@@ -19,7 +19,8 @@ The [vagrant](http://www.vagrantup.com/)-based virtual machine from [here](https
     $ cd ~/vagrant-cascading-hadoop-cluster/single-node
     $ vagrant ssh
     $ cd /opt/hadoop-2.3.0/etc/hadoop/
-    $ cp * /vagrant/configs/
+    $ mkdir /vagrant/configs
+    $ cp * /vagrant/configs
     $ exit
 
  Now you are able to communicate with YARN without any extra setup, just by appending `~/vagrant-cascading-hadoop-cluster/single-node/configs` to `CLASSPATH`.
