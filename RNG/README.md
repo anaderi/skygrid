@@ -35,7 +35,7 @@ parameters to run the program
 5. crowd numbers to be created in each container
 6. output filename in /user/yarnuser/CernYarnApp/generatedNumbers/ path in HDFS
 
-command to run the program
+run the program
 -------------
 
 `java -cp "~/vagrant-cascading-hadoop-cluster/single-node/configs/:target/YarnTestClient-1.0.jar:target/dependency/*" ru.yandex.cern.yarntest.AppClient TestArgument 10 20 3 200 file`
