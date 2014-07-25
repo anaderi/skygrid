@@ -40,4 +40,14 @@ run the program
 
 `java -cp "~/vagrant-cascading-hadoop-cluster/single-node/configs/:target/YarnTestClient-1.0.jar:target/dependency/*" ru.yandex.cern.yarntest.AppClient TestArgument 10 20 3 200 file`
 
+Check results
+-------------
+
+`hadoop fs -ls /user/yarnuser/CernYarnApp/generatedNumbers`
+
+Print results
+-------------
+
+`hadoop fs -cat /user/yarnuser/CernYarnApp/generatedNumbers/file0-200 | head`
+
 [1]: https://github.com/Cascading/vagrant-cascading-hadoop-cluster
