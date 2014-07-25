@@ -8,22 +8,28 @@ After we have installed Vagrant, we do the following:
 vagrant preparation
 -------------
 
-`cd vagrant-cascading-hadoop-cluster/single-node`
-`vagrant up`
+`cd vagrant-cascading-hadoop-cluster/single-node`  
+
+`vagrant up`  
+
 `vagrant ssh master`
 
  communicate with YARN without any extra setup
 -------------
 
-`cd /opt/hadoop-2.3.0/etc/hadoop/`
-`mkdir /vagrant/configs`
-`cp * /vagrant/configs`
+`cd /opt/hadoop-2.3.0/etc/hadoop/`  
+
+`mkdir /vagrant/configs`  
+
+`cp * /vagrant/configs`  
+
 `cd /vagrant/openlab_ship_proto/RNG`
 
 create jar file in target folder
 -------------
 
-`mvn package`
+`mvn package`  
+
 `mvn dependency:copy-dependencies`
 
 parameters to run the program
