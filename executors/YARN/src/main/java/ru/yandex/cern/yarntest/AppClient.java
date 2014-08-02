@@ -40,7 +40,7 @@ public class AppClient {
     private static final String APP_NAME = "CernYarnApp";
     private YarnConfiguration conf;
     private YarnClient yarnClient;
-    private String appJar = "/Users/stromsund/IdeaProjects/YarnTestClient/target/YarnTestClient-1.0.jar";
+    private String appJar = "/Users/stromsund/Development/openlab_ship_proto/executors/YARN/target/YarnTestClient-1.0.jar";
     private ApplicationId appId;
     private FileSystem fs;
     private String inputPath;
@@ -67,8 +67,6 @@ public class AppClient {
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(conf);
         fs = FileSystem.get(conf);
-
-        inputPath = args[0];
     }
 
     public boolean run() throws YarnException, IOException {
@@ -134,7 +132,7 @@ public class AppClient {
 
         Vector<CharSequence> vargs = new Vector<CharSequence>(30);
         vargs.add(Environment.JAVA_HOME.$() + "/bin/java");
-        vargs.add("ru.yandex.cern.yarntest.ApplicationMaster");
+        vargs.add("ru.yandex.cern.yarntest.SeniorApplicationMaster");
         vargs.add(inputPath);
         vargs.add("1><LOG_DIR>/AM.stdout");
         vargs.add("2><LOG_DIR>/AM.stderr");
