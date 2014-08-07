@@ -40,7 +40,7 @@ public class AppClient {
     private static final String APP_NAME = "CernYarnApp";
     private YarnConfiguration conf;
     private YarnClient yarnClient;
-    private String appJar = "/vagrant/openlab_ship_proto/YARN/target/YarnTestClient-1.0.jar";
+    private String appJar = "/vagrant/openlab_ship_proto/RNG/target/YarnTestClient-1.0.jar";
     private ApplicationId appId;
     private FileSystem fs;
     private String inputPath;
