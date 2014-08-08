@@ -20,4 +20,4 @@ Load, run and test the project
 
 `mvn dependency:copy-dependencies`
 
-`java -jar jobdescriptor-1.0.jar`
+`java -jar target/jobdescriptor-1.0.jar`
