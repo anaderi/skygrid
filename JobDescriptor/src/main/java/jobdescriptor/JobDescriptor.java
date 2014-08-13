@@ -469,6 +469,8 @@ public class JobDescriptor {
         initArgs();
         
         jd.Split_equal(Split_equal_arg);
+
+	Jeeves jeeves = new Jeeves(jd);
         
         /*
         jd.Split_proportional(Split_proportional_list);
