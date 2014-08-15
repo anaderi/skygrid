@@ -19,6 +19,8 @@ public class Jeeves {
 		
 		executeFairShip(home);
 		writeFilesToHDFS(home);
+
+		System.out.println("Jeeves has been terminated...");
 	}
 	
 	private static void executeFairShip(String home) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, InterruptedException, IOException{
@@ -41,7 +43,6 @@ public class Jeeves {
 		CommandExecutor.execute(home+"/FairShip","sudo -u hdfs hadoop fs -copyFromLocal " +"/tmp/ship.Pythia8-TGeant4.root /user/jeeves/machine/runid/");
 		System.out.println("Printing...");
 		CommandExecutor.execute(home+"/FairShip","sudo -u hdfs hadoop fs -ls /user/jeeves/machine/runid/");
-		System.out.println("Jeeves has been terminated...");
 		//return status (try-catch)
 	}
 
