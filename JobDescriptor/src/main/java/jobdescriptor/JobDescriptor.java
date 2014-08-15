@@ -461,8 +461,13 @@ public class JobDescriptor {
 
     /**
      * @param args the command line arguments
+     * @throws InterruptedException 
+     * @throws SecurityException 
+     * @throws NoSuchFieldException 
+     * @throws IllegalAccessException 
+     * @throws IllegalArgumentException 
      */
-    public static void main(String[] args) throws IOException, JSONException {
+    public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
         //TODO
         JobDescriptor jd = new JobDescriptor("jobdescriptor");
         
@@ -486,3 +491,4 @@ public class JobDescriptor {
     }
 
 }
+
