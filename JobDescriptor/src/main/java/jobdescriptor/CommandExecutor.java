@@ -31,7 +31,7 @@ public class CommandExecutor {
 
 				stdError = new BufferedReader(new InputStreamReader(
 						proc.getErrorStream()));
-				// /*
+				
 				String s = null;
 				
 
