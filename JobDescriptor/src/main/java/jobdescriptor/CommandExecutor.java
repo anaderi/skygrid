@@ -31,7 +31,7 @@ public class CommandExecutor {
 
 				stdError = new BufferedReader(new InputStreamReader(
 						proc.getErrorStream()));
-				
+				// /*
 				String s = null;
 				
 
@@ -57,6 +57,7 @@ public class CommandExecutor {
 				while (stdError.ready() && ((s = stdError.readLine()) != null)) {
 					sb.append(s);
 					sb.append("\n");
+					System.out.println(s);
 				}
 
 				stdInput.close();
@@ -77,4 +78,3 @@ public class CommandExecutor {
 	}
 
 }
-
