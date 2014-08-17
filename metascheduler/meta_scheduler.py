@@ -11,7 +11,7 @@ server = SimpleXMLRPCServer(("0.0.0.0", 9000),
 server.register_introspection_functions()
 
 def get_task():
-    return 42
+    return '{"task": "Do Something Useful", "constraints": "immediately"}'
 
 server.register_function(get_task, 'GetTask')
 server.serve_forever()

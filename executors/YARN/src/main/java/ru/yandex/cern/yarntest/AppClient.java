@@ -40,15 +40,18 @@ public class AppClient {
     private static final String APP_NAME = "CernYarnApp";
     private YarnConfiguration conf;
     private YarnClient yarnClient;
-    private String appJar = "/Users/stromsund/Development/openlab_ship_proto/executors/YARN/target/YarnTestClient-1.0.jar";
     private ApplicationId appId;
     private FileSystem fs;
-    private String inputPath;
+    private String auntAgathaURL;
 
     public static void main(String[] args) {
         AppClient client;
+        if (args.length != 1) {
+            LOG.error("Obligatory argument: AUNT_AGATHA_URL is missing");
+            return;
+        }
         try {
-            client = new AppClient(args);
+            client = new AppClient(args[0]);
         } catch (IOException e1) {
             e1.printStackTrace();
             return;
@@ -62,7 +65,8 @@ public class AppClient {
         }
     }
 
-    public AppClient(String[] args) throws IOException {
+    public AppClient(String auntAgathaURL) throws IOException {
+        this.auntAgathaURL = auntAgathaURL;
         conf = new YarnConfiguration();
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(conf);
@@ -93,7 +97,7 @@ public class AppClient {
                     queue.getMaximumCapacity());
         }
 
-        Path src = new Path(this.appJar);
+        Path src = new Path(AppClient.class.getProtectionDomain().getCodeSource().getLocation().getFile());
         String pathSuffix = APP_NAME + "/" + appId.getId() + "/app.jar";
         Path dest = new Path(fs.getHomeDirectory(), pathSuffix);
         fs.copyFromLocalFile(false, true, src, dest);
@@ -111,7 +115,7 @@ public class AppClient {
         Map<String, String> env = new HashMap<String, String>();
         String appJarDest = dest.toUri().toString();
         env.put("AMJAR", appJarDest);
-        LOG.info("AMJAR environment variable is set to {}",	appJarDest);
+        LOG.info("AMJAR environment variable is set to {}", appJarDest);
         env.put("AMJARTIMESTAMP", Long.toString(destStatus.getModificationTime()));
         env.put("AMJARLEN", Long.toString(destStatus.getLen()));
         StringBuilder classPathEnv = new StringBuilder().append(File.pathSeparatorChar).append("./app.jar");
@@ -133,7 +137,7 @@ public class AppClient {
         Vector<CharSequence> vargs = new Vector<CharSequence>(30);
         vargs.add(Environment.JAVA_HOME.$() + "/bin/java");
         vargs.add("ru.yandex.cern.yarntest.SeniorApplicationMaster");
-        vargs.add(inputPath);
+        vargs.add(auntAgathaURL);
         vargs.add("1><LOG_DIR>/AM.stdout");
         vargs.add("2><LOG_DIR>/AM.stderr");
         StringBuilder command = new StringBuilder();
