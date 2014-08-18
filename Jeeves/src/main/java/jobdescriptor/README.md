@@ -1,6 +1,6 @@
 JOB DESCRIPTOR SPLIT METHODS
 =========
-This is programm for splitting jobs in various ways.
+This is a class for splitting jobs in various ways.
 
 Class JobDescriptor can create object by parsing JSON files and can split itself into smaller chunks
 
@@ -10,14 +10,3 @@ There are different strategies that should are implemented for splitting:
   - Next(p), gives next job chunk of p items
 
 jobdescriptor0 JSON file is always the initial input-jobdescriptor.
-  
-Load, run and test the project
-=========
-
-`cd JobDescriptor`
-
-`mvn package`
-
-`mvn dependency:copy-dependencies`
-
-`java -jar target/jobdescriptor-1.0.jar`
