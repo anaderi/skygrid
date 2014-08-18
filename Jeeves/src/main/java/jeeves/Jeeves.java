@@ -22,8 +22,9 @@ public class Jeeves {
 	private String resultsFilename;
 
 	/*
-	 * 0 <-- jeeves has terminated normaly 1 <-- jeeves has not started yet 2
-	 * <-- jeeves has terminated with errors
+	 * 0 <-- jeeves has terminated normaly 
+	 * 1 <-- jeeves has not started yet
+	 * 2 <-- jeeves has terminated with errors
 	 */
 	private int jeevesStatus;
 
