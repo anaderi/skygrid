@@ -2,8 +2,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-	<groupId>jobdescriptor</groupId>
-	<artifactId>jobdescriptor</artifactId>
+	<groupId>jeeves</groupId>
+	<artifactId>jeeves</artifactId>
 	<version>1.0</version>
 	<packaging>jar</packaging>
 
@@ -29,7 +29,7 @@
 				    <transformers>
 					<transformer
 					    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-					    <mainClass>jobdescriptor.JobDescriptor</mainClass>
+					    <mainClass>jeeves.Jeeves</mainClass>
 					</transformer>
 				    </transformers>
 				</configuration>

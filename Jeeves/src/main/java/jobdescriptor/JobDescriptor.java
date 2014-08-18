@@ -11,6 +11,9 @@ import java.util.Random;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.net.UnknownHostException;
+
+import jeeves.Jeeves;
 
 /**
  *
@@ -457,17 +460,8 @@ public class JobDescriptor {
         return currentJobDescriptor;
     }
     
-    
-
-    /**
-     * @param args the command line arguments
-     * @throws InterruptedException 
-     * @throws SecurityException 
-     * @throws NoSuchFieldException 
-     * @throws IllegalAccessException 
-     * @throws IllegalArgumentException 
-     */
-    public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+    /*
+    public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, 	IllegalAccessException, NoSuchFieldException, SecurityException, UnknownHostException {
         //TODO
         JobDescriptor jd = new JobDescriptor("jobdescriptor");
         
@@ -475,20 +469,23 @@ public class JobDescriptor {
         
         jd.Split_equal(Split_equal_arg);
 
-	Jeeves jeeves = new Jeeves(jd);
+		Jeeves jeeves = new Jeeves(jd);
+		if(jeeves.getjeevesStatus() == 0){
+			jeeves.writeFairShipResultsToHDFS();
+		}
         
-        /*
-        jd.Split_proportional(Split_proportional_list);
-        */
-       
-        /*
-        jd.Split_next(Split_next_args.get(0));
-        jd.Split_next(Split_next_args.get(1));
-        jd.Split_next(Split_next_args.get(2));
-        jd.Split_next(Split_next_args.get(3));
-        */
+        
+//        jd.Split_proportional(Split_proportional_list);
+//        
+//       
+//        
+//        jd.Split_next(Split_next_args.get(0));
+//        jd.Split_next(Split_next_args.get(1));
+//        jd.Split_next(Split_next_args.get(2));
+//        jd.Split_next(Split_next_args.get(3));
+        
         
     }
+	*/
 
 }
-
