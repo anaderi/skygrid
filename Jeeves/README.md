@@ -1,7 +1,7 @@
 Jeeves
 =========
 ***
->main class is located to **Jeeves** class at the moment mainly for testing reasons.
+>main function is located to **Jeeves** class at the moment mainly for testing reasons.
 
 Compile & run Jeeves
 =========
