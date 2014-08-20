@@ -169,7 +169,7 @@ public class Jeeves {
 		HttpPost post = new HttpPost(url);
 
 		// add header
-		post.setHeader("Content-Type", "application/root");
+		//post.setHeader("Content-Type", "application/root");
 		try {
 			post.setEntity(new StringEntity(
 					getContentOfFile(FairShipLocation + "/FairShip/" + "build/" + resultsFilename)));
@@ -220,8 +220,8 @@ public class Jeeves {
 			String lfile = "FairRunInfo_ship.Pythia8-TGeant4.root";
 			String user = "username";
 
-			String host = "127.1.1.0";
-			String rfile = "TheRemoteTwo.txt";
+			String host = "127.0.0.1";
+			String rfile = "test.txt";
 
 			JSch jsch = new JSch();
 			Session session = jsch.getSession(user, host, 22);
