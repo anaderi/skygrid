@@ -24,8 +24,10 @@ class Worker(Document):
     last_seen = FloatField()
     info = DictField()
 
+    active = BooleanField(default=False)
+
     meta = {
-        'indexes': ['wid'],
+        'indexes': ['wid', 'last_seen', 'active'],
     }
 
     def __unicode__(self):

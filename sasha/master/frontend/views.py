@@ -19,15 +19,17 @@ def worker_heartbeat(wid):
         defaults={
             'hostname': request.remote_addr,
             'last_seen': time(),
-            'meta': {}
+            'meta': {},
+            'active': True
         }
     )
 
     if not created:
         worker.last_seen = time()
+        worker.active = True
         worker.save()
 
-    return str(worker) + "\n"
+    return jsonify(success=True, worker=json.loads(worker.to_json()))
 
 
 @app.route('/add_task', methods=['POST'])
