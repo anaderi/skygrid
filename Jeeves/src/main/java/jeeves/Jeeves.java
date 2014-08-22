@@ -8,6 +8,7 @@ import org.json.JSONException;
 
 import jobdescriptor.JobDescriptor;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,12 +17,15 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-
 import java.util.Properties;
 
 import net.schmizz.sshj.SSHClient;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -115,7 +119,6 @@ public class Jeeves {
 		System.out.println("Printing...");
 		CommandExecutor.execute(FairShipLocation + "/FairShip",
 				"sudo -u hdfs hadoop fs -ls /user/jeeves/" + machine + "/");
-		// return status (try-catch)
 	}
 
 	/*
@@ -136,28 +139,6 @@ public class Jeeves {
 		return jeevesStatus;
 	}
 
-	/**
-	 * @param args
-	 *            the command line arguments
-	 * @throws InterruptedException
-	 * @throws SecurityException
-	 * @throws NoSuchFieldException
-	 * @throws IllegalAccessException
-	 * @throws IllegalArgumentException
-	 */
-	public static void main(String[] args) throws IOException, JSONException,
-			InterruptedException, IllegalArgumentException,
-			IllegalAccessException, NoSuchFieldException, SecurityException,
-			UnknownHostException {
-		// TODO
-		JobDescriptor jd = new JobDescriptor("jobdescriptor");
-
-		Jeeves jeeves = new Jeeves(jd);
-		if (jeeves.getjeevesStatus() == 0) {
-			jeeves.writeFairShipResultsToHDFS();
-		}
-
-	}
 
 	// HTTP POST request
 	private void sendPost() throws Exception {
@@ -212,15 +193,15 @@ public class Jeeves {
 	}
 
 	private void sendWithSCP() {
-		System.out.println("SCP START");
+		//System.out.println("SCP START");
 
 		FileInputStream fis = null;
 		try {
 
-			String lfile = "FairRunInfo_ship.Pythia8-TGeant4.root";
+			String lfile = resultsFilename;
 			String user = "username";
 
-			String host = "127.0.0.1";
+			String host = "127.0.0.1"; //test to localhost
 			String rfile = "test.txt";
 
 			JSch jsch = new JSch();
@@ -254,7 +235,7 @@ public class Jeeves {
 			if (ptimestamp) {
 				command = "T " + (_lfile.lastModified() / 1000) + " 0";
 				// The access time should be sent here,
-				// but it is not accessible with JavaAPI ;-<
+				// but it is not accessible with JavaAPI
 				command += (" " + (_lfile.lastModified() / 1000) + " 0\n");
 				out.write(command.getBytes());
 				out.flush();
@@ -301,7 +282,7 @@ public class Jeeves {
 
 			channel.disconnect();
 			session.disconnect();
-			System.out.println("SCP END");
+			//System.out.println("SCP END");
 			System.exit(0);
 		} catch (Exception e) {
 			System.out.println(e);
@@ -339,6 +320,72 @@ public class Jeeves {
 			}
 		}
 		return b;
+	}
+	
+	private Path createDirToHDFS(FileSystem hdfs) throws IOException{
+		Path workingDir=hdfs.getWorkingDirectory();
+		Path newFolderPath= new Path("/user/jeeves/" + machine
+				+ "/" + currentTime + "/");
+		newFolderPath=Path.mergePaths(workingDir, newFolderPath);
+		if(hdfs.exists(newFolderPath))
+		{
+		      hdfs.delete(newFolderPath, true); //Delete existing Directory
+		}
+
+		hdfs.mkdirs(newFolderPath);     //Create new Directory
+		return newFolderPath;
+	}
+	
+	private void copyFromLocalToHDFS() throws IOException{
+		  FileSystem hdfs =FileSystem.get(new Configuration());
+		  Path localFilePath = new Path(FairShipLocation + "/FairShip/" + "build/" + resultsFilename);
+		  Path hdfsFilePath=new Path(createDirToHDFS(hdfs)+"/" + resultsFilename);
+
+		  hdfs.copyFromLocalFile(localFilePath, hdfsFilePath);
+	}
+
+	private void copyToLocal(File targetLocation)throws IOException {
+		
+		File sourceLocation = new File(FairShipLocation + "/FairShip/" + "build/" + resultsFilename);
+
+		if (sourceLocation.isDirectory()) {
+			if (!targetLocation.exists()) {
+				targetLocation.mkdir();
+			}
+
+			String[] children = sourceLocation.list();
+			for (int i = 0; i < children.length; i++) {
+				copyToLocal(new File(
+						targetLocation, children[i]));
+			}
+		} else {
+
+			InputStream in = new FileInputStream(sourceLocation);
+			OutputStream out = new FileOutputStream(targetLocation);
+
+			// Copy the bits from instream to outstream
+			byte[] buf = new byte[1024];
+			int len;
+			while ((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+			in.close();
+			out.close();
+		}
+	}
+	
+	public static void main(String[] args) throws IOException, JSONException,
+			InterruptedException, IllegalArgumentException,
+			IllegalAccessException, NoSuchFieldException, SecurityException,
+			UnknownHostException {
+		
+		JobDescriptor jd = new JobDescriptor("jobdescriptor");
+		
+		Jeeves jeeves = new Jeeves(jd);
+//		if (jeeves.getjeevesStatus() == 0) {
+//			jeeves.writeFairShipResultsToHDFS();
+//		}
+	
 	}
 
 }
