@@ -1,10 +1,13 @@
 import json
-from time import time
+import datetime
 
 from flask import request, jsonify
 
 from .main import app
-from ..generic.models import Worker, Task, User
+from ..generic.models import Worker, Job, User
+
+
+# from tasks import *
 
 
 @app.route('/')
@@ -18,52 +21,52 @@ def worker_heartbeat(wid):
         wid=wid, 
         defaults={
             'hostname': request.remote_addr,
-            'last_seen': time(),
             'meta': {},
             'active': True
         }
     )
 
     if not created:
-        worker.last_seen = time()
+        worker.last_seen = datetime.datetime.now()
         worker.active = True
         worker.save()
 
-    return jsonify(success=True, worker=json.loads(worker.to_json()))
+    return jsonify(success=True, worker=worker.to_dict())
 
 
-@app.route('/add_task', methods=['POST'])
-def add_task():
+@app.route('/add_job', methods=['POST'])
+def add_job():
     try:
-        task_dict = json.loads(request.data)
-        task_dict['owner'] = User.objects.get(username=task_dict['owner'])
+        job_dict = json.loads(request.data)
+        job_dict['owner'] = User.objects.get(username=job_dict['owner'])
 
-        t = Task(**task_dict)
-        t.save()
+        job = Job(**job_dict)
+        job.save()
 
-        return jsonify(success=True)
+        return jsonify(success=True, job=job.to_dict())
     except Exception, e:
         return jsonify(success=False, exception=str(e))
 
 
-@app.route('/get_task', methods=['GET'])
-def get_task():
+@app.route('/get_jobs', methods=['GET'])
+def distribute_jobs():
     try:
         worker = Worker.objects.get(wid=int(request.args.get('wid')))
-        n_task = int(request.args.get('ntask')) or 1 # how many tasks we need to return
+        n_job = int(request.args.get('njob')) or 1 # how many jobs we need to return
 
-        jsoned_tasks = []
+        jsoned_jobs = []
 
-        tasks = Task.objects(assigned_worker=None)[:n_task]
-        print len(tasks)
-        for task in tasks:
-            task.assigned_worker = worker
-            jsoned_tasks.append(task.to_json())
+        jobs = Job.objects(assigned_worker=None)[:n_job]
+        print len(jobs)
+        for job in jobs:
+            job.assigned_worker = worker
+            jsoned_jobs.append(job.to_dict())
 
-            task.save()
+            job.save()
 
-        return jsonify(success=True, tasks=jsoned_tasks)
+        return jsonify(success=True, jobs=jsoned_jobs)
 
 
     except Exception, e:
         return jsonify(success=False, exception=str(e))
+

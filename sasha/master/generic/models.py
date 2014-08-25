@@ -21,7 +21,7 @@ class User(Document):
 class Worker(Document):
     wid = IntField(unique=True)
     hostname = StringField()
-    last_seen = FloatField()
+    last_seen = DateTimeField(default=datetime.datetime.now)
     info = DictField()
 
     active = BooleanField(default=False)
@@ -30,11 +30,21 @@ class Worker(Document):
         'indexes': ['wid', 'last_seen', 'active'],
     }
 
+    def to_dict(self):
+        return {
+            "wid": self.wid,
+            "hostname": self.hostname,
+            "last_seen": self.last_seen,
+            "info": self.info,
+
+            "active": self.active,
+        }
+
     def __unicode__(self):
         return "{} : {}".format(self.wid, self.hostname)
 
 
-class Task(Document):
+class Job(Document):
     name = StringField()
     environments = ListField(StringField())
     owner = ReferenceField(User)
@@ -51,9 +61,38 @@ class Task(Document):
 
     assigned_worker = ReferenceField(Worker)
     submitted = DateTimeField(default=datetime.datetime.now)
+    last_update = DateTimeField(default=datetime.datetime.now)
+
+    VALID_STATUSES = ['submitted', 'running', 'completed', 'failed']
     status = StringField(default="submitted") # submitted, running, complete, failed
 
     meta = {
         'indexes': ['name', 'owner', 'app'],
         'ordering': ['submitted']
     }
+
+    def to_dict(self):
+        return {
+            "id": str(self.pk),
+            "worker":  self.assigned_worker.wid if self.assigned_worker else None,
+
+            "name": self.name,
+            "environments": self.environments,
+            "owner": self.owner.username,
+            "app": self.app,
+
+            "workdir": self.workdir,
+            "cmd": self.cmd,
+            "args": self.args,
+
+            "run_containters": self.run_containters,
+            "min_memoryMB": self.min_memoryMB,
+            "max_memoryMB": self.max_memoryMB,
+            "cpu_per_container": self.cpu_per_container,
+
+            "submitted": self.submitted,
+            "status": self.status,
+        }
+
+    def __unicode__(self):
+        return "{} : {}".format(self.pk, self.name)

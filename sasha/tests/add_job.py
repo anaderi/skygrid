@@ -27,6 +27,6 @@ payload = {
 }
 
 
-r = requests.post("http://test02cern.vs.os.yandex.net:5000/add_task", data=json.dumps(payload))
+r = requests.post("http://test02cern.vs.os.yandex.net:5000/add_job", data=json.dumps(payload))
 
 print r.text
