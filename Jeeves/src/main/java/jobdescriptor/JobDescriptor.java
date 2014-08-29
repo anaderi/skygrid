@@ -13,8 +13,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.net.UnknownHostException;
 
-import jeeves.Jeeves;
-
 /**
  *
  * @author Dimitris Sarigiannis
@@ -23,35 +21,35 @@ public class JobDescriptor {
 
     private String jobDescriptorTxt;
     private JSONObject obj;
-    
+
     public static int Split_equal_arg;
     public static ArrayList<Integer> Split_proportional_list;
     public static ArrayList<Integer> Split_next_args;
-    
+
     private int nextCounter;
     private int currentJobDescriptor;
-    
-    public static void initArgs(){
-        Split_equal_arg = 2;
-        
+
+    public static void initArgs() {
+        Split_equal_arg = 4;
+
         Split_proportional_list = new ArrayList<Integer>();
         Split_proportional_list.add(10);
         Split_proportional_list.add(90);
-        
+
         Split_next_args = new ArrayList<Integer>();
         //Split_next_args.add(500);
         Split_next_args.add(300);
         //Split_next_args.add(200);
         //Split_next_args.add(1);
     }
-    
+
     public JobDescriptor(String jobDescriptorName) throws FileNotFoundException, IOException, JSONException {
-        
+
         this.nextCounter = 0; //for next sub-jobdescriptor
         this.currentJobDescriptor = 0;
-        
+
         try {
-            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName+this.currentJobDescriptor));
+            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + this.currentJobDescriptor));
             this.jobDescriptorTxt = "";
             do {
                 String temp = br.readLine();
@@ -61,24 +59,23 @@ public class JobDescriptor {
                 jobDescriptorTxt += temp;
             } while (true);
         } catch (FileNotFoundException fe) {
-            System.err.println("File "+jobDescriptorName+this.currentJobDescriptor+" not found");
+            System.err.println("File " + jobDescriptorName + this.currentJobDescriptor + " not found");
             System.exit(0);
         }
 
         this.obj = new JSONObject(this.jobDescriptorTxt);
     }
-    
-    
+
     /*
-      Constructor only for testing 
-    */
-    public JobDescriptor(String jobDescriptorName,int i) throws FileNotFoundException, IOException, JSONException {
-        
+     Constructor only for testing 
+     */
+    public JobDescriptor(String jobDescriptorName, int i) throws FileNotFoundException, IOException, JSONException {
+
         this.nextCounter = 0; //for next sub-jobdescriptor
         this.currentJobDescriptor = 0;
-        
+
         try {
-            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName+i));
+            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + i));
             this.jobDescriptorTxt = "";
             do {
                 String temp = br.readLine();
@@ -88,7 +85,7 @@ public class JobDescriptor {
                 jobDescriptorTxt += temp;
             } while (true);
         } catch (FileNotFoundException fe) {
-            System.err.println("File "+jobDescriptorName+i+" not found");
+            System.err.println("File " + jobDescriptorName + i + " not found");
             System.exit(0);
         }
 
@@ -100,13 +97,14 @@ public class JobDescriptor {
      */
     public void Split_equal(int N) throws IOException, JSONException {
 
-        if(this.getSCALE() % N != 0){
-            System.err.println("Split_equal("+N+") is not not applicable.\nPlease change argument N and try again.");
-            return;
-        }
-        
         Random RANDOM_SEED = new Random();
         int reduceSCALE = 0;
+
+        int scaleBalance = this.getSCALE() % N;
+
+        int rangeBalance = (this.getRANGE().get(1) - this.getRANGE().get(0) + 1) % N;
+        int rangeInterval = (this.getRANGE().get(1) - this.getRANGE().get(0) + 1) / N;
+        int currentRangeValue = 1;
 
         for (int i = 1; i <= N; i++) {
 
@@ -130,11 +128,12 @@ public class JobDescriptor {
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(0).toString());
             sublist.put(subArr.get(0));
             sublist.put(subArr.get(1));
-            
-            sublist.put(new Integer((Integer) subArr.get(2) / N));
+
+            int newScale = (Integer) subArr.get(2) / N + ((scaleBalance--) > 0 ? 1 : 0);
+            sublist.put(new Integer((Integer) newScale));
             //update jobdescriptor's SCALE
-            reduceSCALE +=  new Integer((Integer) subArr.get(2) / N);
-            
+            reduceSCALE += new Integer((Integer) newScale);
+
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(1).toString());
@@ -144,9 +143,14 @@ public class JobDescriptor {
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(2).toString());
+            JSONArray rangeArray = new JSONArray();
+            rangeArray.put(new Integer(currentRangeValue));
+            int temp = currentRangeValue + rangeInterval - 1 + ((rangeBalance--) > 0 ? 1 : 0);
+            rangeArray.put(new Integer(temp));
+            currentRangeValue = temp + 1;
             sublist.put(subArr.get(0).toString());
             sublist.put(subArr.get(1).toString());
-            sublist.put(subArr.get(2));
+            sublist.put(rangeArray);
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(3).toString());
@@ -154,7 +158,7 @@ public class JobDescriptor {
             sublist.put(RANDOM_SEED.nextInt(1000000000));
             sublists.add(sublist);
             subObj1.put("scaleArg", sublists);
-            
+
             subObj.put("args", subObj1);
 
             subObj.put("num_containers", new Integer((Integer) obj.get("num_containers")));
@@ -165,23 +169,26 @@ public class JobDescriptor {
             writeJSONObjectToFile("sub-jobdescriptor" + i, subObj);
 
         }
-        
-        this.setSCALE(this.getSCALE()-reduceSCALE);
+
+        this.setSCALE(this.getSCALE() - reduceSCALE);
     }
-    
-    public void Split_proportional(ArrayList<Integer> l) throws JSONException, IOException{
-        
-        int sum = 0;
-        for(Integer p : l){
-            sum += p*10;
+
+    public void Split_proportional(ArrayList<Integer> l) throws JSONException, IOException {
+
+        double sum = 0;
+        for (Integer p : l) {
+            sum += p * this.getSCALE() * 0.01;
         }
-        if(this.getSCALE() != sum){
+        if (this.getSCALE() != sum) {
             System.err.println("Split_propotional() is not not applicable.\nPlease change the proportions and try again.");
             return;
         }
-        
+
         Random RANDOM_SEED = new Random();
         int reduceSCALE = 0;
+
+        int rangeInitInterval = (this.getRANGE().get(1) - this.getRANGE().get(0) + 1);
+        int currentRangeValue = 1;
         
         for (int i = 0; i < l.size(); i++) {
 
@@ -205,10 +212,10 @@ public class JobDescriptor {
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(0).toString());
             sublist.put(subArr.get(0));
             sublist.put(subArr.get(1));
-            
-            sublist.put(new Integer(((Integer) subArr.get(2) * l.get(i))/100)); //we assume that we have exact division always.
-            reduceSCALE += (((Integer) subArr.get(2) * l.get(i))/100);
-            
+
+            sublist.put(new Integer(((Integer) subArr.get(2) * l.get(i)) / 100)); //we assume that we have exact division always.
+            reduceSCALE += (((Integer) subArr.get(2) * l.get(i)) / 100);
+
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(1).toString());
@@ -218,9 +225,14 @@ public class JobDescriptor {
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(2).toString());
+            JSONArray rangeArray = new JSONArray();
+            rangeArray.put(new Integer(currentRangeValue));
+            int temp = currentRangeValue + (int)(rangeInitInterval * 0.01 * l.get(i)) - 1;
+            rangeArray.put(new Integer(temp));
+            currentRangeValue = temp + 1;
             sublist.put(subArr.get(0).toString());
             sublist.put(subArr.get(1).toString());
-            sublist.put(subArr.get(2));
+            sublist.put(rangeArray);
             sublists.add(sublist);
             sublist = new JSONArray();
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(3).toString());
@@ -228,7 +240,7 @@ public class JobDescriptor {
             sublist.put(RANDOM_SEED.nextInt(1000000000));
             sublists.add(sublist);
             subObj1.put("scaleArg", sublists);
-            
+
             subObj.put("args", subObj1);
 
             subObj.put("num_containers", new Integer((Integer) obj.get("num_containers")));
@@ -236,20 +248,20 @@ public class JobDescriptor {
             subObj.put("max_memoryMB", new Integer((Integer) obj.get("max_memoryMB")));
             subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
 
-            writeJSONObjectToFile("sub-jobdescriptor" + (i+1), subObj);
+            writeJSONObjectToFile("sub-jobdescriptor" + (i + 1), subObj);
 
         }
-        
-        this.setSCALE(this.getSCALE()-reduceSCALE);
+
+        this.setSCALE(this.getSCALE() - reduceSCALE);
     }
-    
-    public void Split_next(int X) throws JSONException, IOException{
-        
-        if(X > this.getSCALE()){
-            System.err.println("Split_next("+X+") has been canceled.\nPlease change the argument and try again.");
+
+    public void Split_next(int X) throws JSONException, IOException {
+
+        if (X > this.getSCALE()) {
+            System.err.println("Split_next(" + X + ") has been canceled.\nPlease change the argument and try again.");
             return;
         }
-        
+
         Random RANDOM_SEED = new Random();
 
         JSONObject subObj = new JSONObject();
@@ -276,7 +288,7 @@ public class JobDescriptor {
         //set new sub-jobdescriptor's SCALE
         sublist.put(new Integer(X));
         //update jobdescriptor's SCALE
-        this.setSCALE(this.getSCALE()-X);
+        this.setSCALE(this.getSCALE() - X);
 
         sublists.add(sublist);
         sublist = new JSONArray();
@@ -306,15 +318,15 @@ public class JobDescriptor {
         subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
 
         writeJSONObjectToFile("sub-jobdescriptor" + (++this.nextCounter), subObj);
-         //sub-jobdescriptor has been created successfully
+        //sub-jobdescriptor has been created successfully
     }
 
     public void writeJSONObjectToFile(String filename, JSONObject obj) throws IOException, JSONException {
-        
+
         FileWriter file = new FileWriter(filename);
-        
+
         file.write(JsonWriter.formatJson(obj.toString()));
-        
+
         file.flush();
         file.close();
     }
@@ -325,8 +337,8 @@ public class JobDescriptor {
         JSONArray arr1 = new JSONArray(arr.getJSONArray(0).toString());
         return (Integer) arr1.get(2);
     }
-    
-    private void setSCALE(int newSCALE) throws JSONException, IOException{
+
+    private void setSCALE(int newSCALE) throws JSONException, IOException {
         JSONObject subObj = new JSONObject();
 
         subObj.put("name", obj.get("name").toString());
@@ -374,10 +386,10 @@ public class JobDescriptor {
         subObj.put("min_memoryMB", new Integer((Integer) obj.get("min_memoryMB")));
         subObj.put("max_memoryMB", new Integer((Integer) obj.get("max_memoryMB")));
         subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
-        
+
         obj = subObj;
-        
-        writeJSONObjectToFile("jobdescriptor"+(++this.currentJobDescriptor), subObj); //updates jobdescriptor's file (creates new file to keep history-log)
+
+        writeJSONObjectToFile("jobdescriptor" + (++this.currentJobDescriptor), subObj); //updates jobdescriptor's file (creates new file to keep history-log)
     }
 
     public Integer getRANDOM_SEED() throws JSONException {
@@ -459,23 +471,16 @@ public class JobDescriptor {
     public int getCurrentJobDescriptor() {
         return currentJobDescriptor;
     }
-    
-    /*
-    public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, 	IllegalAccessException, NoSuchFieldException, SecurityException, UnknownHostException {
+/*
+    public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, UnknownHostException {
         //TODO
         JobDescriptor jd = new JobDescriptor("jobdescriptor");
-        
-        initArgs();
-        
-        jd.Split_equal(Split_equal_arg);
 
-		Jeeves jeeves = new Jeeves(jd);
-		if(jeeves.getjeevesStatus() == 0){
-			jeeves.writeFairShipResultsToHDFS();
-		}
-        
-        
-//        jd.Split_proportional(Split_proportional_list);
+        initArgs();
+
+ //       jd.Split_equal(Split_equal_arg);
+
+        jd.Split_proportional(Split_proportional_list);
 //        
 //       
 //        
@@ -483,9 +488,7 @@ public class JobDescriptor {
 //        jd.Split_next(Split_next_args.get(1));
 //        jd.Split_next(Split_next_args.get(2));
 //        jd.Split_next(Split_next_args.get(3));
-        
-        
     }
-	*/
-
+*/
 }
+
