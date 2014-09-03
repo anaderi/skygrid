@@ -324,7 +324,7 @@ public class Jeeves {
 	
 	private Path createDirToHDFS(FileSystem hdfs) throws IOException{
 		Path workingDir=hdfs.getWorkingDirectory();
-		Path newFolderPath= new Path("/user/jeeves/" + machine
+		Path newFolderPath= new Path("hdfs://master.local:9000/user/jeeves/" + machine
 				+ "/" + currentTime + "/");
 		newFolderPath=Path.mergePaths(workingDir, newFolderPath);
 		if(hdfs.exists(newFolderPath))
