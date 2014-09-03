@@ -93,7 +93,7 @@ def docker_is_running(container, verbose=False):
 
 
 def halt(msg):
-    print "ERR: %s" % msg
+    print "HALT: %s" % msg
     exit(1)
 
 
