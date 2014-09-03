@@ -9,6 +9,7 @@ import json
 import socket
 import logging
 import smtplib
+import datetime
 import tempfile
 import argparse
 import subprocess
@@ -20,7 +21,7 @@ SUCCESS = 0
 ERROR_EXCEPTION = 254
 verbose = False
 MAILFROM = "Wooster@SkyGrid"
-MAILHOST = "mail.cern.ch"
+MAILHOST = "localhost"
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -156,6 +157,7 @@ def parse_args():
     p.add_argument("--output", "-o", help="output folder", default="output")
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
+    p.add_argument("--mail", "-m", action='store_true', default=False)
     args = p.parse_args()
     if not os.path.exists(args.dir):
         p.error("directory '%s' does not exists" % args.dir)
@@ -189,49 +191,56 @@ def run_jd(jds, output_dir):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (out, err) = p.communicate()
             result["rc"] = p.returncode
-            if out is not None and len(out) > 0:
+            if out is not None and len(out.strip()) > 0:
                 result["status"] += "OUT: %s\n" % out
-            if err is not None and len(err) > 0:
+            if err is not None and len(err.strip()) > 0:
                 result["status"] += "ERR: %s\n" % err
+            logfile = "%s/%d/output.log" % (output_dir, jds["job_id"])
+            with open(logfile, "w") as fh_log:
+                fh_log.write(result["status"])
     except Exception, e:
         result["status"] = "EXCEPTION: " + e.__repr__()
     return result
 
 
-def notify_email(results):
-    if len(results) == 0: return
-    addresses = set()
-    failset = set()
-    for rd in results:
-        addresses.add(rd["jd"]["email"])
-        if rd["rc"] != SUCCESS:
-            failset.add(rd["jd"]["job_id"])
-    failrate = 100. * len(failset) / len(results)
-    # addresses = set()
-    # addresses.add("austyuzh@cern.ch")
+def notify_email(mailto, report):
     subject = "Wooster@SkyGrid process report"
     body = """\
-Your job descriptots has been processed.
-Failure rate: %0.1f%%
-FailSet: %s
+%s
 
 --
 Faithfully Yours,
 Wooster @ %s
-""" % (failrate, failset, socket.gethostname())
+""" % (report, socket.gethostname())
     try:
         msg = MIMEText(body)
-        msg['To'] = list(addresses)[0]
+        msg['To'] = mailto
         msg['From'] = MAILFROM
         msg['Subject'] = subject
-        # logger.info("addresses: %s" % list(addresses))
-        # logger.info("msg: %s" % msg)
 
         smtpObj = smtplib.SMTP(MAILHOST)
-        smtpObj.sendmail(MAILFROM, list(addresses), msg.as_string())
-        logger.info("Successfully sent email to %s" % addresses)
+        smtpObj.sendmail(MAILFROM, mailto, msg.as_string())
+        logger.info("Successfully sent email to %s" % mailto)
     except smtplib.SMTPException, e:
-        logger.error("Error: unable to send email to '%s' (%s)" % (list(addresses), str(e)))
+        logger.error("Error: unable to send email to '%s' (%s)" % (mailto, str(e)))
+
+
+def make_report(results, time_run, nthreads):
+    failset = set()
+    for rd in results:
+        if rd["rc"] != SUCCESS:
+            failset.add(rd["jd"]["job_id"])
+    failrate = 100. * len(failset) / len(results)
+    report = """
+{jobs} job descriptors has been processed in {time} sec.
+Host: '{host}'
+Workers: {nthreads}
+Failure rate: {failrate:0.1f}%
+""".format(jobs=len(results), failrate=failrate, nthreads=nthreads,
+           time=time_run, host=socket.gethostname())
+    if len(failset) > 0:
+        report += "\nFailed IDs ({n}): {failset}".format(n=len(failset), failset=list(failset))
+    return report
 
 
 def main(args):
@@ -244,15 +253,23 @@ def main(args):
     q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
 
     output_list = itertools.repeat(args.output)
+    time_start = datetime.datetime.now()
     results = p.map(run_jd_wrapper,
                     zip(q_input, output_list))
+    time_end = datetime.datetime.now()
+    time_run = time_end - time_start
     for rd in results:
         if rd["rc"] == SUCCESS:
-            q_success.put(rd)
+            q_success.put(rd["jd"])
         else:
             q_fail.put(rd["jd"])
             logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
-    notify_email(results)
+
+    report = make_report(results, time_run, args.nworkers)
+    print report
+    if args.mail and len(results) > 0:
+        mailto = results[0]["jd"]["email"]
+        notify_email(mailto, report)
 
 
 if __name__ == '__main__':
