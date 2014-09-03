@@ -4,16 +4,145 @@
 """
 
 import os
-import time
+import re
+import json
+import logging
+import tempfile
 import argparse
 import subprocess
-import multiprocessing
 import itertools
+import multiprocessing
 # from functools import partial
 
 SUCCESS = 0
-ERROR = 1
+ERROR_EXCEPTION = 254
 verbose = False
+
+logger = logging.getLogger()
+logger.addHandler(logging.StreamHandler())
+
+logger.setLevel(logging.DEBUG)
+
+
+class QueueDir(object):
+
+    def __init__(self, dirname, default_mask="%d_job.json"):
+        self.dirname = os.path.abspath(dirname)
+        if os.path.exists(dirname):
+            assert os.path.isdir(dirname), "%s is not a directory" % dirname
+        else:
+            os.makedirs(dirname)
+        self.mask = self._detect_mask(default_mask)
+        logger.info(self)
+
+    def __str__(self):
+        return "QueueDir: %s, mask: %s" % (self.dirname, self.mask)
+
+    def _detect_mask(self, default_mask):
+        masks = {default_mask: 0}
+        for name in os.listdir(self.dirname):
+            mgroups = re.match("(\D*)(\d+)(\D*)", name)
+            if mgroups is not None:
+                mask = "%s%%d%s" % (mgroups.groups()[0], mgroups.groups()[2])
+                if mask in masks:
+                    masks[mask] += 1
+                else:
+                    masks[mask] = 1
+        sorted_keys = sorted(masks, key=masks.get)
+        print sorted_keys, masks
+        return sorted_keys[-1]
+
+    def qsize(self):
+        return len(self.__unsorted_list_name_id())
+
+    def empty(self):
+        return self.qsize() == 0
+
+    def __get_max_id(self):
+        name_id = self.__unsorted_list_name_id()
+        if len(name_id) == 0:
+            return 0
+        sorted_name_id = sorted(name_id, key=lambda x: x[1])
+        return sorted_name_id[-1][1]
+
+    def __unsorted_list_name_id(self):
+        m_re = self.mask.replace("%d", "(\d+)")
+        name_id_list = [(name, int(re.match(m_re, name).groups()[0]))
+                        for name in os.listdir(self.dirname) 
+                        if re.match(m_re, name) is not None]
+        # logger.debug("list: %s" % name_id_list)
+        return name_id_list
+
+    def list_files(self):
+        name_id = self.__unsorted_list_name_id()
+        sorted_name_id = sorted(name_id, key=lambda x: x[1])
+        return ["%s/%s" % (self.dirname, i[0]) for i in sorted_name_id]
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.empty():
+            raise StopIteration
+        return self.get()
+
+    def extend(self, iterable):
+        for i in iterable:
+            self.put(i)
+
+    def put(self, item):
+        i = self.__get_max_id() + 1
+        filename = os.path.join(self.dirname, self.mask % i)
+        logger.info("put: %s // %s" % (filename, item))
+        with open(filename, "w") as fh:
+            json.dump(item, fh)
+
+    def get(self):
+        filename = self.list_files()[0]
+        with open(filename) as fh:
+            item = json.load(fh)
+        if item is not None:
+            os.remove(filename)
+            logger.info("get: %s" % item)
+        return item
+
+
+def test_queue():
+    import shutil
+    dirs = ["_d1", "_d2"]
+    for d in dirs:
+        if os.path.exists(d):
+            shutil.rmtree(d)
+    q1 = QueueDir(dirs[0])
+    assert q1.qsize() == 0
+    assert q1.empty()
+    i1 = {'key': 1}
+    q1.put(i1)
+    assert q1.qsize() == 1
+    o1 = q1.get()
+    assert i1 == o1
+    assert q1.qsize() == 0
+    os.makedirs(dirs[1])
+    with open("%s/sub123" % dirs[1], "w") as fh:
+        json.dump("123", fh)
+    q2 = QueueDir(dirs[1])
+    q2.put(i1)
+    q2.put({'key': 2})
+    assert q2.qsize() == 3
+    l = []
+    for i in q2:
+        logger.info("iter: %s" % i)
+        l.append(i)
+    assert q2.empty()
+    q1.extend(l)
+    assert q1.qsize() == 3
+
+    i1 = q1.get()
+    q1.put(i1)
+    assert q1.qsize() == 3, q1.qsize()
+    for d in dirs:
+        if os.path.exists(d):
+            shutil.rmtree(d)
 
 
 def parse_args():
@@ -23,9 +152,11 @@ def parse_args():
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
     p.add_argument("--output", "-o", help="output folder", default="output")
     p.add_argument("--verbose", "-v", action='store_true', default=False)
+    p.add_argument("--test", "-t", action='store_true', default=False)
     args = p.parse_args()
     if not os.path.exists(args.dir):
         p.error("directory '%s' does not exists" % args.dir)
+    args.dir = args.dir.rstrip("/")
     verbose = args.verbose
     return args
 
@@ -39,22 +170,28 @@ def run_jd_wrapper(args):
     return run_jd(*args)
 
 
-def run_jd(jd_filename, output, verbose=False):
-    print "run", jd_filename, "out:", output
+def run_jd(jds, output_dir):
     result = {
-        "rc": ERROR,
-        "status": ""
+        "rc": ERROR_EXCEPTION,
+        "status": "",
+        "jd": jds
     }
     try:
-        runner = os.path.join(my_dir(), "jeeves.py")
-        cmd = [runner, "--input", jd_filename, "--output", output]
-        if verbose:
-            print "CMD:", " ".join(cmd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (out, err) = p.communicate()
-        result["rc"] = p.returncode
+        with tempfile.NamedTemporaryFile() as fh:
+            json.dump(jds, fh)
+            fh.flush()
+            runner = os.path.join(my_dir(), "jeeves.py")
+            cmd = [runner, "--input", fh.name, "--output", output_dir, "-v"]
+            logger.info("CMD:" + " ".join(cmd))
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (out, err) = p.communicate()
+            result["rc"] = p.returncode
+            if out is not None and len(out) > 0:
+                result["status"] += "OUT: %s\n" % out
+            if err is not None and len(err) > 0:
+                result["status"] += "ERR: %s\n" % err
     except Exception, e:
-        result["status"] = e.__repr__()
+        result["status"] = "EXCEPTION: " + e.__repr__()
     return result
 
 
@@ -64,12 +201,23 @@ def job_list(directory):
 
 
 def main(args):
+    if args.test:
+        test_queue()
+        exit(1)
     p = multiprocessing.Pool(args.nworkers)
-    file_list = job_list(args.dir)
+    q_input = QueueDir(args.dir)
+    q_fail = QueueDir(args.dir + ".fail", default_mask=q_input.mask)
+    q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
+
     output_list = itertools.repeat(args.output)
-    verbose_list = itertools.repeat(True)
-    result = p.map(run_jd_wrapper, zip(file_list, output_list, verbose_list))
-    print "Result:", result
+    result = p.map(run_jd_wrapper,
+                   zip(q_input, output_list))
+    for rd in result:
+        if rd["rc"] == SUCCESS:
+            q_success.put(rd)
+        else:
+            q_fail.put(rd["jd"])
+            logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
 
 
 if __name__ == '__main__':

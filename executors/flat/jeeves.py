@@ -131,13 +131,13 @@ def run_jd(jd, output_basedir="output", force=False):
             shutil.rmtree(JOB_OUTPUT_DIR)
         else:
             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
-    os.makedirs(JOB_OUTPUT_DIR)
     if not docker_is_running(APP_CONTAINER):
-        result = sh("docker run -d -v %s --name %s %s 'echo %s app container'" % 
+        result = sh("docker run -d -v %s --name %s %s echo %s app" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
             halt("unable to run app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
+    os.makedirs(JOB_OUTPUT_DIR)
     result = sh("docker run --rm -t --volumes-from %s -v %s -v %s:/output %s %s %s"
                 % (APP_CONTAINER, DATA_VOLUME, JOB_OUTPUT_DIR, ENV_CONTAINER, CMD, ARGS),
                 verbose=verbose)
