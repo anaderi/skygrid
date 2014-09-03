@@ -6,17 +6,21 @@
 import os
 import re
 import json
+import socket
 import logging
+import smtplib
 import tempfile
 import argparse
 import subprocess
 import itertools
 import multiprocessing
-# from functools import partial
+from email.mime.text import MIMEText
 
 SUCCESS = 0
 ERROR_EXCEPTION = 254
 verbose = False
+MAILFROM = "Wooster@SkyGrid"
+MAILHOST = "mail.cern.ch"
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -33,10 +37,10 @@ class QueueDir(object):
         else:
             os.makedirs(dirname)
         self.mask = self._detect_mask(default_mask)
-        logger.info(self)
+        logger.debug(self)
 
     def __str__(self):
-        return "QueueDir: %s, mask: %s" % (self.dirname, self.mask)
+        return "QueueDir: %s, mask: %s, count: %d" % (self.dirname, self.mask, self.qsize())
 
     def _detect_mask(self, default_mask):
         masks = {default_mask: 0}
@@ -70,7 +74,6 @@ class QueueDir(object):
         name_id_list = [(name, int(re.match(m_re, name).groups()[0]))
                         for name in os.listdir(self.dirname) 
                         if re.match(m_re, name) is not None]
-        # logger.debug("list: %s" % name_id_list)
         return name_id_list
 
     def list_files(self):
@@ -195,9 +198,40 @@ def run_jd(jds, output_dir):
     return result
 
 
-def job_list(directory):
-    job_list = os.listdir(directory)
-    return [os.path.abspath("%s/%s" % (directory, f)) for f in job_list]
+def notify_email(results):
+    if len(results) == 0: return
+    addresses = set()
+    failset = set()
+    for rd in results:
+        addresses.add(rd["jd"]["email"])
+        if rd["rc"] != SUCCESS:
+            failset.add(rd["jd"]["job_id"])
+    failrate = 100. * len(failset) / len(results)
+    # addresses = set()
+    # addresses.add("austyuzh@cern.ch")
+    subject = "Wooster@SkyGrid process report"
+    body = """\
+Your job descriptots has been processed.
+Failure rate: %0.1f%%
+FailSet: %s
+
+--
+Faithfully Yours,
+Wooster @ %s
+""" % (failrate, failset, socket.gethostname())
+    try:
+        msg = MIMEText(body)
+        msg['To'] = list(addresses)[0]
+        msg['From'] = MAILFROM
+        msg['Subject'] = subject
+        # logger.info("addresses: %s" % list(addresses))
+        # logger.info("msg: %s" % msg)
+
+        smtpObj = smtplib.SMTP(MAILHOST)
+        smtpObj.sendmail(MAILFROM, list(addresses), msg.as_string())
+        logger.info("Successfully sent email to %s" % addresses)
+    except smtplib.SMTPException, e:
+        logger.error("Error: unable to send email to '%s' (%s)" % (list(addresses), str(e)))
 
 
 def main(args):
@@ -210,14 +244,15 @@ def main(args):
     q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
 
     output_list = itertools.repeat(args.output)
-    result = p.map(run_jd_wrapper,
-                   zip(q_input, output_list))
-    for rd in result:
+    results = p.map(run_jd_wrapper,
+                    zip(q_input, output_list))
+    for rd in results:
         if rd["rc"] == SUCCESS:
             q_success.put(rd)
         else:
             q_fail.put(rd["jd"])
             logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
+    notify_email(results)
 
 
 if __name__ == '__main__':
