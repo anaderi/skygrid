@@ -7,6 +7,7 @@ import json
 import shutil
 import shlex
 import argparse
+import traceback
 import subprocess
 
 SUCCESS = 0
@@ -102,8 +103,8 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         result['rc'] = proc.returncode
         result['out'] = out
         result['err'] = err
-    except Exception, e:
-        result['status']=e.__repr__()
+    except Exception:
+        result['status'] = traceback.format_exc()
         result['rc'] = ERROR
     return result
 
@@ -164,7 +165,7 @@ def run_jd(jd, output_basedir="output", force=False):
         else:
             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
     if not docker_is_running(APP_CONTAINER):
-        result = sh("docker run -d -v %s --name %s %s echo %s app" % 
+        result = sh("docker run -d -v %s --name %s %s 'echo %s app'" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
