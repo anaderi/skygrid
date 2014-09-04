@@ -2,6 +2,7 @@ package jobdescriptor;
 
 import com.cedarsoftware.util.io.JsonWriter;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -29,8 +30,10 @@ public class JobDescriptor {
     private int nextCounter;
     private int currentJobDescriptor;
 
+    private final String outputFolder = "output";
+
     public static void initArgs() {
-        Split_equal_arg = 4;
+        Split_equal_arg = 3;
 
         Split_proportional_list = new ArrayList<Integer>();
         Split_proportional_list.add(10);
@@ -45,11 +48,15 @@ public class JobDescriptor {
 
     public JobDescriptor(String jobDescriptorName) throws FileNotFoundException, IOException, JSONException {
 
+        File outputDir = new File(outputFolder);
+        initDir(outputDir);
+        createOutputFolder(outputDir);
+
         this.nextCounter = 0; //for next sub-jobdescriptor
         this.currentJobDescriptor = 0;
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + this.currentJobDescriptor));
+            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + this.currentJobDescriptor+".json"));
             this.jobDescriptorTxt = "";
             do {
                 String temp = br.readLine();
@@ -59,7 +66,7 @@ public class JobDescriptor {
                 jobDescriptorTxt += temp;
             } while (true);
         } catch (FileNotFoundException fe) {
-            System.err.println("File " + jobDescriptorName + this.currentJobDescriptor + " not found");
+            System.err.println("File " + jobDescriptorName + this.currentJobDescriptor + ".json not found");
             System.exit(0);
         }
 
@@ -75,7 +82,8 @@ public class JobDescriptor {
         this.currentJobDescriptor = 0;
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + i));
+            System.out.println(jobDescriptorName + i + ".json");
+            BufferedReader br = new BufferedReader(new FileReader(jobDescriptorName + i + ".json"));
             this.jobDescriptorTxt = "";
             do {
                 String temp = br.readLine();
@@ -85,11 +93,28 @@ public class JobDescriptor {
                 jobDescriptorTxt += temp;
             } while (true);
         } catch (FileNotFoundException fe) {
-            System.err.println("File " + jobDescriptorName + i + " not found");
+            System.err.println("File " + jobDescriptorName + i + ".json not found");
             System.exit(0);
         }
 
         this.obj = new JSONObject(this.jobDescriptorTxt);
+    }
+
+    private void createOutputFolder(File theDir) {
+
+        if (!theDir.exists()) {
+            try {
+                theDir.mkdir();
+            } catch (SecurityException se) {
+                System.exit(1);
+            }
+        }
+    }
+
+    private void initDir(File dir) {
+        for (File file : dir.listFiles()) {
+            file.delete();
+        }
     }
 
     /*
@@ -99,7 +124,7 @@ public class JobDescriptor {
 
         Random RANDOM_SEED = new Random();
         int reduceSCALE = 0;
-
+        
         int scaleBalance = this.getSCALE() % N;
 
         int rangeBalance = (this.getRANGE().get(1) - this.getRANGE().get(0) + 1) % N;
@@ -173,6 +198,123 @@ public class JobDescriptor {
         this.setSCALE(this.getSCALE() - reduceSCALE);
     }
 
+    /*
+     Split the JobDescriptor file
+     */
+    //new format 70
+    public void Split_equal_70() throws IOException, JSONException {
+
+        Random RANDOM_SEED = new Random();
+
+        JSONObject subObj = new JSONObject();
+
+        for (int i = 1; i <= this.getSETsize(); i++) {
+
+            subObj.put("name", obj.get("name"));
+            subObj.put("job_id", i);
+            subObj.put("job_parent_id", 0);
+            subObj.put("job_super_id", obj.get("job_super_id"));
+            subObj.put("env_container", new JSONObject().put("name", this.getEnvironements().get(0)));
+            subObj.put("owner", obj.get("owner").toString());
+            subObj.put("app_container", obj.get("app_container"));
+            subObj.put("email", obj.get("email").toString());
+            subObj.put("workdir", obj.get("workdir").toString());
+            subObj.put("volumes", obj.get("volumes"));
+            subObj.put("cmd", obj.get("cmd").toString());
+
+            //create args
+            JSONObject args = new JSONObject();
+            JSONArray SET_Array = new JSONArray();
+            SET_Array.put(this.getSET(i - 1));
+            SET_Array.put(this.getOutput());
+            args.put("__POS__", SET_Array);
+            subObj.put("args", args);
+
+            subObj.put("num_containers", new Integer((Integer) obj.get("num_containers")));
+            subObj.put("min_memoryMB", new Integer((Integer) obj.get("min_memoryMB")));
+            subObj.put("max_memoryMB", new Integer((Integer) obj.get("max_memoryMB")));
+            subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
+
+            writeJSONObjectToFile("sub-jobdescriptor" + i, subObj);
+
+        }
+
+    }
+
+    /*
+     Split the JobDescriptor file
+     */
+    //new format 700
+    public void Split_equal_700() throws IOException, JSONException {
+
+        JSONObject subObj = new JSONObject();
+
+        for (int i = 1; i <= this.getSETsize(); i++) {
+
+            subObj.put("name", obj.get("name"));
+            subObj.put("job_id", i);
+            subObj.put("job_parent_id", 0);
+            subObj.put("job_super_id", obj.get("job_super_id"));
+
+            subObj.put("env_container", obj.getJSONObject("env_container"));
+
+            subObj.put("owner", obj.get("owner").toString());
+            subObj.put("app_container", obj.get("app_container"));
+            subObj.put("email", obj.get("email").toString());
+            subObj.put("cmd", obj.get("cmd").toString());
+
+            //create args sub_obj
+            JSONObject args = new JSONObject();
+            args.put("__POS1__", this.getSET(i - 1));
+            args.put("__POS2__", obj.getJSONObject("args").get("__POS2__"));
+            subObj.put("args", args);
+
+            subObj.put("num_containers", new Integer((Integer) obj.get("num_containers")));
+            subObj.put("min_memoryMB", new Integer((Integer) obj.get("min_memoryMB")));
+            subObj.put("max_memoryMB", new Integer((Integer) obj.get("max_memoryMB")));
+            subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
+
+            writeJSONObjectToFile("sub-jobdescriptor" + i, subObj);
+
+        }
+
+    }
+
+    public void Split_equal_ship() throws JSONException, IOException {
+
+        int start = obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(1).getJSONArray(2).getInt(0);
+        int stop = obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(1).getJSONArray(2).getInt(1);
+        int N = stop - start + 1;
+
+        JSONObject subObj = new JSONObject();
+        int balance = this.getSCALE() % N;
+
+        for (int i = start; i <= N; i++) {
+            subObj.put("name", obj.get("name"));
+            subObj.put("job_id", i);
+            subObj.put("job_parent_id", 0);
+            subObj.put("job_super_id", obj.get("job_id"));
+            subObj.put("app_container", obj.get("app_container"));
+            subObj.put("email", obj.get("email").toString());
+            subObj.put("env_container", obj.getJSONObject("env_container"));
+            subObj.put("cmd", obj.get("cmd").toString());
+
+            //create args sub_obj
+            JSONObject args = new JSONObject();
+            args.put("--nEvents", ((Integer) obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(0).get(2) / N) + ((balance--) > 0 ? 1 : 0));
+            args.put("--run-number", i);
+            args.put("--output", obj.getJSONObject("args").get("--output"));
+            subObj.put("args", args);
+
+            subObj.put("num_containers", new Integer((Integer) obj.get("num_containers")));
+            subObj.put("min_memoryMB", new Integer((Integer) obj.get("min_memoryMB")));
+            subObj.put("max_memoryMB", new Integer((Integer) obj.get("max_memoryMB")));
+            subObj.put("cpu_per_container", new Integer((Integer) obj.get("cpu_per_container")));
+
+            writeJSONObjectToFile("sub-jobdescriptor" + i, subObj);
+        }
+    }
+
     public void Split_proportional(ArrayList<Integer> l) throws JSONException, IOException {
 
         double sum = 0;
@@ -189,7 +331,7 @@ public class JobDescriptor {
 
         int rangeInitInterval = (this.getRANGE().get(1) - this.getRANGE().get(0) + 1);
         int currentRangeValue = 1;
-        
+
         for (int i = 0; i < l.size(); i++) {
 
             JSONObject subObj = new JSONObject();
@@ -227,7 +369,7 @@ public class JobDescriptor {
             subArr = new JSONArray(subObj1.getJSONArray("scaleArg").get(2).toString());
             JSONArray rangeArray = new JSONArray();
             rangeArray.put(new Integer(currentRangeValue));
-            int temp = currentRangeValue + (int)(rangeInitInterval * 0.01 * l.get(i)) - 1;
+            int temp = currentRangeValue + (int) (rangeInitInterval * 0.01 * l.get(i)) - 1;
             rangeArray.put(new Integer(temp));
             currentRangeValue = temp + 1;
             sublist.put(subArr.get(0).toString());
@@ -323,7 +465,7 @@ public class JobDescriptor {
 
     public void writeJSONObjectToFile(String filename, JSONObject obj) throws IOException, JSONException {
 
-        FileWriter file = new FileWriter(filename);
+        FileWriter file = new FileWriter(outputFolder + "/" + filename + ".json");
 
         file.write(JsonWriter.formatJson(obj.toString()));
 
@@ -408,6 +550,10 @@ public class JobDescriptor {
         return environments;
     }
 
+    public JSONObject getEnv_container() throws JSONException {
+        return obj.getJSONObject("env_container");
+    }
+
     public ArrayList<Integer> getSET() throws JSONException {
         JSONObject subObj = new JSONObject(obj.get("args").toString());
         JSONArray arr = new JSONArray(subObj.get("scaleArg").toString());
@@ -418,6 +564,21 @@ public class JobDescriptor {
             SET.add(arr2.getInt(i));
         }
         return SET;
+    }
+
+    //new format70
+    public String getSET(int i) throws JSONException {
+        return obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(1).getJSONArray(2).get(i).toString();
+    }
+
+    //new format70
+    public String getOutput() throws JSONException {
+        return obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(2).get(1).toString();
+    }
+
+    //new format70
+    public int getSETsize() throws JSONException {
+        return obj.getJSONObject("args").getJSONArray("scaleArg").getJSONArray(1).getJSONArray(2).length();
     }
 
     public ArrayList<Integer> getRANGE() throws JSONException {
@@ -471,16 +632,19 @@ public class JobDescriptor {
     public int getCurrentJobDescriptor() {
         return currentJobDescriptor;
     }
-/*
+
+   /* 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, UnknownHostException {
         //TODO
-        JobDescriptor jd = new JobDescriptor("jobdescriptor");
-
+        
         initArgs();
+        
+        JobDescriptor jd = new JobDescriptor("jobdescriptor");
+        
+        jd.Split_equal(Split_equal_arg);
+        //jd.Split_equal_ship();
 
- //       jd.Split_equal(Split_equal_arg);
-
-        jd.Split_proportional(Split_proportional_list);
+        //       jd.Split_proportional(Split_proportional_list);
 //        
 //       
 //        
