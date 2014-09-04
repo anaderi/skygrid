@@ -1,5 +1,5 @@
 JOB DESCRIPTOR SPLIT METHODS
-=========
+-------------
 This is a class for splitting jobs in various ways.
 
 Class JobDescriptor can create object by parsing JSON files and can split itself into smaller chunks

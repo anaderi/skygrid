@@ -52,8 +52,6 @@ public class JobDescriptorTest {
         System.out.println("Split_equal");
         
         int N = JobDescriptor.Split_equal_arg;
-
-        testSplitEqualArgument();
         
         jd.Split_equal(N);
 
@@ -72,7 +70,7 @@ public class JobDescriptorTest {
         testMaxMemoryMB();
         testCPUperContainer();
         testSET();
-        testRANGE();
+        testEqualandProportionalRANGE();
     }
     
     /**
@@ -102,7 +100,7 @@ public class JobDescriptorTest {
         testMaxMemoryMB();
         testCPUperContainer();
         testSET();
-        testRANGE();
+        testEqualandProportionalRANGE();
     }
     
     /**
@@ -132,18 +130,14 @@ public class JobDescriptorTest {
         testMaxMemoryMB();
         testCPUperContainer();
         testSET();
-        testRANGE();
+        testNextRANGE();
     }
 
     public void createSubDescriptors(int N) throws IOException, FileNotFoundException, JSONException {
         subjds = new ArrayList<JobDescriptor>();
         for (int i = 1; i <= N; i++) {
-            subjds.add(new JobDescriptor("sub-jobdescriptor", i));
+            subjds.add(new JobDescriptor("output/sub-jobdescriptor",i));
         }
-    }
-
-    public void testSplitEqualArgument() throws JSONException{
-        assertEquals(jd.getSCALE() % JobDescriptor.Split_equal_arg , 0);
     }
     
     public void testSplitProportionalListArgument() throws JSONException{
@@ -162,11 +156,6 @@ public class JobDescriptorTest {
      sum of sub-jobdestcriptors SCALE must be equal to jobdescriptor SCALE
      */
     public void testEqualSCALE() throws JSONException, IOException {
-        //test if splitted parts are equal each other
-        int N = subjds.get(0).getSCALE();
-        for(int i = 1; i<subjds.size(); i++){
-            assertEquals(subjds.get(i).getSCALE(), N);
-        }
         //test if sum of equal splitted parts is equal to jobdescriptors scale
         int sumSCALE = 0;
         for (JobDescriptor subjd : subjds) {
@@ -228,7 +217,7 @@ public class JobDescriptorTest {
         }
     }
 
-    public void testRANGE() throws JSONException {
+    public void testNextRANGE() throws JSONException {
         for (JobDescriptor subjd : subjds) {
             int range_i = 0;
             for (Integer range : subjd.getRANGE()) {
@@ -236,6 +225,19 @@ public class JobDescriptorTest {
                 range_i++;
             }
         }
+    }
+    
+     public void testEqualandProportionalRANGE() throws JSONException {
+        int initMax = jd.getRANGE().get(1);
+        int initMin = jd.getRANGE().get(0);
+        int initRange = initMax - initMin + 1;
+        int sumRange = 0;
+        for (JobDescriptor subjd : subjds) {
+            int max = subjd.getRANGE().get(1);
+            int min = subjd.getRANGE().get(0);
+            sumRange += max - min + 1;
+        }
+        assertEquals(initRange, sumRange);
     }
 
     public void testName() throws JSONException {
@@ -293,3 +295,4 @@ public class JobDescriptorTest {
     }
 
 }
+
