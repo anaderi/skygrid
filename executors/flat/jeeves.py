@@ -5,11 +5,12 @@
 import os
 import json
 import shutil
+import shlex
 import argparse
 import subprocess
 
 SUCCESS = 0
-ERROR = 1
+ERROR = 254
 verbose = False
 
 
@@ -23,7 +24,7 @@ def parse_args():
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     args = p.parse_args()
-    if not os.path.exists(args.input):
+    if not os.path.exists(args.input) and not args.test:
         p.error("file '%s' does not exists" % args.input)
     verbose = args.verbose
     return args
@@ -31,30 +32,33 @@ def parse_args():
 
 def test_sh():
     result = sh("ls -l", verbose=False)
-    assert result['rc']  == 0
+    assert result['rc'] == 0, result
     filename = result['out'].split("\n")[2].split()[8]
     print "FILENAME:", filename
     result = sh("ls -l", verbose=True)
-    assert result['rc']  == 0
+    assert result['rc'] == 0
     assert filename in result['out']
     result = sh("ls -l", verbose=True, logout="log.log")
-    assert result['rc']  == 0
+    assert result['rc'] == 0
     assert os.path.exists("log.log")
-    result =  sh("rm log1.log", verbose=True, logerr="err.log")
-    assert result['rc']  != 0
+    result = sh("rm log1.log", verbose=True, logerr="err.log")
+    assert result['rc'] != 0
     assert os.path.exists("err.log")
-    result =  sh("rm log.log", verbose=True)
-    assert result['rc']  == 0
-    result =  sh("rm err.log", verbose=True)
-    assert result['rc']  == SUCCESS
-    result =  sh("xxx err.log", verbose=True)
-    assert result['rc']  == ERROR
+    result = sh("rm log.log", verbose=True)
+    assert result['rc'] == 0
+    result = sh("rm err.log", verbose=True)
+    assert result['rc'] == SUCCESS
+    result = sh("xxx err.log", verbose=True)
+    assert result['rc'] == ERROR
     print "ERR:", result['status']
+    result = sh("echo 'no split single quotes'", verbose=True)
+    assert result["rc"] == 0
+    assert result["out"].strip() == "no split single quotes"
 
 
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
     if verbose: print cmd
-    cmd_args = cmd.split()
+    cmd_args = shlex.split(cmd)
     result = {
         'status': "",
         'out': None,
@@ -62,8 +66,27 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         'rc': 0
     }
     try:
-        proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = proc.communicate(input)
+        fh_out, fh_err = (subprocess.PIPE, subprocess.PIPE)
+        if logout is not None:
+            fh_out = open(logout, "w")
+        if logerr is not None:
+            fh_err = open(logerr, "w")
+        proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
+        proc.wait()
+
+        if fh_out != subprocess.PIPE:
+            fh_out.close()
+            with open(logout, "r") as fh_out:
+                out = fh_out.read()
+        else:
+            out = proc.stdout.read()
+        if fh_err != subprocess.PIPE:
+            fh_err.close()
+            with open(logerr, "r") as fh:
+                err = fh.read()
+        else:
+            err = proc.stderr.read()
+
         if out is not None and len(out) > 0:
             if verbose:
                 print "===OUT===\n%s" % out
@@ -99,6 +122,13 @@ def halt(msg):
 
 def getargs(jd, subst):
     args = []
+    kw_keys = [k for k in jd["args"].keys() if k.startswith("-")]
+    for k in kw_keys:
+        v = jd["args"][k]
+        if v is True:
+            args.append(k)
+        else:
+            args.append("%s=%s" % (k, str(v)))
     pos_keys = sorted([k for k in jd["args"].keys() if k.startswith("__POS")])
     for k in pos_keys:
         v = jd["args"][k]
@@ -121,8 +151,10 @@ def run_jd(jd, output_basedir="output", force=False):
     ENV_CONTAINER = jd["env_container"]["name"]
     WORK_DIR = jd["env_container"]["workdir"]
     CMD = jd["cmd"]
+    ENV_VOLUMES = []
     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
-    DATA_VOLUME = jd["env_container"]["data_volume"]
+    if "data_volume" in jd["env_container"]:
+        ENV_VOLUMES.append(jd["env_container"]["data_volume"])
     ARGS = getargs(jd, {"$DATA_DIR": "/data", "$OUTPUT_DIR": "/output"})
 
     if os.path.exists(JOB_OUTPUT_DIR):
@@ -136,13 +168,15 @@ def run_jd(jd, output_basedir="output", force=False):
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
-            halt("unable to run app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
+            halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
     os.makedirs(JOB_OUTPUT_DIR)
-    result = sh("docker run --rm -t --volumes-from %s -v %s -v %s:/output %s %s %s"
-                % (APP_CONTAINER, DATA_VOLUME, JOB_OUTPUT_DIR, ENV_CONTAINER, CMD, ARGS),
-                verbose=verbose)
+    ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
+    docker_cmd = "docker run --rm -t --volumes-from {app} -v {volumes} -w {workdir} {env} '{cmd} {args}'".format(
+        app=APP_CONTAINER, volumes=" -v".join(ENV_VOLUMES), 
+        env=ENV_CONTAINER, cmd=CMD, args=ARGS, workdir=WORK_DIR)
+    result = sh(docker_cmd, verbose=verbose, logout="%s/out.log" % JOB_OUTPUT_DIR, logerr="%s/err.log" % JOB_OUTPUT_DIR, )
     if result['rc'] != SUCCESS:
-        halt("unable to run env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
+        halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
 
 
 def gather_output(jd, output_basedir, output_storage):
