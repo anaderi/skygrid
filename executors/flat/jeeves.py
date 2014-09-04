@@ -58,8 +58,8 @@ def test_sh():
 
 
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
-    if verbose: print cmd
-    cmd_args = shlex.split(cmd)
+    if verbose: print "`%s`" % cmd
+    cmd_args = shlex.split(cmd.encode('ascii'))
     result = {
         'status': "",
         'out': None,
@@ -165,7 +165,7 @@ def run_jd(jd, output_basedir="output", force=False):
         else:
             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
     if not docker_is_running(APP_CONTAINER):
-        result = sh("docker run -d -v %s --name %s %s 'echo %s app'" % 
+        result = sh("docker run -d -v %s --name %s %s echo %s app" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
