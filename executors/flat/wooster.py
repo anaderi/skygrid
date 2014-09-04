@@ -227,10 +227,12 @@ Wooster @ %s
 
 def make_report(results, time_run, nthreads):
     failset = set()
+    failrate = "(n/a)"
     for rd in results:
         if rd["rc"] != SUCCESS:
             failset.add(rd["jd"]["job_id"])
-    failrate = 100. * len(failset) / len(results)
+    if len(results) > 0:
+        failrate = 100. * len(failset) / len(results)
     report = """
 {jobs} job descriptors has been processed in {time} sec.
 Host: '{host}'
