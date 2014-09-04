@@ -99,7 +99,7 @@ class QueueDir(object):
         filename = os.path.join(self.dirname, self.mask % i)
         logger.info("put: %s // %s" % (filename, item))
         with open(filename, "w") as fh:
-            json.dump(item, fh)
+            json.dump(item, fh, indent=2, sort_keys=True)
 
     def get(self):
         filename = self.list_files()[0]
@@ -183,7 +183,7 @@ def run_jd(jds, output_dir):
     }
     try:
         with tempfile.NamedTemporaryFile() as fh:
-            json.dump(jds, fh)
+            json.dump(jds, fh, indent=2, sort_keys=True)
             fh.flush()
             runner = os.path.join(my_dir(), "jeeves.py")
             cmd = [runner, "--input", fh.name, "--output", output_dir, "-v"]
