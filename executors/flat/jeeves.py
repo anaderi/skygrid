@@ -139,7 +139,7 @@ def getargs(jd, subst):
             args.extend(v)
     s = " ".join(args)
     for k, v in subst.iteritems():
-        s = s.replace(k, v)
+        s = s.replace(k, str(v))
     return s
 
 
