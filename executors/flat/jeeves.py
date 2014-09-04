@@ -156,7 +156,10 @@ def run_jd(jd, output_basedir="output", force=False):
     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
     if "data_volume" in jd["env_container"]:
         ENV_VOLUMES.append(jd["env_container"]["data_volume"])
-    ARGS = getargs(jd, {"$DATA_DIR": "/data", "$OUTPUT_DIR": "/output"})
+    ARGS = getargs(jd, {"$DATA_DIR": "/data", 
+                   "$OUTPUT_DIR": "/output",
+                   "$JOB_ID": JOB_ID
+                        })
 
     if os.path.exists(JOB_OUTPUT_DIR):
         if force:
