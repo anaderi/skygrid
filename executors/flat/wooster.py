@@ -4,7 +4,6 @@
 """
 
 import os
-import re
 import json
 import socket
 import logging
@@ -12,13 +11,11 @@ import smtplib
 import datetime
 import tempfile
 import argparse
-import subprocess
 import itertools
 import multiprocessing
 from email.mime.text import MIMEText
+from util import QueueDir, test_queue, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEPTION
 
-SUCCESS = 0
-ERROR_EXCEPTION = 254
 verbose = False
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
@@ -27,126 +24,6 @@ logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
 
 logger.setLevel(logging.DEBUG)
-
-
-class QueueDir(object):
-
-    def __init__(self, dirname, default_mask="%d_job.json"):
-        self.dirname = os.path.abspath(dirname)
-        if os.path.exists(dirname):
-            assert os.path.isdir(dirname), "%s is not a directory" % dirname
-        else:
-            os.makedirs(dirname)
-        self.mask = self._detect_mask(default_mask)
-        logger.debug(self)
-
-    def __str__(self):
-        return "QueueDir: %s, mask: %s, count: %d" % (self.dirname, self.mask, self.qsize())
-
-    def _detect_mask(self, default_mask):
-        masks = {default_mask: 0}
-        for name in os.listdir(self.dirname):
-            mgroups = re.match("(\D*)(\d+)(\D*)", name)
-            if mgroups is not None:
-                mask = "%s%%d%s" % (mgroups.groups()[0], mgroups.groups()[2])
-                if mask in masks:
-                    masks[mask] += 1
-                else:
-                    masks[mask] = 1
-        sorted_keys = sorted(masks, key=masks.get)
-        print sorted_keys, masks
-        return sorted_keys[-1]
-
-    def qsize(self):
-        return len(self.__unsorted_list_name_id())
-
-    def empty(self):
-        return self.qsize() == 0
-
-    def __get_max_id(self):
-        name_id = self.__unsorted_list_name_id()
-        if len(name_id) == 0:
-            return 0
-        sorted_name_id = sorted(name_id, key=lambda x: x[1])
-        return sorted_name_id[-1][1]
-
-    def __unsorted_list_name_id(self):
-        m_re = self.mask.replace("%d", "(\d+)")
-        name_id_list = [(name, int(re.match(m_re, name).groups()[0]))
-                        for name in os.listdir(self.dirname) 
-                        if re.match(m_re, name) is not None]
-        return name_id_list
-
-    def list_files(self):
-        name_id = self.__unsorted_list_name_id()
-        sorted_name_id = sorted(name_id, key=lambda x: x[1])
-        return ["%s/%s" % (self.dirname, i[0]) for i in sorted_name_id]
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.empty():
-            raise StopIteration
-        return self.get()
-
-    def extend(self, iterable):
-        for i in iterable:
-            self.put(i)
-
-    def put(self, item):
-        i = self.__get_max_id() + 1
-        filename = os.path.join(self.dirname, self.mask % i)
-        logger.info("put: %s // %s" % (filename, item))
-        with open(filename, "w") as fh:
-            json.dump(item, fh, indent=2, sort_keys=True)
-
-    def get(self):
-        filename = self.list_files()[0]
-        with open(filename) as fh:
-            item = json.load(fh)
-        if item is not None:
-            os.remove(filename)
-            logger.info("get: %s" % item)
-        return item
-
-
-def test_queue():
-    import shutil
-    dirs = ["_d1", "_d2"]
-    for d in dirs:
-        if os.path.exists(d):
-            shutil.rmtree(d)
-    q1 = QueueDir(dirs[0])
-    assert q1.qsize() == 0
-    assert q1.empty()
-    i1 = {'key': 1}
-    q1.put(i1)
-    assert q1.qsize() == 1
-    o1 = q1.get()
-    assert i1 == o1
-    assert q1.qsize() == 0
-    os.makedirs(dirs[1])
-    with open("%s/sub123" % dirs[1], "w") as fh:
-        json.dump("123", fh)
-    q2 = QueueDir(dirs[1])
-    q2.put(i1)
-    q2.put({'key': 2})
-    assert q2.qsize() == 3
-    l = []
-    for i in q2:
-        logger.info("iter: %s" % i)
-        l.append(i)
-    assert q2.empty()
-    q1.extend(l)
-    assert q1.qsize() == 3
-
-    i1 = q1.get()
-    q1.put(i1)
-    assert q1.qsize() == 3, q1.qsize()
-    for d in dirs:
-        if os.path.exists(d):
-            shutil.rmtree(d)
 
 
 def parse_args():
@@ -186,18 +63,17 @@ def run_jd(jds, output_dir):
             json.dump(jds, fh, indent=2, sort_keys=True)
             fh.flush()
             runner = os.path.join(my_dir(), "jeeves.py")
-            cmd = [runner, "--input", fh.name, "--output", output_dir, "-v"]
-            logger.info("CMD:" + " ".join(cmd))
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            (out, err) = p.communicate()
-            result["rc"] = p.returncode
-            if out is not None and len(out.strip()) > 0:
-                result["status"] += "OUT: %s\n" % out
-            if err is not None and len(err.strip()) > 0:
-                result["status"] += "ERR: %s\n" % err
-            logfile = "%s/%d/output.log" % (output_dir, jds["job_id"])
-            with open(logfile, "w") as fh_log:
-                fh_log.write(result["status"])
+            cmd = "{runner} --input {file} --output {out} -v".format(
+                runner=runner, file=fh.name, out=output_dir)
+            logger.info("CMD: " + cmd)
+            sh_result = sh(cmd)
+            result["rc"] = sh_result["rc"]
+            if len(sh_result["status"]) > 0:
+                result["status"] = sh_result["status"]
+            if len(sh_result["out"]) > 0:
+                result["status"] += sh_result["out"]
+            if len(sh_result["err"]) > 0:
+                result["status"] += sh_result["err"]
     except Exception, e:
         result["status"] = "EXCEPTION: " + e.__repr__()
     return result
@@ -227,7 +103,7 @@ Wooster @ %s
 
 def make_report(results, time_run, nthreads):
     failset = set()
-    failrate = "(n/a)"
+    failrate = 0
     for rd in results:
         if rd["rc"] != SUCCESS:
             failset.add(rd["jd"]["job_id"])
@@ -256,22 +132,36 @@ def main(args):
 
     output_list = itertools.repeat(args.output)
     time_start = datetime.datetime.now()
-    results = p.map(run_jd_wrapper,
-                    zip(q_input, output_list))
+    results = []
+    while True:
+        job_slice = q_input.get_n(args.nworkers)
+        if job_slice is None:
+            break
+        try:
+            results_slice = p.map(run_jd_wrapper,
+                                  zip(job_slice, output_list))
+            for rd in results_slice:
+                results.append(rd)
+                if rd["rc"] == SUCCESS:
+                    rd['jd']['status'] = "SUCCESS"
+                    q_success.put(rd["jd"])
+                else:
+                    rd['jd']['status'] = "FAIL"
+                    q_fail.put(rd["jd"])
+                    logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
+        except KeyboardInterrupt:
+            for jd in job_slice:
+                jd['status'] = "INTERRUPT"
+                results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
+            q_fail.extend(job_slice)
+
     time_end = datetime.datetime.now()
     time_run = time_end - time_start
-    for rd in results:
-        if rd["rc"] == SUCCESS:
-            q_success.put(rd["jd"])
-        else:
-            q_fail.put(rd["jd"])
-            logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
 
     report = make_report(results, time_run, args.nworkers)
     print report
-    if args.mail and len(results) > 0:
-        mailto = results[0]["jd"]["email"]
-        notify_email(mailto, report)
+    if args.mail and len(results) > 0 and results[0]["jd"]["email"] is not None:
+        notify_email(results[0]["jd"]["email"], report)
 
 
 if __name__ == '__main__':

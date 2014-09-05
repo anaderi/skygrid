@@ -5,13 +5,9 @@
 import os
 import json
 import shutil
-import shlex
 import argparse
-import traceback
-import subprocess
+from util import sh, test_sh, SUCCESS, ERROR_EXCEPTION
 
-SUCCESS = 0
-ERROR = 254
 verbose = False
 
 
@@ -31,87 +27,9 @@ def parse_args():
     return args
 
 
-def test_sh():
-    result = sh("ls -l", verbose=False)
-    assert result['rc'] == 0, result
-    filename = result['out'].split("\n")[2].split()[8]
-    print "FILENAME:", filename
-    result = sh("ls -l", verbose=True)
-    assert result['rc'] == 0
-    assert filename in result['out']
-    result = sh("ls -l", verbose=True, logout="log.log")
-    assert result['rc'] == 0
-    assert os.path.exists("log.log")
-    result = sh("rm log1.log", verbose=True, logerr="err.log")
-    assert result['rc'] != 0
-    assert os.path.exists("err.log")
-    result = sh("rm log.log", verbose=True)
-    assert result['rc'] == 0
-    result = sh("rm err.log", verbose=True)
-    assert result['rc'] == SUCCESS
-    result = sh("xxx err.log", verbose=True)
-    assert result['rc'] == ERROR
-    print "ERR:", result['status']
-    result = sh("echo 'no split single quotes'", verbose=True)
-    assert result["rc"] == 0
-    assert result["out"].strip() == "no split single quotes"
-
-
-def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
-    if verbose: print "`%s`" % cmd
-    cmd_args = shlex.split(cmd.encode('ascii'))
-    result = {
-        'status': "",
-        'out': None,
-        'err': None,
-        'rc': 0
-    }
-    try:
-        fh_out, fh_err = (subprocess.PIPE, subprocess.PIPE)
-        if logout is not None:
-            fh_out = open(logout, "w")
-        if logerr is not None:
-            fh_err = open(logerr, "w")
-        proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
-        proc.wait()
-
-        if fh_out != subprocess.PIPE:
-            fh_out.close()
-            with open(logout, "r") as fh_out:
-                out = fh_out.read()
-        else:
-            out = proc.stdout.read()
-        if fh_err != subprocess.PIPE:
-            fh_err.close()
-            with open(logerr, "r") as fh:
-                err = fh.read()
-        else:
-            err = proc.stderr.read()
-
-        if out is not None and len(out) > 0:
-            if verbose:
-                print "===OUT===\n%s" % out
-            if logout is not None:
-                with open(logout, "a") as fh:
-                    fh.write(out)
-        if err is not None and len(err) > 0:
-            if verbose:
-                print "===ERR===\n%s" % err
-            if logerr is not None:
-                with open(logerr, "a") as fh:
-                    fh.write(err)
-        result['rc'] = proc.returncode
-        result['out'] = out
-        result['err'] = err
-    except Exception:
-        result['status'] = traceback.format_exc()
-        result['rc'] = ERROR
-    return result
-
-
 def docker_is_running(container, verbose=False):
     result = sh("docker ps -a", verbose=verbose)
-    if result["rc"] == ERROR:
+    if result["rc"] == ERROR_EXCEPTION:
         return False
     return container in result["out"]
 
@@ -153,6 +71,7 @@ def run_jd(jd, output_basedir="output", force=False):
     WORK_DIR = jd["env_container"]["workdir"]
     CMD = jd["cmd"]
     ENV_VOLUMES = []
+    QUOTE_CMD = jd["quote_cmd"]
     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
     if "data_volume" in jd["env_container"]:
         ENV_VOLUMES.append(jd["env_container"]["data_volume"])
@@ -167,17 +86,21 @@ def run_jd(jd, output_basedir="output", force=False):
             shutil.rmtree(JOB_OUTPUT_DIR)
         else:
             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
+    else:
+        os.makedirs(JOB_OUTPUT_DIR)
     if not docker_is_running(APP_CONTAINER):
         result = sh("docker run -d -v %s --name %s %s echo %s app" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
             halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
-    os.makedirs(JOB_OUTPUT_DIR)
     ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
-    docker_cmd = "docker run --rm -t --volumes-from {app} -v {volumes} -w {workdir} {env} '{cmd} {args}'".format(
-        app=APP_CONTAINER, volumes=" -v".join(ENV_VOLUMES), 
-        env=ENV_CONTAINER, cmd=CMD, args=ARGS, workdir=WORK_DIR)
+    cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
+    if QUOTE_CMD:
+        cmd_args = "'%s'" % cmd_args
+    docker_cmd = "docker run --rm -t --volumes-from {app} -v {volumes} -w {workdir} {env} {cmd_args}".format(
+        app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
+        env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
     result = sh(docker_cmd, verbose=verbose, logout="%s/out.log" % JOB_OUTPUT_DIR, logerr="%s/err.log" % JOB_OUTPUT_DIR, )
     if result['rc'] != SUCCESS:
         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
