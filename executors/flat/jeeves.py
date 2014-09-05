@@ -71,7 +71,9 @@ def run_jd(jd, output_basedir="output", force=False):
     WORK_DIR = jd["env_container"]["workdir"]
     CMD = jd["cmd"]
     ENV_VOLUMES = []
-    QUOTE_CMD = jd["quote_cmd"]
+    QUOTE_CMD = True
+    if 'quote_cmd' in jd:
+        QUOTE_CMD = jd['quote_cmd']
     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
     if "data_volume" in jd["env_container"]:
         ENV_VOLUMES.append(jd["env_container"]["data_volume"])
