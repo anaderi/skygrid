@@ -45,54 +45,11 @@ class Worker(Document):
 
 
 class Job(Document):
-    name = StringField()
-    environments = ListField(StringField())
-    owner = ReferenceField(User)
-    app = StringField()
-
-    workdir = StringField()
-    cmd = StringField()
-    args = DictField()
-
-    run_containters = IntField(min_value=1)
-    min_memoryMB = IntField(min_value=1)
-    max_memoryMB = IntField(min_value=1)
-    cpu_per_container = IntField()
-
-    assigned_worker = ReferenceField(Worker)
-    submitted = DateTimeField(default=datetime.datetime.now)
-    last_update = DateTimeField(default=datetime.datetime.now)
-
-    VALID_STATUSES = ['submitted', 'running', 'completed', 'failed']
-    status = StringField(default="submitted") # submitted, running, complete, failed
-
-    meta = {
-        'indexes': ['name', 'owner', 'app'],
-        'ordering': ['submitted']
-    }
+    job_type = StringField(default="ANY")
+    description = DictField(default={})
 
     def to_dict(self):
-        return {
-            "id": str(self.pk),
-            "worker":  self.assigned_worker.wid if self.assigned_worker else None,
-
-            "name": self.name,
-            "environments": self.environments,
-            "owner": self.owner.username,
-            "app": self.app,
-
-            "workdir": self.workdir,
-            "cmd": self.cmd,
-            "args": self.args,
-
-            "run_containters": self.run_containters,
-            "min_memoryMB": self.min_memoryMB,
-            "max_memoryMB": self.max_memoryMB,
-            "cpu_per_container": self.cpu_per_container,
-
-            "submitted": self.submitted,
-            "status": self.status,
-        }
+        return self.description
 
     def __unicode__(self):
-        return "{} : {}".format(self.pk, self.name)
+        return "{} : {}".format(self.pk, self.job_type)
