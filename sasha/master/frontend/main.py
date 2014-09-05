@@ -8,7 +8,10 @@ api = restful.Api(app)
 
 app.config.from_envvar('SHIP_FRONTEND_CONFIG')
 
-connect(app.config['DB']) # connect to MongoDB
+if app.config['DB_USE_AUTH']:
+    connect(app.config['DB'], username=app.config['DB_USERNAME'], password=app.config['DB_PASSWORD'])
+else:
+    connect(app.config['DB'])
 
 from views import *
 
