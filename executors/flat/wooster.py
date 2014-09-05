@@ -154,6 +154,7 @@ def main(args):
                 jd['status'] = "INTERRUPT"
                 results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
             q_fail.extend(job_slice)
+            break
 
     time_end = datetime.datetime.now()
     time_run = time_end - time_start
