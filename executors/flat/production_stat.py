@@ -56,8 +56,8 @@ def stat_host(basedir, name):
         stat[FAILRATE] = 100. * stat[FAIL] / stat[TOTAL]
         stat[SUCCRATE] = 100. * stat[SUCC] / stat[TOTAL]
     else:
-        stat[FAILRATE] = None
-        stat[SUCCRATE] = None
+        stat[FAILRATE] = -1.
+        stat[SUCCRATE] = -1.
     stat['name'] = name
     return stat
 
