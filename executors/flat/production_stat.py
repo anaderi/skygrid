@@ -35,7 +35,7 @@ def parse_args():
     p.add_argument("--queues", "-q", help="list of queues to compute stats for")
     p.add_argument("--basedir", "-b", help="basedir", default=".")
     p.add_argument("--verbose", "-v", action='store_true', default=False)
-    p.add_argument("--exptotal", "-e", type=int, help="expected totals per group")
+    p.add_argument("--exptotal", "-e", type=int, help="expected jds per group")
     args = p.parse_args()
     if args.verbose:
         logger.setLevel(logging.DEBUG)
@@ -61,18 +61,18 @@ def stat_host(basedir, name, exptotal=None):
     return stat
 
 
-def update_calc_stat(stat, exptotal=None):
+def update_calc_stat(stat, expected=None):
     if stat[TOTAL] > 0:
         stat[FAILRATE] = 100. * stat[FAIL] / stat[TOTAL]
         stat[SUCCRATE] = 100. * stat[SUCC] / stat[TOTAL]
     else:
         stat[FAILRATE] = -1.
         stat[SUCCRATE] = -1.
-    if exptotal is not None:
-        stat[MISSING] = exptotal - stat[TOTAL]
+    if expected is not None:
+        stat[MISSING] = expected - stat[TOTAL]
 
 
-def print_stat(group_stat, exptotals):
+def print_stat(group_stat, expected_per_group):
     report = ordereddict.OrderedDict([
         (NAME, "%s"), 
         (SUCC, "%d"), 
@@ -83,11 +83,11 @@ def print_stat(group_stat, exptotals):
         (FAILRATE, "%.1f"),
         (SUCCRATE, "%.1f\t")
     ])
-    if exptotals is not None:
+    totals = {NAME: 'TOTAL'}
+    if expected_per_group is not None:
         report[MISSING] = "%d"
     header = "\t".join(report.keys())
     print header
-    totals = {NAME: 'TOTAL'}
     for stat in group_stat:
         row = "\t".join([format % stat[key] for key, format in report.iteritems()])
         print row
@@ -96,9 +96,16 @@ def print_stat(group_stat, exptotals):
                 totals[k] += stat[k]
             else:
                 totals[k] = stat[k]
-    update_calc_stat(totals, exptotal=len(group_stat) * exptotals)
+    if expected_per_group is None:
+        update_calc_stat(totals, None)
+    else:
+        update_calc_stat(totals, len(group_stat) * expected_per_group)
     totals_row = "\t".join([format % totals[key] for key, format in report.iteritems()])
     print totals_row
+
+
+def predict_expected_per_group(groups_stats):
+    pass  # TODO
 
 
 def main(args):
@@ -109,7 +116,7 @@ def main(args):
         groups = args.queues.split(",")
 
     group_stat = [stat_host(args.basedir, group, exptotal=args.exptotal) for group in groups]
-    print_stat(group_stat, exptotals=args.exptotal)
+    print_stat(group_stat, expected_per_group=args.exptotal)
 
 
 if __name__ == '__main__':
