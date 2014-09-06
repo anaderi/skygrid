@@ -73,7 +73,7 @@ def print_stat(group_stat):
 
 
 def main(args):
-    groups = map(lambda i: "mc%02d" % i, range(20))
+    groups = map(lambda i: "mc%02d" % i, range(1, 21))
     if args.ids:
         groups = map(lambda i: "mc%02d" % int(i), args.ids.split(','))
     if args.queues:
