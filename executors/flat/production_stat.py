@@ -17,7 +17,7 @@ FAIL = 'fail'
 WORK = 'work'
 ORIG = 'orig'
 MISSING = 'miss'
-FAILRATE = 'f-rate'
+FAILRATE = 'fail-rate'
 SUCCRATE = 'success-rate'
 TOTAL = 'total'
 
@@ -34,7 +34,9 @@ def parse_args():
     p.add_argument("--ids", "-i", help="hosts ids for stat")
     p.add_argument("--queues", "-q", help="list of queues to compute stats for")
     p.add_argument("--basedir", "-b", help="basedir", default=".")
+    p.add_argument("--sortby", "-s", help="sort table by (field name)")
     p.add_argument("--verbose", "-v", action='store_true', default=False)
+    p.add_argument("--desc", "-d", action='store_true', default=False)
     p.add_argument("--exptotal", "-e", type=int, help="expected jds per group")
     args = p.parse_args()
     if args.verbose:
@@ -72,7 +74,7 @@ def update_calc_stat(stat, expected=None):
         stat[MISSING] = expected - stat[TOTAL]
 
 
-def print_stat(group_stat, expected_per_group):
+def print_stat(group_stat, sortby=None, sort_desc=False, expected_per_group=None):
     report = ordereddict.OrderedDict([
         (NAME, "%s"), 
         (SUCC, "%d"), 
@@ -80,7 +82,7 @@ def print_stat(group_stat, expected_per_group):
         (WORK, "%d"),
         (ORIG, "%d"),
         (TOTAL, "%d"),
-        (FAILRATE, "%.1f"),
+        (FAILRATE, "%.1f\t"),
         (SUCCRATE, "%.1f\t")
     ])
     totals = {NAME: 'TOTAL'}
@@ -88,6 +90,8 @@ def print_stat(group_stat, expected_per_group):
         report[MISSING] = "%d"
     header = "\t".join(report.keys())
     print header
+    if sortby is not None:
+        group_stat = sorted(group_stat, key=lambda stat: stat[sortby], reverse=sort_desc)
     for stat in group_stat:
         row = "\t".join([format % stat[key] for key, format in report.iteritems()])
         print row
@@ -116,7 +120,7 @@ def main(args):
         groups = args.queues.split(",")
 
     group_stat = [stat_host(args.basedir, group, exptotal=args.exptotal) for group in groups]
-    print_stat(group_stat, expected_per_group=args.exptotal)
+    print_stat(group_stat, sortby=args.sortby, sort_desc=args.desc, expected_per_group=args.exptotal)
 
 
 if __name__ == '__main__':
