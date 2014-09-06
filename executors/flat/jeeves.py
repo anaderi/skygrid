@@ -6,9 +6,13 @@ import os
 import json
 import shutil
 import argparse
+import logging
 from util import sh, test_sh, SUCCESS, ERROR_EXCEPTION
 
 verbose = False
+logger = logging.getLogger()
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 
 def parse_args():

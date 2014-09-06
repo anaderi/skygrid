@@ -22,7 +22,6 @@ MAILHOST = "localhost"
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
-
 logger.setLevel(logging.DEBUG)
 
 
@@ -58,6 +57,7 @@ def run_jd(jds, output_dir):
         "status": "",
         "jd": jds
     }
+    # TODO rndom delay before start
     try:
         with tempfile.NamedTemporaryFile() as fh:
             json.dump(jds, fh, indent=2, sort_keys=True)
@@ -129,6 +129,8 @@ def main(args):
     q_input = QueueDir(args.dir)
     q_fail = QueueDir(args.dir + ".fail", default_mask=q_input.mask)
     q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
+    q_work = QueueDir(args.dir + ".work", default_mask=q_input.mask)
+    assert q_work.qsize() == 0, "Work queue is not empty"
 
     output_list = itertools.repeat(args.output)
     time_start = datetime.datetime.now()
@@ -138,6 +140,7 @@ def main(args):
         if job_slice is None:
             break
         try:
+            q_work.put(job_slice)
             results_slice = p.map(run_jd_wrapper,
                                   zip(job_slice, output_list))
             for rd in results_slice:
@@ -149,11 +152,13 @@ def main(args):
                     rd['jd']['status'] = "FAIL"
                     q_fail.put(rd["jd"])
                     logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
+            q_work.get_n(args.nworkers)
         except KeyboardInterrupt:
             for jd in job_slice:
                 jd['status'] = "INTERRUPT"
                 results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
             q_fail.extend(job_slice)
+            q_work.get_n(args.nworkers)
             break
 
     time_end = datetime.datetime.now()

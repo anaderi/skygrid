@@ -14,7 +14,7 @@ logger = logging.getLogger()
 
 
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
-    if verbose: print "`%s`" % cmd
+    if verbose: logger.info("`%s`" % cmd)
     cmd_args = shlex.split(cmd.encode('ascii'))
     result = {
         'status': "",
@@ -29,10 +29,12 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         if logerr is not None:
             fh_err = open(logerr, "w")
         proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
+        logger.info("PID: %d" % proc.pid)
         try:
             result['rc'] = proc.wait()
         except KeyboardInterrupt:
-            proc.terminate()
+            print "^C in util (%d)" % proc.pid
+            proc.kill()
             result['rc'] = ERROR_INTERRUPT
             result['status'] = "Terminated by ^C"
 
@@ -121,7 +123,6 @@ class QueueDir(object):
                 else:
                     masks[mask] = 1
         sorted_keys = sorted(masks, key=masks.get)
-        print sorted_keys, masks
         return sorted_keys[-1]
 
     def qsize(self):
@@ -164,7 +165,7 @@ class QueueDir(object):
     def put(self, item):
         i = self.__get_max_id() + 1
         filename = os.path.join(self.dirname, self.mask % i)
-        logger.info("put: %s // %s" % (filename, item))
+        logger.debug("put: %s // %s" % (filename, item))
         with open(filename, "w") as fh:
             json.dump(item, fh, indent=2, sort_keys=True)
 
@@ -180,7 +181,7 @@ class QueueDir(object):
                 item = json.load(fh)
             if item is not None:
                 os.remove(filename)
-                logger.info("get: %s" % item)
+                logger.debug("get: %s" % item)
                 result.append(item)
         return result
 
