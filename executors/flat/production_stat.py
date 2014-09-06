@@ -55,6 +55,9 @@ def stat_host(basedir, name):
     if total_count > 0:
         stat[FAILRATE] = 100. * stat[FAIL] / stat[TOTAL]
         stat[SUCCRATE] = 100. * stat[SUCC] / stat[TOTAL]
+    else:
+        stat[FAILRATE] = None
+        stat[SUCCRATE] = None
     stat['name'] = name
     return stat
 
@@ -77,7 +80,7 @@ def main(args):
 
     group_stat = [stat_host(args.basedir, group) for group in groups]
     print_stat(group_stat)
-    
+
 
 if __name__ == '__main__':
     main(parse_args())
