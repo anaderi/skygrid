@@ -63,11 +63,12 @@ def stat_host(basedir, name):
 
 
 def print_stat(group_stat):
-    keys = [NAME, SUCC, FAIL, ORIG, TOTAL, FAILRATE, SUCCRATE]
+    keys    = [NAME, SUCC, FAIL, WORK, ORIG, TOTAL, FAILRATE, SUCCRATE]
+    formats = ["%s", "%d", "%d", "%d", "%d", "%d", "%.1f", "%.1f"]
     header = "\t".join(keys)
     print header
     for stat in group_stat:
-        row = "\t".join([str(stat[k]) for k in keys])
+        row = "\t".join([formats[i] % stat[k] for i, k in enumerate(keys)])
         print row
 
 
