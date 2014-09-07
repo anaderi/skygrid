@@ -1,0 +1,30 @@
+{
+    "name": "SHIP-MC.test",
+    "job_id": 1,
+    "job_parent_id": null,
+    "job_super_id": null,
+    "email": "andrey.u@gmail.com",
+    "app_container": {
+        "name": "anaderi/ship-dev:0.0.2", 
+        "volume": "/opt/ship"
+        },
+    "env_container": {
+        "name": "anaderi/ocean:0.2.5",
+        "app_volume": "$APP_CONTAINER",
+        "workdir": "/opt/ship/build",
+        "output_volume": "$JOB_OUTPUT_DIR:/output"
+        },
+    "cmd": "/opt/ship/muonShieldOptimization/g4Ex_args.py",
+    "args": {
+        "scaleArg": [
+            ["--nEvents", "SCALE", 100008],
+            ["--run-number", "RANGE", [1, 24]]
+           ],
+        "--output": "$OUTPUT_DIR"
+
+    },
+    "num_containers": 48,
+    "min_memoryMB": 512,
+    "max_memoryMB": 1024,
+    "cpu_per_container": 1
+}

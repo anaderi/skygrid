@@ -4,10 +4,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Time;
 
-import org.json.JSONException;
-
-import jobdescriptor.JobDescriptor;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -44,7 +40,6 @@ import com.jcraft.jsch.Session;
  */
 public class Jeeves {
 
-	private JobDescriptor jd;
 	private String FairShipLocation;
 	private String machine;
 	private String currentTime;
@@ -57,7 +52,7 @@ public class Jeeves {
 	 */
 	private int jeevesStatus;
 
-	public Jeeves(JobDescriptor jd) throws IOException, InterruptedException,
+	public Jeeves() throws IOException, InterruptedException,
 			IllegalArgumentException, IllegalAccessException,
 			NoSuchFieldException, SecurityException, UnknownHostException {
 		System.out.println("Jeeves has been started...");
@@ -70,8 +65,6 @@ public class Jeeves {
 		// assuming that FairShip project is located in user's home folder
 		FairShipLocation = System.getProperty("user.home");
 		resultsFilename = "ship.Pythia8-TGeant4.root";
-
-		this.jd = jd;
 
 		executeFairShip();
 
@@ -374,14 +367,12 @@ public class Jeeves {
 		}
 	}
 	
-	public static void main(String[] args) throws IOException, JSONException,
+	public static void main(String[] args) throws IOException,
 			InterruptedException, IllegalArgumentException,
 			IllegalAccessException, NoSuchFieldException, SecurityException,
 			UnknownHostException {
 		
-		JobDescriptor jd = new JobDescriptor("jobdescriptor");
-		
-		Jeeves jeeves = new Jeeves(jd);
+		Jeeves jeeves = new Jeeves();
 //		if (jeeves.getjeevesStatus() == 0) {
 //			jeeves.writeFairShipResultsToHDFS();
 //		}

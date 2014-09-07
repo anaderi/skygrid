@@ -1,0 +1,53 @@
+{
+    "name": null,
+    "job_id": null,
+    "job_parent_id": null,
+    "job_super_id": 0,
+    "environments": [
+        "anaderi/slc6-devtoolset_1.1"
+    ],
+    "owner": "anaderi",
+    "app_container": {
+        "name": "anaderi/biofit:0.2",
+        "mount": "/opt/biofit"
+    },
+    "email": "andrey.u@gmail.com",
+    "workdir": "/opt/biofit",
+    "volumes": [
+        "$DATA_DIR:/data"
+    ],
+    "cmd": "bash /opt/biofit/run.sh",
+    "args": {
+        "scaleArg": [
+            [
+                "nEvents",
+                "SCALE",
+                700
+            ],
+            [
+                "__POS1__",
+                "SET",
+                [
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1231.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1232.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1233.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1234.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1235.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1236.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1237.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1238.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1239.dat.csv",
+                    "$DATA_DIR/TMT10plex-yeast_1-2-5-3-4-6-8-10-9-7_30K_1240.dat.csv"
+                ]
+            ],
+            [
+                "__POS2__",
+                "$OUTPUT_DIR"
+            ]
+        ]
+    },
+    "num_containers": 48,
+    "min_memoryMB": 512,
+    "max_memoryMB": 1024,
+    "cpu_per_container": 1
+}
