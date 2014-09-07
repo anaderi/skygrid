@@ -22,7 +22,7 @@ MAILHOST = "localhost"
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def parse_args():
@@ -36,7 +36,7 @@ def parse_args():
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
     args = p.parse_args()
-    if not os.path.exists(args.dir):
+    if not os.path.exists(args.dir) and not args.test:
         p.error("directory '%s' does not exists" % args.dir)
     args.dir = args.dir.rstrip("/")
     verbose = args.verbose
@@ -124,6 +124,7 @@ Failure rate: {failrate:0.1f}%
 
 def main(args):
     if args.test:
+        logger.setLevel(logging.DEBUG)
         test_queue()
         exit(1)
     pool = multiprocessing.Pool(args.nworkers)
@@ -142,7 +143,7 @@ def main(args):
         if job_slice is None:
             break
         try:
-            q_work.put(job_slice)
+            q_work.extend(job_slice)
             results_slice = pool.map(run_jd_wrapper,
                                      zip(job_slice, output_list))
             for rd in results_slice:
@@ -154,7 +155,7 @@ def main(args):
                     rd['jd']['status'] = "FAIL"
                     q_fail.put(rd["jd"])
                     logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
-            q_work.get_n(args.nworkers)
+            q_work.clear()
             iteration += 1
             if args.niterations is not None and iteration >= args.niterations:
                 break
@@ -165,7 +166,7 @@ def main(args):
                 jd['status'] = "INTERRUPT"
                 results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
             q_fail.extend(job_slice)
-            q_work.get_n(args.nworkers)
+            q_work.clear()
             logger.warn("Terminate pool")
             pool.close()
             pool.terminate()

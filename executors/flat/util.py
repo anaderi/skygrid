@@ -171,6 +171,9 @@ class QueueDir(object):
             raise StopIteration
         return self.get()
 
+    def clear(self):
+        self.get_n(self.qsize())
+
     def extend(self, iterable):
         for i in iterable:
             self.put(i)
@@ -245,6 +248,15 @@ def test_queue():
     assert len(arr1) == 2
     arr1 = q1.get_n(2)
     assert len(arr1) == 1
+
+    with open("%s/sub123" % dirs[1], "w") as fh:
+        json.dump("123", fh)
+    with open("%s/sub1" % dirs[1], "w") as fh:
+        json.dump("1", fh)
+    assert q2.qsize() == 2
+    assert q2.get() == "1"
+    q2.clear()
+    assert q2.qsize() == 0
     for d in dirs:
         if os.path.exists(d):
             shutil.rmtree(d)
