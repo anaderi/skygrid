@@ -18,7 +18,8 @@ Run manually JobDescriptor
 If you need to run and split manualy your own jobdescriptor:
 * run `mvn package`
 * create your input-file.json and put it inside input/ folder. (e.g. jd0.json)
-* run `java -jar target/jobdescriptor-1.0.jar 0.json` (you can run it for more than one files if you want 
+* run `java -jar target/jobdescriptor-1.0.jar jd0.json` (you can run it for more than one files if you want 
 (e.g. `java -jar target/jobdescriptor-1.0.jar jd0.json jd1.json`)
+* results are stored inside output/ folder.
 
 (WARNING) currently with this jar file you can run only split_equal method.
