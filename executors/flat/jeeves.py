@@ -12,7 +12,7 @@ from util import sh, test_sh, SUCCESS, ERROR_EXCEPTION
 verbose = False
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def parse_args():
@@ -28,6 +28,8 @@ def parse_args():
     if not os.path.exists(args.input) and not args.test:
         p.error("file '%s' does not exists" % args.input)
     verbose = args.verbose
+    if verbose:
+        logger.setLevel(logging.DEBUG)
     return args
 
 

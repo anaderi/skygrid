@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import time
 import subprocess
 import traceback
 import shlex
@@ -9,6 +10,7 @@ import logging
 SUCCESS = 0
 ERROR_INTERRUPT = 253
 ERROR_EXCEPTION = 254
+ERROR_DEAD = 127
 
 logger = logging.getLogger()
 
@@ -29,9 +31,20 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         if logerr is not None:
             fh_err = open(logerr, "w")
         proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
-        logger.info("PID: %d" % proc.pid)
+        logger.debug("PID: %d" % proc.pid)
         try:
-            result['rc'] = proc.wait()
+            # result['rc'] = proc.wait()
+            # TODO increase delay progressively
+            delay = 0.5
+            while True:
+                rc = proc._internal_poll(_deadstate=ERROR_DEAD)
+                if rc is not None:
+                    if rc == ERROR_DEAD:
+                        rc = SUCCESS  # HACK to avoid ZOmbies
+                    result['rc'] = rc
+                    break
+                else:
+                    time.sleep(delay)
         except KeyboardInterrupt:
             print "^C in util (%d)" % proc.pid
             proc.kill()

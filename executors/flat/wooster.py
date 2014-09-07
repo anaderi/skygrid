@@ -30,6 +30,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--dir", "-d", help="job descriptor pool", default="jobs")
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
+    p.add_argument("--niterations", help="number of iterations", type=int, default=None)
     p.add_argument("--output", "-o", help="output folder", default="output")
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
@@ -125,7 +126,7 @@ def main(args):
     if args.test:
         test_queue()
         exit(1)
-    p = multiprocessing.Pool(args.nworkers)
+    pool = multiprocessing.Pool(args.nworkers)
     q_input = QueueDir(args.dir)
     q_fail = QueueDir(args.dir + ".fail", default_mask=q_input.mask)
     q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
@@ -135,14 +136,15 @@ def main(args):
     output_list = itertools.repeat(args.output)
     time_start = datetime.datetime.now()
     results = []
+    iteration = 0
     while True:
         job_slice = q_input.get_n(args.nworkers)
         if job_slice is None:
             break
         try:
             q_work.put(job_slice)
-            results_slice = p.map(run_jd_wrapper,
-                                  zip(job_slice, output_list))
+            results_slice = pool.map(run_jd_wrapper,
+                                     zip(job_slice, output_list))
             for rd in results_slice:
                 results.append(rd)
                 if rd["rc"] == SUCCESS:
@@ -153,12 +155,22 @@ def main(args):
                     q_fail.put(rd["jd"])
                     logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
             q_work.get_n(args.nworkers)
+            iteration += 1
+            if args.niterations is not None and iteration >= args.niterations:
+                break
         except KeyboardInterrupt:
+            logger.warn("Caught SIGINT (^C), terminating")
+            logger.warn("Dumping jds")
             for jd in job_slice:
                 jd['status'] = "INTERRUPT"
                 results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
             q_fail.extend(job_slice)
             q_work.get_n(args.nworkers)
+            logger.warn("Terminate pool")
+            pool.close()
+            pool.terminate()
+            logger.warn("Waiting for processes to stop")
+            pool.join()
             break
 
     time_end = datetime.datetime.now()
