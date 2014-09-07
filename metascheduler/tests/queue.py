@@ -11,9 +11,11 @@ class QueueMS(object):
 
         self.ADD_URL = self.URL + self.queue_name + "/add_job"
         self.GET_URL = self.URL + "get_jobs?job_type=" + self.queue_name
+        self.LEN_URL = self.URL + self.queue_name + "/length"
 
     def empty(self):
-        return self.qsize() == 0
+        r = requests.get(self.LEN_URL)
+        return int(r.text) == 0
 
     def __iter__(self):
         return self
@@ -39,17 +41,10 @@ class QueueMS(object):
 
 def test_queue():
     q = QueueMS("test_queue")
-    queue_empty = False
 
-    try:
-        while True:
-            q.get() # Get all queue
-    except IndexError:
-        queue_empty = True
-
-    if not queue_empty:
-        print "Queue not empty, quit!"
-        return
+    if not q.empty():
+        for el in q:
+            print el
 
     q.put({"a": "b"})
     item = q.get()

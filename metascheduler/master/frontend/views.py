@@ -24,6 +24,16 @@ def add_job(job_type):
         return jsonify(success=False, exception=str(e))
 
 
+@app.route('/<job_type>/length', methods=['GET'])
+def queue_length(job_type):
+    try:
+        return str(len(Job.objects(job_type=job_type)))
+
+    except Exception, e:
+        return jsonify(success=False, exception=str(e))
+
+
+
 @app.route('/get_jobs', methods=['GET'])
 def distribute_jobs():
     try:
