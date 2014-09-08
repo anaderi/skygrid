@@ -15,6 +15,22 @@ ERROR_DEAD = 127
 logger = logging.getLogger()
 
 
+def wait_poll(proc):
+    # TODO increase delay progressively
+    delay = 0.5
+    rc = None
+    while True:
+        rc = proc._internal_poll(_deadstate=ERROR_DEAD)
+        if rc is not None:
+            if rc == ERROR_DEAD:
+                logger.error("ZOMBIE DETECTED")
+                rc = SUCCESS  # HACK to avoid ZOmbies
+            break
+        else:
+            time.sleep(delay)
+    return rc
+
+
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
     if verbose: logger.info("`%s`" % cmd)
     cmd_args = shlex.split(cmd.encode('ascii'))
@@ -33,18 +49,7 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
         logger.debug("PID: %d" % proc.pid)
         try:
-            # result['rc'] = proc.wait()
-            # TODO increase delay progressively
-            delay = 0.5
-            while True:
-                rc = proc._internal_poll(_deadstate=ERROR_DEAD)
-                if rc is not None:
-                    if rc == ERROR_DEAD:
-                        rc = SUCCESS  # HACK to avoid ZOmbies
-                    result['rc'] = rc
-                    break
-                else:
-                    time.sleep(delay)
+            result['rc'] = proc.wait()
         except KeyboardInterrupt:
             print "^C in util (%d)" % proc.pid
             proc.kill()

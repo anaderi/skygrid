@@ -5,9 +5,11 @@
 
 import os
 import json
+import time
 import socket
 import logging
 import smtplib
+import cPickle
 import datetime
 import tempfile
 import argparse
@@ -16,9 +18,9 @@ import multiprocessing
 from email.mime.text import MIMEText
 from util import QueueDir, test_queue, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEPTION
 
-verbose = False
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
+SLEEP_DELAY = 1
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -26,7 +28,6 @@ logger.setLevel(logging.INFO)
 
 
 def parse_args():
-    global verbose
     p = argparse.ArgumentParser()
     p.add_argument("--dir", "-d", help="job descriptor pool", default="jobs")
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
@@ -39,7 +40,8 @@ def parse_args():
     if not os.path.exists(args.dir) and not args.test:
         p.error("directory '%s' does not exists" % args.dir)
     args.dir = args.dir.rstrip("/")
-    verbose = args.verbose
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
     return args
 
 
@@ -122,65 +124,176 @@ Failure rate: {failrate:0.1f}%
     return report
 
 
+class ResultSlots(object):
+    def __init__(self, count):
+        self.slots = []
+        for i in range(count):
+            self.slots.append(None)
+
+    def is_slot_available(self):
+        return len([item for item in self.slots if item is None]) > 0
+
+    def empty(self):
+        return len([item for item in self.slots if item is not None]) == 0
+
+    def get_empty_idx(self):
+        for i, v in enumerate(self.slots):
+            if v is None:
+                return i
+        return None
+
+    def __getitem__(self, i):
+        return self.slots[i]
+
+    def __setitem__(self, i, v):
+        self.slots[i] = v
+
+    def __iter__(self):
+        return self.slots.__iter__()
+
+    def __repr__(self):
+        return self.slots.__repr__()
+
+
+def test_slots():
+    slots = ResultSlots(4)
+    assert slots.is_slot_available()
+    assert slots.get_empty_idx() == 0
+    assert slots[0] is None
+    slots[0] = 1
+    assert slots[0] == 1
+    assert slots.get_empty_idx() == 1
+    assert slots.is_slot_available()
+    for i in slots:
+        print i
+
+
+def test_cache():
+    name = "test.ext"
+    if os.path.exists(name):
+        os.remove(name)
+    locker = Cache(name)
+    assert not locker.exists()
+    jd1 = {'job_id': 1}
+    jd2 = {'job_id': 2}
+    locker.lock(jd1)
+    assert locker.load().keys()[0] == jd1['job_id']
+    assert locker.unlock(jd1)
+    assert not locker.unlock(jd2)
+    assert not locker.exists()
+    locker.lock(jd1)
+    locker.clear()
+    assert not locker.exists()
+
+
+class Cache(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+    def exists(self):
+        return os.path.exists(self.filename)
+
+    def lock(self, jd):
+        jds = self.load()
+        assert jd['job_id'] not in jds
+        jds[jd['job_id']] = jd
+        self._dump(jds)
+
+    def unlock(self, jd):
+        jds = self.load()
+        if jd['job_id'] not in jds:
+            return False
+        del jds[jd['job_id']]
+        self._dump(jds)
+        return True
+
+    def _dump(self, jds):
+        if len(jds) > 0:
+            with open(self.filename, "w") as fh:
+                cPickle.dump(jds, fh)
+        else:
+            os.remove(self.filename)
+
+    def load(self):
+        jds = {}
+        if self.exists():
+            with open(self.filename, "r") as fh:
+                jds = cPickle.load(fh)
+        return jds
+
+    def clear(self):
+        if self.exists():
+            os.remove(self.filename)
+
+
+def update_results(results, q_success, q_fail, locker, result_log):
+    for i, r in enumerate(results):
+        if r is not None and r.ready():
+            rd = r.get()
+            if rd['rc'] == SUCCESS:
+                rd['jd']['status'] = "SUCCESS"
+                q_success.put(rd['jd'])
+            else:
+                rd['jd']['status'] = "FAIL"
+                q_fail.put(rd['jd'])
+                logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
+            unlock_result = locker.unlock(rd['jd'])
+            assert unlock_result
+            results[i] = None
+            result_log.append(rd)
+
+
 def main(args):
     if args.test:
         logger.setLevel(logging.DEBUG)
         test_queue()
+        test_slots()
+        test_cache()
         exit(1)
     pool = multiprocessing.Pool(args.nworkers)
     q_input = QueueDir(args.dir)
     q_fail = QueueDir(args.dir + ".fail", default_mask=q_input.mask)
     q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
-    q_work = QueueDir(args.dir + ".work", default_mask=q_input.mask)
-    assert q_work.qsize() == 0, "Work queue is not empty"
+    locker = Cache(args.dir + ".locker")
+    assert not locker.exists()
 
-    output_list = itertools.repeat(args.output)
     time_start = datetime.datetime.now()
-    results = []
-    iteration = 0
-    while True:
-        job_slice = q_input.get_n(args.nworkers)
-        if job_slice is None:
-            break
-        try:
-            q_work.extend(job_slice)
-            results_slice = pool.map(run_jd_wrapper,
-                                     zip(job_slice, output_list))
-            for rd in results_slice:
-                results.append(rd)
-                if rd["rc"] == SUCCESS:
-                    rd['jd']['status'] = "SUCCESS"
-                    q_success.put(rd["jd"])
-                else:
-                    rd['jd']['status'] = "FAIL"
-                    q_fail.put(rd["jd"])
-                    logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
-            q_work.clear()
-            iteration += 1
-            if args.niterations is not None and iteration >= args.niterations:
-                break
-        except KeyboardInterrupt:
-            logger.warn("Caught SIGINT (^C), terminating")
-            logger.warn("Dumping jds")
-            for jd in job_slice:
-                jd['status'] = "INTERRUPT"
-                results.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
-            q_fail.extend(job_slice)
-            q_work.clear()
-            logger.warn("Terminate pool")
-            pool.close()
-            pool.terminate()
-            logger.warn("Waiting for processes to stop")
-            pool.join()
-            break
+    result_async = ResultSlots(args.nworkers)
+    result_log = []
+
+    try:
+        for jd in itertools.islice(q_input, args.niterations):
+            locker.lock(jd)
+            while not result_async.is_slot_available():
+                time.sleep(SLEEP_DELAY)
+                update_results(result_async, q_success, q_fail, locker, result_log)
+            slot_id = result_async.get_empty_idx()
+            result_async[slot_id] = pool.apply_async(run_jd, [jd, args.output])
+        while not result_async.empty():
+            update_results(result_async, q_success, q_fail, locker, result_log)
+            time.sleep(SLEEP_DELAY)
+
+    except KeyboardInterrupt:
+        logger.warn("Caught SIGINT (^C), terminating")
+        logger.warn("Dumping jds")
+        for jd in locker.load().values():
+            jd['status'] = "INTERRUPT"
+            result_log.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
+            q_fail.put(jd)
+        logger.warn("Terminate pool")
+        pool.close()
+        pool.terminate()
+        logger.warn("Waiting for processes to stop")
+        pool.join()
 
     time_end = datetime.datetime.now()
     time_run = time_end - time_start
+    locker.clear()
 
-    report = make_report(results, time_run, args.nworkers)
-    print report
-    if args.mail and len(results) > 0 and results[0]["jd"]["email"] is not None:
-        notify_email(results[0]["jd"]["email"], report)
+    report = make_report(result_log, time_run, args.nworkers)
+    logger.info(report)
+    if args.mail and len(result_log) > 0 and result_log[0]["jd"]["email"] is not None:
+        notify_email(result_log[0]["jd"]["email"], report)
 
 
 if __name__ == '__main__':
