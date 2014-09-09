@@ -31,6 +31,19 @@ def wait_poll(proc):
     return rc
 
 
+def filter_older_than(fh, fh_out, seconds):
+    for line in fh:
+        g = re.search("^\s*(((\d+)-)*(\d\d):(\d\d):(\d\d))", line)
+        if g is None:
+            continue
+        (old, _, days, hours, mins, secs) = g.groups()
+        lifetime = int(secs) + int(mins) * 60 + int(hours) * 3600
+        if days is not None:
+            lifetime += int(days) * 3600 * 24
+        if lifetime > seconds:
+            fh_out.write(line.replace(old, str(lifetime)))
+
+
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
     if verbose: logger.info("`%s`" % cmd)
     cmd_args = shlex.split(cmd.encode('ascii'))
