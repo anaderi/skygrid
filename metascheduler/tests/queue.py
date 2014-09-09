@@ -13,9 +13,12 @@ class QueueMS(object):
         self.GET_URL = self.URL + "get_jobs?job_type=" + self.queue_name
         self.LEN_URL = self.URL + self.queue_name + "/length"
 
-    def empty(self):
+    def qsize(self):
         r = requests.get(self.LEN_URL)
-        return int(r.text) == 0
+        return int(r.text)
+
+    def empty(self):
+        return self.qsize() == 0
 
     def __iter__(self):
         return self
@@ -46,7 +49,11 @@ def test_queue():
         for el in q:
             print el
 
+    assert q.qsize() == 0
+
     q.put({"a": "b"})
+    assert q.qsize() == 1
+
     item = q.get()
     assert item['a'] == 'b'
 
