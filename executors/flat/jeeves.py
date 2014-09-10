@@ -4,6 +4,7 @@
 """
 import os
 import json
+import time
 import shutil
 import argparse
 import logging
@@ -102,6 +103,7 @@ def run_jd(jd, output_basedir="output", force=False):
                     verbose=verbose)
         if result['rc'] != SUCCESS:
             halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
+        time.sleep(3)
     ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
     cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
     if QUOTE_CMD:
