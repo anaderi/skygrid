@@ -4,6 +4,7 @@ import os
 import json
 import argparse
 import logging
+import cPickle
 from util import QueueDir
 from copy import copy
 
@@ -15,6 +16,7 @@ CMD_MV = "mv"
 CMD_CP = "cp"
 CMD_FILL = "fill"
 CMD_FIX_SPLIT = "fix_split"
+CMD_UNLOCK = "unlock"
 
 
 def parse_args():
@@ -81,6 +83,20 @@ def fix_split(name):
     logger.info(queue)
 
 
+def unlock(name):
+    lockfile = "%s.locker" % name
+    assert os.path.exists(name) and os.path.isdir(name)
+    assert os.path.exists(lockfile)
+    jds = {}
+    with open(lockfile, "r") as fh:
+        jds = cPickle.load(fh)
+    assert len(jds) > 0
+    queue = QueueDir(name)
+    queue.extend(jds)
+    logger.info(queue)
+    os.remove(lockfile)
+
+
 def main(args):
     if args.cmd == CMD_MV:
         mv(args.arg1, args.arg2, args.count)
@@ -90,6 +106,8 @@ def main(args):
         fill(args.arg1, args.arg2, args.count)
     elif args.cmd == CMD_FIX_SPLIT:
         fix_split(args.arg1)
+    elif args.cmd == CMD_UNLOCK:
+        unlock(args.arg1)
 
 
 if __name__ == '__main__':
