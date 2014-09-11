@@ -1,9 +1,9 @@
 import datetime
 
 from flask import request, jsonify
-from flask.ext.restful import Resource
+from flask.ext.restful import Resource, reqparse
 
-from ..generic.models import Worker, Job, User
+from ...generic.models import Job
 
 
 class JobResource(Resource):

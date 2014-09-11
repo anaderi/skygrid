@@ -1,7 +1,7 @@
 from flask import Flask
 from flask.ext import restful
 
-from ..generic.models import *
+from mongoengine import connect
 
 app = Flask(__name__)
 api = restful.Api(app)
@@ -16,6 +16,8 @@ else:
 from views import *
 
 
-from resources import JobResource
+from resources import JobResource, QueueLengthResource, QueueResource
 
-api.add_resource(JobResource, '/jobs/<string:job_id>')
+api.add_resource(JobResource, '/job/<string:job_id>')
+api.add_resource(QueueResource, '/queues/<string:job_type>')
+api.add_resource(QueueLengthResource, '/queues/<string:job_type>/length')

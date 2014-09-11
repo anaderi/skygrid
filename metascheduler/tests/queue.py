@@ -4,18 +4,17 @@ import requests
 
 
 class QueueMS(object):
-    URL = "http://test02cern.vs.os.yandex.net:5000/"
+    URL_PATTERN = "http://test02cern.vs.os.yandex.net:5000/queues/{}"
 
     def __init__(self, queue_name):
-        self.queue_name = queue_name
+        self.QUEUE_URL = self.URL_PATTERN.format(queue_name)
 
-        self.ADD_URL = self.URL + self.queue_name + "/add_job"
-        self.GET_URL = self.URL + "get_jobs?job_type=" + self.queue_name
-        self.LEN_URL = self.URL + self.queue_name + "/length"
+        
+        self.LEN_URL = self.QUEUE_URL + "/length"
 
     def qsize(self):
-        r = requests.get(self.LEN_URL)
-        return int(r.text)
+        info = requests.get(self.LEN_URL).json()
+        return info['length']
 
     def empty(self):
         return self.qsize() == 0
@@ -33,29 +32,40 @@ class QueueMS(object):
             self.put(i)
 
     def put(self, item):
-        r = requests.post(self.ADD_URL, data=json.dumps(item))
+        r = requests.post(self.QUEUE_URL, data=json.dumps(item))
 
     def get(self):
-        r = requests.get(self.GET_URL)
-        response = json.loads(r.text)
-        item = response['jobs'][0]
-        return item
+        response = requests.get(self.QUEUE_URL).json()
+        jobs = response['jobs']
+        if len(jobs) > 0:
+            return response['jobs'][0]
+        else:
+            return None
+
 
 
 def test_queue():
     q = QueueMS("test_queue")
 
+    print "Extract everything from queue..."
+
     if not q.empty():
         for el in q:
-            print el
+            print "Was on queue:", el
 
     assert q.qsize() == 0
+    print "Queue is empty"
 
-    q.put({"a": "b"})
+    TEST_OBJ = {"a": "b"}
+    print "Putting {} to queue.".format(TEST_OBJ)
+    
+    q.put(TEST_OBJ)
     assert q.qsize() == 1
+    print "Object is in queue."
 
     item = q.get()
-    assert item['a'] == 'b'
+    assert item == TEST_OBJ
+    print "Got same object form queue. Everything is OK."
 
 if __name__ == '__main__':
     test_queue()
