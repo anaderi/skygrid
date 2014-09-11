@@ -234,7 +234,8 @@ def update_results(results, q_success, q_fail, locker, result_log):
                 rd['jd']['status'] = "SUCCESS"
                 q_success.put(rd['jd'])
             else:
-                rd['jd']['status'] = "FAIL"
+                rd['jd']['status'] = rd['rc']
+                rd['jd']['status'] = rd['status']
                 q_fail.put(rd['jd'])
                 logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
             unlock_result = locker.unlock(rd['jd'])
