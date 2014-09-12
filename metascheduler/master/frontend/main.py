@@ -16,8 +16,10 @@ else:
 from views import *
 
 
-from resources import JobResource, QueueLengthResource, QueueResource
+from resources import *
 
 api.add_resource(JobResource, '/job/<string:job_id>')
+
+api.add_resource(QueueManagementResource, '/queues')
 api.add_resource(QueueResource, '/queues/<string:job_type>')
 api.add_resource(QueueLengthResource, '/queues/<string:job_type>/length')
