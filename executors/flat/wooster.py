@@ -42,6 +42,8 @@ def parse_args():
     args.dir = args.dir.rstrip("/")
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+    if args.niterations == 0:
+        args.niterations = None
     return args
 
 
