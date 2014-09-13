@@ -100,9 +100,15 @@ def unlock(name):
     with open(lockfile, "r") as fh:
         jds = cPickle.load(fh)
     assert len(jds) > 0
-    queue = QueueDir(name)
-    queue.extend(jds)
-    logger.info(queue)
+    queue_orig = QueueDir(name)
+    queue_succ = QueueDir(name + ".success")
+    for job_id, jd in jds.iteritems():
+        if _has_output(name, jd):
+            queue_succ.put(jd)
+            logger.info("%d -> success" % job_id)
+        else:
+            queue_orig.put(jd)
+            logger.info("%d -> orig" % job_id)
     os.remove(lockfile)
 
 
@@ -118,10 +124,6 @@ def _has_output(name, jd):
     if size < 5000:
         return False
     return True
-
-
-def check_no_dups(name):
-    pass
 
 
 def fix_interrupts(name):
