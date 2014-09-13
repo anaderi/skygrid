@@ -2,6 +2,7 @@
 
 import os
 import json
+import glob
 import argparse
 import logging
 import cPickle
@@ -95,6 +96,39 @@ def unlock(name):
     queue.extend(jds)
     logger.info(queue)
     os.remove(lockfile)
+
+
+def _has_output(name, jd):
+    output_dir = "output-" + name.replace(".fail", '')
+    root_out_dir = "%s/%d/root" % (output_dir, jd['job_id'])
+    if not os.path.exists(root_out_dir):
+        return False
+    filelist = glob.glob("%s/pythia*.root" % root_out_dir)
+    if len(filelist) != 1:
+        return False
+    size = os.stat(filelist[0]).st_size
+    if size < 5000:
+        return False
+    return True
+
+
+def fix_interrupts(name):
+    assert os.path.exists(name) and os.path.isdir(name)
+    assert name.endswith('fail')
+    queue = QueueDir(name)
+    queue_success = QueueDir(name.replace('fail', 'success'))
+    restore_count = 0
+    for i in range(queue.qsize(), 0, -1):
+        jd = queue.peek(i)
+        if _has_output(name, jd):
+            print "seemsOK: %d" % jd['job_id']
+            restore_count += 1
+            continue
+            # queue.remove(i)
+            # jd['ex_status'] = jd['status']
+            # jd['status'] = 'SUCCESS'
+            # queue_success.put(jd)
+    print "restored %d JDs" % restore_count
 
 
 def main(args):
