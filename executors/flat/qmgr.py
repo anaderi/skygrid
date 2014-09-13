@@ -37,6 +37,7 @@ Example:
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
     p.add_argument("--template", help="template jd file", default=None)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
+    p.add_argument("--remove", "-r", action='store_true', default=False)
     p.add_argument("cmd", help="command")
     p.add_argument("arg1", help="ARG1")
     p.add_argument("arg2", help="ARG2", nargs='?')
@@ -140,7 +141,7 @@ def fix_interrupts(name):
     print "restored %d JDs of %d" % (restore_count, queue_fail_size)
 
 
-def check_dupes(name):
+def check_dupes(name, do_remove=False):
     assert os.path.exists(name) and os.path.isdir(name)
     queue = QueueDir(name)
     queue_files = queue.list_files()
@@ -149,12 +150,16 @@ def check_dupes(name):
         jd = queue.peek(i)
         key = jd['job_id']
         if key in (jds):
-            jds[key].append({'file': queue_files[i], 'jd': jd})
+            jds[key].append({'file': queue_files[i], 'jd': jd, 'id': i})
         else:
             jds[key] = [{'file': queue_files[i], 'jd': jd}]
     for key, dupes in jds.iteritems():
         if len(dupes) > 1:
             print "Dupes: %s" % dupes
+            if do_remove:
+                for jd_rec in dupes[0:-1]:
+                    print "remove: %s" % jd_rec['file']
+                    queue.remove(jd_rec['id'])
 
 
 def main(args):
@@ -171,7 +176,7 @@ def main(args):
     elif args.cmd == CMD_FIX_INTERRUPT:
         fix_interrupts(args.arg1)
     elif args.cmd == CMD_CHECK_DUPES:
-        check_dupes(args.arg1)
+        check_dupes(args.arg1, args.remove)
     else:
         print "Unknown CMD: %s" % args.cmd
 
