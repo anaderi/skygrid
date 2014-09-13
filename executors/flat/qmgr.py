@@ -19,6 +19,7 @@ CMD_FILL = "fill"
 CMD_FIX_SPLIT = "fix_split"
 CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
+CMD_CHECK_DUPS = "check_dupes"
 
 
 def parse_args():
@@ -28,6 +29,7 @@ Supported commands:
     cp QUEUE_FROM QUEUE_TO
     fix_split QUEUE
     fix_int QUEUE.FAIL
+    check_dups QUEUE
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -114,6 +116,10 @@ def _has_output(name, jd):
     return True
 
 
+def check_no_dups(name):
+    pass
+
+
 def fix_interrupts(name):
     assert os.path.exists(name) and os.path.isdir(name)
     assert name.endswith('fail')
@@ -132,6 +138,23 @@ def fix_interrupts(name):
             jd['status'] = 'SUCCESS'
             queue_success.put(jd)
     print "restored %d JDs of %d" % (restore_count, queue_fail_size)
+
+
+def check_dupes(name):
+    assert os.path.exists(name) and os.path.isdir(name)
+    queue = QueueDir(name)
+    queue_files = queue.list_files()
+    jds = {}
+    for i in range(queue.qsize()):
+        jd = queue.peek(i)
+        key = jd['job_id']
+        if key in (jds):
+            jds[key].appen({'file': queue_files[i], 'jd': jd})
+        else:
+            jds[key] = [{'file': queue_files[i], 'jd': jd}]
+    for key, dupes in jds.iteritems():
+        if len(dupes) > 1:
+            print "Dupes: %s" % dupes
 
 
 def main(args):
