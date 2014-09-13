@@ -20,6 +20,7 @@ CMD_FIX_SPLIT = "fix_split"
 CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
 CMD_CHECK_DUPES = "check_dupes"
+CMD_RESET_FAIL = "reset_fail"
 
 
 def parse_args():
@@ -30,6 +31,7 @@ Supported commands:
     fix_split QUEUE
     fix_int QUEUE.FAIL
     check_dupes QUEUE
+    reset_fail QUEUE.fail
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -174,6 +176,22 @@ def check_dupes(name, do_remove=False):
                     os.remove(jd_rec['file'])  # hack
 
 
+def reset_fail(name):
+    assert os.path.exists(name) and os.path.isdir(name)
+    name = name.rstrip('/')
+    assert name.endswith('.fail')
+    origname = name.replace('.fail', '')
+    groupname = os.path.basename(origname)
+
+    qfail = QueueDir(name)
+    qorig = QueueDir(origname)
+    for jd in qfail:
+        outdir = 'output-%s/%d' % (groupname, jd['job_id'])
+        if os.path.exists(outdir):
+            os.removedirs(outdir)
+        qorig.put(jd)
+
+
 def main(args):
     if args.cmd == CMD_MV:
         mv(args.arg1, args.arg2, args.count)
@@ -189,6 +207,8 @@ def main(args):
         fix_interrupts(args.arg1)
     elif args.cmd == CMD_CHECK_DUPES:
         check_dupes(args.arg1, args.remove)
+    elif args.cmd == CMD_RESET_FAIL:
+        reset_fail(args.arg1)
     else:
         print "Unknown CMD: %s" % args.cmd
 
