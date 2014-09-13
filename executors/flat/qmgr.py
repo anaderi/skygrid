@@ -6,6 +6,7 @@ import glob
 import argparse
 import logging
 import cPickle
+import shutil
 from util import QueueDir
 from copy import copy
 
@@ -188,7 +189,7 @@ def reset_fail(name):
     for jd in qfail:
         outdir = 'output-%s/%d' % (groupname, jd['job_id'])
         if os.path.exists(outdir):
-            os.removedirs(outdir)
+            shutil.rmtree(outdir)
         qorig.put(jd)
 
 
