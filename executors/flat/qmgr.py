@@ -127,7 +127,6 @@ def fix_interrupts(name):
         if _has_output(name, jd):
             print "seemsOK: %d" % jd['job_id']
             restore_count += 1
-            continue
             queue_fail.remove(i)
             jd['ex_status'] = jd['status']
             jd['status'] = 'SUCCESS'
