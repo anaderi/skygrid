@@ -149,7 +149,7 @@ def check_dupes(name):
         jd = queue.peek(i)
         key = jd['job_id']
         if key in (jds):
-            jds[key].appen({'file': queue_files[i], 'jd': jd})
+            jds[key].append({'file': queue_files[i], 'jd': jd})
         else:
             jds[key] = [{'file': queue_files[i], 'jd': jd}]
     for key, dupes in jds.iteritems():
