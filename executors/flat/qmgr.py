@@ -19,7 +19,7 @@ CMD_FILL = "fill"
 CMD_FIX_SPLIT = "fix_split"
 CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
-CMD_CHECK_DUPS = "check_dupes"
+CMD_CHECK_DUPES = "check_dupes"
 
 
 def parse_args():
@@ -29,7 +29,7 @@ Supported commands:
     cp QUEUE_FROM QUEUE_TO
     fix_split QUEUE
     fix_int QUEUE.FAIL
-    check_dups QUEUE
+    check_dupes QUEUE
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -170,6 +170,10 @@ def main(args):
         unlock(args.arg1)
     elif args.cmd == CMD_FIX_INTERRUPT:
         fix_interrupts(args.arg1)
+    elif args.cmd == CMD_CHECK_DUPES:
+        check_dupes(args.arg1)
+    else:
+        print "Unknown CMD: %s" % args.cmd
 
 
 if __name__ == '__main__':
