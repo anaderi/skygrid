@@ -128,10 +128,21 @@ def fix_interrupts(name):
     queue_success = QueueDir(name.replace('fail', 'success'))
     restore_count = 0
     queue_fail_size = queue_fail.qsize()
+    fail_files = queue_fail.list_files()
+
+    success_cache = {}
+    for i in range(queue_success.qsize()):
+        jd = queue_success.peek(i)
+        key = jd['job_id']
+        jd_rec = {'jd': jd, 'id': i}
+        success_cache[key] = jd_rec
 
     for i in range(queue_fail.qsize() - 1, -1, -1):
         jd = queue_fail.peek(i)
         if _has_output(name, jd):
+            if jd['job_id'] in success_cache:
+                print "WARN: already in success (%s)" % fail_files[i]
+                continue
             print "seemsOK: %d" % jd['job_id']
             restore_count += 1
             queue_fail.remove(i)
