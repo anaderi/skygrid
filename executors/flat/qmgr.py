@@ -160,7 +160,7 @@ def check_dupes(name, do_remove=False):
             if do_remove:
                 for jd_rec in dupes[0:-1]:
                     print "remove: %s" % jd_rec['file']
-                    queue.remove(jd_rec['id'])
+                    os.remove(jd_rec['file'])  # hack
 
 
 def main(args):
