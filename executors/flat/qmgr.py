@@ -117,20 +117,22 @@ def _has_output(name, jd):
 def fix_interrupts(name):
     assert os.path.exists(name) and os.path.isdir(name)
     assert name.endswith('fail')
-    queue = QueueDir(name)
+    queue_fail = QueueDir(name)
     queue_success = QueueDir(name.replace('fail', 'success'))
     restore_count = 0
-    for i in range(queue.qsize() - 1, -1, -1):
-        jd = queue.peek(i)
+    queue_fail_size = queue_fail.qsize()
+
+    for i in range(queue_fail.qsize() - 1, -1, -1):
+        jd = queue_fail.peek(i)
         if _has_output(name, jd):
             print "seemsOK: %d" % jd['job_id']
             restore_count += 1
             continue
-            # queue.remove(i)
-            # jd['ex_status'] = jd['status']
-            # jd['status'] = 'SUCCESS'
-            # queue_success.put(jd)
-    print "restored %d JDs" % restore_count
+            queue_fail.remove(i)
+            jd['ex_status'] = jd['status']
+            jd['status'] = 'SUCCESS'
+            queue_success.put(jd)
+    print "restored %d JDs of %d" % (restore_count, queue_fail_size)
 
 
 def main(args):
