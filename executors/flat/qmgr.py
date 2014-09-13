@@ -17,6 +17,7 @@ CMD_MV = "mv"
 CMD_CP = "cp"
 CMD_FILL = "fill"
 CMD_FIX_SPLIT = "fix_split"
+CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
 
 
@@ -26,6 +27,7 @@ Supported commands:
     mv QUEUE_FROM QUEUE_TO
     cp QUEUE_FROM QUEUE_TO
     fix_split QUEUE
+    fix_int QUEUE.FAIL
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -142,6 +144,8 @@ def main(args):
         fix_split(args.arg1)
     elif args.cmd == CMD_UNLOCK:
         unlock(args.arg1)
+    elif args.cmd == CMD_FIX_INTERRUPT:
+        fix_interrupts(args.arg1)
 
 
 if __name__ == '__main__':
