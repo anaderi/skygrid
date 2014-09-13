@@ -120,7 +120,7 @@ def fix_interrupts(name):
     queue = QueueDir(name)
     queue_success = QueueDir(name.replace('fail', 'success'))
     restore_count = 0
-    for i in range(queue.qsize(), 0, -1):
+    for i in range(queue.qsize() - 1, -1, -1):
         jd = queue.peek(i)
         if _has_output(name, jd):
             print "seemsOK: %d" % jd['job_id']
