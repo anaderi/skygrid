@@ -47,7 +47,7 @@ def parse_args():
 
 
 def stat_host(basedir, name, exptotal=None):
-    stat = {}
+    stat = {WORK: 0}
     total_count = 0
     for key, suff in queue_exts.iteritems():
         queue_dir = "%s/%s%s" % (basedir, name, suff)
