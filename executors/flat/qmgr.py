@@ -48,7 +48,7 @@ Example:
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--remove", "-r", action='store_true', default=False)
     p.add_argument("cmd", help="command")
-    p.add_argument("arg1", help="ARG1")
+    p.add_argument("arg1", help="ARG1", nargs='?')
     p.add_argument("arg2", help="ARG2", nargs='?')
     args = p.parse_args()
     if args.verbose:
@@ -257,7 +257,7 @@ def main(args):
     elif args.cmd == CMD_RESET_FAIL:
         reset_fail(args.arg1)
     elif args.cmd == CMD_MISSING_IDS:
-        print_missing(args.start_id, args.stop_id)
+        print_missing(args.start, args.stop)
     else:
         print "Unknown CMD: %s" % args.cmd
 
