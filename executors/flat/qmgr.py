@@ -24,7 +24,11 @@ CMD_UNLOCK = "unlock"
 CMD_CHECK_DUPES = "check_dupes"
 CMD_RESET_FAIL = "reset_fail"
 CMD_MISSING_IDS = "missing"
+CMD_MISSING2FAIL = "missing2fail"
+CMD_CREATE_SCRATCH = "create"
 POOL_SIZE=20
+JD_PER_DIR = 1000
+EV_PER_JD = 5000
 
 
 def parse_args():
@@ -37,6 +41,8 @@ Supported commands:
     check_dupes QUEUE
     reset_fail QUEUE.fail
     missing
+    missing2fail [-m missing.txt]
+    create [-t TEMPLATE]
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -44,7 +50,8 @@ Example:
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
     p.add_argument("--start", help="start id", type=int, default=1010)
     p.add_argument("--stop", help="stop id", type=int, default=20010)
-    p.add_argument("--template", help="template jd file", default=None)
+    p.add_argument("--template", "-t", help="template jd file", default=None)
+    p.add_argument("--missing", "-m", help="missing ids file", default=None)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--remove", "-r", action='store_true', default=False)
     p.add_argument("cmd", help="command")
@@ -228,6 +235,7 @@ def _group_job_ids(name):
 def print_missing(start_id, stop_id):
     pool = multiprocessing.Pool(POOL_SIZE)
     group_names = ["mc%02d" % i for i in range(1,21)]
+    print group_names
     ids_list = pool.map(_group_job_ids, group_names)
     ids_full = {}
     for ids in ids_list:
@@ -238,6 +246,48 @@ def print_missing(start_id, stop_id):
     for i in range(start_id, stop_id):
         if i not in ids_full:
             print i
+
+
+def create_from_scratch(template):
+    assert os.path.exists(template)
+    with open(template) as fh:
+        t = json.load(fh)
+    t['args']['--num-events'] = EV_PER_JD
+
+    for host_id in range(1, 21):
+        dir = "mc{i:02d}".format(i=host_id)
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
+        os.makedirs(dir)
+        for c in range(0, JD_PER_DIR):
+            jd = copy(t)
+            jd["job_id"] = 10 + host_id * JD_PER_DIR + c
+            with open("%s/%d_job.json" % (dir, c), "w") as fh:
+                json.dump(jd, fh, sort_keys=True, indent=2)
+
+
+def missing2fail(template, missing):
+    assert os.path.exists(missing)
+    assert os.path.exists(template)
+    ids = []
+    with open(missing) as fh:
+        ids = map(int, fh.readlines())
+    with open(template) as fh:
+        t = json.load(fh)
+    t['args']['--num-events'] = EV_PER_JD
+    restored_count = 0
+    for host_id in range(1, 21):
+        dir_fail = "mc{i:02d}.fail".format(i=host_id)
+        if not os.path.exists(dir_fail):
+            os.makedirs(dir_fail)
+        for c in [id for id in ids if id >= 10 + host_id * JD_PER_DIR and id < 10 + (host_id + 1) * JD_PER_DIR]:
+            jd = copy(t)
+            jd["job_id"] = c
+            print "%d -> %s" % (c, dir_fail)
+            restored_count += 1
+            # with open("%s/%d_job.json" % (dir_fail, c), "w") as fh:
+            #     json.dump(jd, fh, sort_keys=True, indent=2)
+    print "Restored %d jds out of %d" % (restored_count, len(ids))
 
 
 def main(args):
@@ -259,6 +309,10 @@ def main(args):
         reset_fail(args.arg1)
     elif args.cmd == CMD_MISSING_IDS:
         print_missing(args.start, args.stop)
+    elif args.cmd == CMD_CREATE_SCRATCH:
+        create_from_scratch(args.template)
+    elif args.cmd == CMD_MISSING2FAIL:
+        missing2fail(args.template, args.missing)
     else:
         print "Unknown CMD: %s" % args.cmd
 
