@@ -42,8 +42,8 @@ Example:
     qmgr.py mv mc01.fail mc01
         """)
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
-    p.add_argument("--start", help="start id", type=int, default=10)
-    p.add_argument("--stop", help="stop id", type=int, default=10010)
+    p.add_argument("--start", help="start id", type=int, default=1010)
+    p.add_argument("--stop", help="stop id", type=int, default=20010)
     p.add_argument("--template", help="template jd file", default=None)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--remove", "-r", action='store_true', default=False)
@@ -99,10 +99,10 @@ def fix_split(name):
 
 
 def _lock_ids(lockfile):
-    assert os.path.exists(lockfile)
     jds = {}
-    with open(lockfile, "r") as fh:
-        jds = cPickle.load(fh)
+    if os.path.exists(lockfile):
+        with open(lockfile, "r") as fh:
+            jds = cPickle.load(fh)
     return jds
 
 
@@ -218,7 +218,8 @@ def _queue_ids(name):
 
 
 def _group_job_ids(name):
-    ids = _queue_ids("%s.success" % name)
+    ids = _queue_ids(name)
+    ids.extend(_queue_ids("%s.success" % name))
     ids.extend(_queue_ids("%s.fail" % name))
     ids.extend(_lock_ids("%s.locker" % name).keys())
     return ids
@@ -226,7 +227,7 @@ def _group_job_ids(name):
 
 def print_missing(start_id, stop_id):
     pool = multiprocessing.Pool(POOL_SIZE)
-    group_names = ["map%02d" % i for i in range(1,21)]
+    group_names = ["mc%02d" % i for i in range(1,21)]
     ids_list = pool.map(_group_job_ids, group_names)
     ids_full = {}
     for ids in ids_list:
