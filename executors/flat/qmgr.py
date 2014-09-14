@@ -7,6 +7,7 @@ import argparse
 import logging
 import cPickle
 import shutil
+import multiprocessing
 from util import QueueDir
 from copy import copy
 
@@ -22,6 +23,8 @@ CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
 CMD_CHECK_DUPES = "check_dupes"
 CMD_RESET_FAIL = "reset_fail"
+CMD_MISSING_IDS = "missing"
+POOL_SIZE=20
 
 
 def parse_args():
@@ -33,11 +36,14 @@ Supported commands:
     fix_int QUEUE.FAIL
     check_dupes QUEUE
     reset_fail QUEUE.fail
+    missing
 
 Example:
     qmgr.py mv mc01.fail mc01
         """)
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
+    p.add_argument("--start", help="start id", type=int, default=10)
+    p.add_argument("--stop", help="stop id", type=int, default=10010)
     p.add_argument("--template", help="template jd file", default=None)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--remove", "-r", action='store_true', default=False)
@@ -92,13 +98,18 @@ def fix_split(name):
     logger.info(queue)
 
 
-def unlock(name):
-    lockfile = "%s.locker" % name
-    assert os.path.exists(name) and os.path.isdir(name)
+def _lock_ids(lockfile):
     assert os.path.exists(lockfile)
     jds = {}
     with open(lockfile, "r") as fh:
         jds = cPickle.load(fh)
+    return jds
+
+
+def unlock(name):
+    lockfile = "%s.locker" % name
+    assert os.path.exists(name) and os.path.isdir(name)
+    jds = _lock_ids(lockfile)
     assert len(jds) > 0
     queue_orig = QueueDir(name)
     queue_succ = QueueDir(name + ".success")
@@ -195,6 +206,39 @@ def reset_fail(name):
         qorig.put(jd)
 
 
+def _queue_ids(name):
+    assert os.path.exists(name) and os.path.isdir(name)
+    queue = QueueDir(name)
+    ids = []
+    for i in range(queue.qsize()):
+        jd = queue.peek(i)
+        job_id = jd['job_id']
+        ids.append(job_id)
+    return ids
+
+
+def _group_job_ids(name):
+    ids = _queue_ids("%s.success" % name)
+    ids.extend(_queue_ids("%s.fail" % name))
+    ids.extend(_lock_ids("%s.locker" % name).keys())
+    return ids
+
+
+def print_missing(start_id, stop_id):
+    pool = multiprocessing.Pool(POOL_SIZE)
+    group_names = ["map%02d" % i for i in range(1,21)]
+    ids_list = pool.map(_group_job_ids, group_names)
+    ids_full = {}
+    for ids in ids_list:
+        for id in ids:
+            if id in ids_full:
+                print "WARN: %d already in ids collection"
+            ids_full[id] = 1
+    for i in range(start_id, stop_id):
+        if i not in ids_full:
+            print i
+
+
 def main(args):
     if args.cmd == CMD_MV:
         mv(args.arg1, args.arg2, args.count)
@@ -212,6 +256,8 @@ def main(args):
         check_dupes(args.arg1, args.remove)
     elif args.cmd == CMD_RESET_FAIL:
         reset_fail(args.arg1)
+    elif args.cmd == CMD_MISSING_IDS:
+        print_missing(args.start_id, args.stop_id)
     else:
         print "Unknown CMD: %s" % args.cmd
 
