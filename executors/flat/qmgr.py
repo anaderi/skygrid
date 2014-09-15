@@ -51,7 +51,7 @@ Example:
         """)
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
     p.add_argument("--start", help="start id", type=int, default=1010)
-    p.add_argument("--stop", help="stop id", type=int, default=20010)
+    p.add_argument("--stop", help="stop id", type=int, default=21010)
     p.add_argument("--template", "-t", help="template jd file", default=None)
     p.add_argument("--missing", "-m", help="missing ids file", default=None)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
@@ -317,8 +317,8 @@ def missing2fail(template, missing):
             jd["job_id"] = c
             print "%d -> %s" % (c, dir_fail)
             restored_count += 1
-            # with open("%s/%d_job.json" % (dir_fail, c), "w") as fh:
-            #     json.dump(jd, fh, sort_keys=True, indent=2)
+            with open("%s/%d_job.json" % (dir_fail, c), "w") as fh:
+                json.dump(jd, fh, sort_keys=True, indent=2)
     print "Restored %d jds out of %d" % (restored_count, len(ids))
 
 
