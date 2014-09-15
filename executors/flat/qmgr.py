@@ -266,7 +266,8 @@ def _find_no_output(name):
     no_output = {}
     for i, jd in sorted(jds.iteritems(), key=lambda k: k[0], reverse=True):
         if not _has_output(name, jd):
-            no_output[i] = jd
+            key = "%s.success:%d" % (name, i)
+            no_output[key] = jd
     return no_output
 
 
@@ -275,8 +276,9 @@ def check_success(start_id, stop_id):
     group_names = ["mc%02d" % i for i in range(1,21)]
     print group_names
     unsuccessful = pool.map(_find_no_output, group_names)
+    unsuccessful = [x for x in unsuccessful if len(x) > 0]
     print unsuccessful
-    with open("no_output.dump") as fh:
+    with open("no_output.dump", 'w') as fh:
         cPickle.dump(unsuccessful, fh)
 
 
