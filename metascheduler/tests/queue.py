@@ -1,20 +1,34 @@
 #!/usr/bin/env python
+import os
 import json
+import unittest
 from time import sleep
 
 import requests
 
 class QueueMS(object):
-    URL_PATTERN = "http://test02cern.vs.os.yandex.net:5000/queues/{}"
+    def __init__(self, queue_name, api_url="http://localhost:5000/", autocreate=True):
+        self.queue_name = queue_name
 
-    def __init__(self, queue_name):
-        self.QUEUE_URL = self.URL_PATTERN.format(queue_name)
-
+        self.QUEUE_MANAGEMENT_URL = self.QUEUE_URL = os.path.join(api_url, 'queues')
+        self.QUEUE_URL = os.path.join(
+            api_url,
+            'queues',
+            self.queue_name
+        )
         
-        self.LEN_URL = self.QUEUE_URL + "/length"
+        self.INFO_URL = os.path.join(self.QUEUE_URL, "info")
+
+        if autocreate and not self._exists():
+            self._create_queue()
+
+
+    def _get_info(self):
+        return requests.get(self.INFO_URL).json()
 
     def qsize(self):
-        info = requests.get(self.LEN_URL).json()
+        info = self._get_info()
+        assert info['success']
         return info['length']
 
     def empty(self):
@@ -43,6 +57,18 @@ class QueueMS(object):
         else:
             return None
 
+    def _create_queue(self):
+        create_payload = {
+            'job_type': self.queue_name
+        }
+        r = requests.put(self.QUEUE_MANAGEMENT_URL, data=json.dumps(create_payload))
+        result = r.json()
+
+        return result['success']
+
+    def _exists(self):
+        info = self._get_info()
+        return info['success']
 
 
 def test_queue():
