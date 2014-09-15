@@ -26,6 +26,7 @@ CMD_RESET_FAIL = "reset_fail"
 CMD_MISSING_IDS = "missing"
 CMD_MISSING2FAIL = "missing2fail"
 CMD_CREATE_SCRATCH = "create"
+CMD_CHECK_SUCCESS = "check_success"
 POOL_SIZE=20
 JD_PER_DIR = 1000
 EV_PER_JD = 5000
@@ -43,6 +44,7 @@ Supported commands:
     missing
     missing2fail [-m missing.txt]
     create [-t TEMPLATE]
+    check_success [--start START] [--stop STOP]
 
 Example:
     qmgr.py mv mc01.fail mc01
@@ -224,6 +226,16 @@ def _queue_ids(name):
     return ids
 
 
+def _queue_jds(name):
+    assert os.path.exists(name) and os.path.isdir(name)
+    queue = QueueDir(name)
+    jds = {}
+    for i in range(queue.qsize()):
+        jd = queue.peek(i)
+        jds[i] = jd
+    return jds
+
+
 def _group_job_ids(name):
     ids = _queue_ids(name)
     ids.extend(_queue_ids("%s.success" % name))
@@ -246,6 +258,26 @@ def print_missing(start_id, stop_id):
     for i in range(start_id, stop_id):
         if i not in ids_full:
             print i
+
+
+def _find_no_output(name):
+    jds = _queue_jds("%s.success" % name)
+    # qmiss = QueueDir("%s.miss" % name)
+    no_output = {}
+    for i, jd in sorted(jds.iteritems(), key=lambda k: k[0], reverse=True):
+        if not _has_output(name, jd):
+            no_output[i] = jd
+    return no_output
+
+
+def check_success(start_id, stop_id):
+    pool = multiprocessing.Pool(POOL_SIZE)
+    group_names = ["mc%02d" % i for i in range(1,21)]
+    print group_names
+    unsuccessful = pool.map(_find_no_output, group_names)
+    print unsuccessful
+    with open("no_output.dump") as fh:
+        cPickle.dump(unsuccessful, fh)
 
 
 def create_from_scratch(template):
@@ -313,6 +345,8 @@ def main(args):
         create_from_scratch(args.template)
     elif args.cmd == CMD_MISSING2FAIL:
         missing2fail(args.template, args.missing)
+    elif args.cmd == CMD_CHECK_SUCCESS:
+        check_success(args.start, args.stop)
     else:
         print "Unknown CMD: %s" % args.cmd
 
