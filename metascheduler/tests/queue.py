@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import json
-import requests
+from time import sleep
 
+import requests
 
 class QueueMS(object):
     URL_PATTERN = "http://test02cern.vs.os.yandex.net:5000/queues/{}"
@@ -56,16 +57,32 @@ def test_queue():
     assert q.qsize() == 0
     print "Queue is empty"
 
-    TEST_OBJ = {"a": "b"}
-    print "Putting {} to queue.".format(TEST_OBJ)
-    
-    q.put(TEST_OBJ)
-    assert q.qsize() == 1
-    print "Object is in queue."
+    TEST_OBJ =[
+        {"a": "b"},
+        {"c": "d"}
+    ]
 
-    item = q.get()
-    assert item == TEST_OBJ
-    print "Got same object form queue. Everything is OK."
+    for obj in TEST_OBJ:
+        print "Putting {} to queue.".format(obj)
+        q.put(obj)
+        print "Sleep..."
+        sleep(0.5)
+
+    assert q.qsize() == len(TEST_OBJ)
+    print "Objects is in queue."
+
+    for obj in TEST_OBJ:
+        item = q.get()
+        print "Pulled object is: ", item
+
+        try:
+            assert item['description'] == obj
+        except Exception, e:
+            print "Something went wrong: ", e
+        else:
+            print "Object is fine."
+
+    print "Got same objects form queue.\nEverything is OK."
 
 if __name__ == '__main__':
     test_queue()
