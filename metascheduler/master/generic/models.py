@@ -1,8 +1,9 @@
 import os
-import datetime
+import time
 
 from mongoengine import *
 
+# User model and stuff used
 
 def generate_salt():
     return os.urandom(128).encode('base_64')[:-1] # "\n" always at the end
@@ -18,47 +19,49 @@ class User(Document):
         return "{}".format(self.username)
 
 
-class Worker(Document):
-    wid = IntField(unique=True)
-    hostname = StringField()
-    last_seen = DateTimeField(default=datetime.datetime.now)
-    info = DictField()
+# Job model and stuff used
 
-    active = BooleanField(default=False)
 
-    meta = {
-        'indexes': ['wid', 'last_seen', 'active'],
-    }
+class JobStatus:
+    Pending = "pending"
+    Running = "running"
+    Failed  = "failed"
 
-    def to_dict(self):
-        return {
-            "wid": self.wid,
-            "hostname": self.hostname,
-            "last_seen": self.last_seen,
-            "info": self.info,
 
-            "active": self.active,
-        }
-
-    def __unicode__(self):
-        return "{} : {}".format(self.wid, self.hostname)
+def get_current_time():
+    return time.time()
 
 
 class Job(Document):
     job_type = StringField(default="ANY")
     description = DictField(default={})
 
+    status = StringField(default=JobStatus.Pending)
+    last_update = FloatField(min_value=0, default=get_current_time)
+
+    meta = {
+        'ordering': ['last_update']
+    }
+
     def to_dict(self):
-        return self.description
+        d = {
+            'id': str(self.pk),
+            'status': self.status,
+            'description': self.description
+        }
+
+        return d
 
     def __unicode__(self):
         return "{} : {}".format(self.pk, self.job_type)
 
 
+# Queue model and stuff used
+
 class Queue(Document):
-    job_type = StringField(required=True)
+    job_type = StringField(required=True, unique=True)
     
-    timeout = IntField(min_value=0)
+    timeout = FloatField(min_value=0)
     use_timeout = BooleanField(default=False, required=True)
 
     def to_dict(self):

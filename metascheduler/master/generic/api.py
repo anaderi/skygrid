@@ -5,6 +5,8 @@ def api_decorator(f):
     def decorated(*args, **kwargs):
         try:
             result = f(*args, **kwargs)
+            if not result:
+                result = {}
             return jsonify(success=True, **result)
         except Exception, e:
             return jsonify(success=False, exception=str(e))

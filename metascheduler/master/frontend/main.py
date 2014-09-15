@@ -2,6 +2,7 @@ from flask import Flask
 from flask.ext import restful
 
 from mongoengine import connect
+from ..generic.models import *
 
 app = Flask(__name__)
 api = restful.Api(app)
