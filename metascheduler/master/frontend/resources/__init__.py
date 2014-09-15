@@ -1,2 +1,2 @@
 from .job import JobResource
-from .queue import QueueLengthResource,  QueueResource, QueueManagementResource
+from .queue import QueueInfoResource,  QueueResource, QueueManagementResource
