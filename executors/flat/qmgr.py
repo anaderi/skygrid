@@ -280,6 +280,16 @@ def check_success(start_id, stop_id):
     print unsuccessful
     with open("no_output.dump", 'w') as fh:
         cPickle.dump(unsuccessful, fh)
+    for unx in unsuccessful:
+        queue_succ_name = unx.keys()[0].split(':')[0]
+        queue_succ = QueueDir(queue_succ_name)
+        queue_fail = QueueDir(queue_succ_name.replace('success', 'fail'))
+        for key in sorted(unx.keys(), key=lambda x: int(x.split(':')[1]), reverse=True):
+            id = int(key.split(':')[1])
+            jd = unx[key]
+            print "%s -> fail (%d)" % (key, jd['job_id'])
+            queue_fail.put(jd)
+            queue_succ.remove(id)
 
 
 def create_from_scratch(template):
