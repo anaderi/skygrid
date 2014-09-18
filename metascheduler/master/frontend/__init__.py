@@ -1,5 +1,5 @@
-import main
+import models
 import resources
-import views
 
-from main import app
+import main
+

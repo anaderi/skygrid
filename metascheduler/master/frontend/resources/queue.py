@@ -4,8 +4,8 @@ import datetime
 from flask import request, jsonify
 from flask.ext.restful import reqparse
 
-from ...generic.models import *
-from ...generic.api import MetaschedulerResource
+from ..models import *
+from api import MetaschedulerResource, ExistingQueueResource, queue_exists
 
 
 class QueueManagementResource(MetaschedulerResource):
@@ -31,13 +31,9 @@ class QueueManagementResource(MetaschedulerResource):
         return {'queue': queue.to_dict()}
 
 
-def check_queue_exists(job_type):
-    if len(Queue.objects(job_type=job_type)) != 1:
-        raise Exception('Queue does not exist')
 
-class QueueResource(MetaschedulerResource):
+class QueueResource(ExistingQueueResource):
     def get(self, job_type):
-        check_queue_exists(job_type)
         n_job = int(request.args.get('njob') or 1) # how many jobs we need to return
 
         jsoned_jobs = []
@@ -53,7 +49,6 @@ class QueueResource(MetaschedulerResource):
         return {'jobs': jsoned_jobs}
 
     def post(self, job_type):
-        check_queue_exists(job_type)
         job_dict = json.loads(request.data)
 
         job = Job(job_type=job_type, description=job_dict)
@@ -62,15 +57,16 @@ class QueueResource(MetaschedulerResource):
         return {'job': job.to_dict()}
 
     def delete(self, job_type):
-        check_queue_exists(job_type)
-
         queue = Queue.objects.get(job_type=job_type)
+        queue.delete()
 
 
 
 class QueueInfoResource(MetaschedulerResource):
     def get(self, job_type):
-        check_queue_exists(job_type)
+        if not queue_exists(job_type):
+            return {'exists': False}
+
         l = len(Job.objects(job_type=job_type, status=JobStatus.Pending))
 
-        return {'length': l}
+        return {'length': l, 'exists': True}

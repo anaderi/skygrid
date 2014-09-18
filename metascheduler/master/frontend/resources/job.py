@@ -3,8 +3,8 @@ import datetime
 from flask import request, jsonify
 from flask.ext.restful import reqparse
 
-from ...generic.models import Job
-from ...generic.api import MetaschedulerResource
+from ..models import Job
+from api import MetaschedulerResource
 
 
 class JobResource(MetaschedulerResource):

@@ -66,9 +66,12 @@ class QueueMS(object):
 
         return result['success']
 
+    def _delete_queue(self):
+        return requests.delete(self.QUEUE_URL).json()['success']
+
     def _exists(self):
         info = self._get_info()
-        return info['success']
+        return info['exists']
 
 
 def test_queue():

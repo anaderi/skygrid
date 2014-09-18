@@ -1,3 +1,2 @@
 import frontend
-import generic
 import worker_watch

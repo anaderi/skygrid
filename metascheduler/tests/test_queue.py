@@ -20,9 +20,10 @@ class TestQueueMS(unittest.TestCase):
             for el in q:
                 print "Was on queue:", el
 
+    def tearDown(self):
+        self.queue._delete_queue()
 
     def test_sequence(self):
-        self.queue.qsize()
         TEST_OBJ =[
             {"a": "b"},
             {"c": "d"}

@@ -1,12 +1,9 @@
 from flask import Flask
 from flask.ext import restful
 
-from mongoengine import connect
-from ..generic.models import *
+from models import *
 
 app = Flask(__name__)
-api = restful.Api(app)
-
 app.config.from_envvar('SHIP_FRONTEND_CONFIG')
 
 if app.config['DB_USE_AUTH']:
@@ -14,11 +11,14 @@ if app.config['DB_USE_AUTH']:
 else:
     connect(app.config['DB'])
 
-from views import *
+from resources import (
+    JobResource,
+    QueueManagementResource,
+    QueueResource,
+    QueueInfoResource
+)
 
-
-from resources import *
-
+api = restful.Api(app)
 api.add_resource(JobResource, '/job/<string:job_id>')
 
 api.add_resource(QueueManagementResource, '/queues')

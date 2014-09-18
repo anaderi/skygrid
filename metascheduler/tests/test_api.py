@@ -16,7 +16,11 @@ class BasicQueueTest(unittest.TestCase):
 
         self.all_queues_url = os.path.join(self.api_url, 'queues')
         self.queue_url = os.path.join(self.all_queues_url, self.queue_name)
+        self.queue_info_url = os.path.join(self.queue_url, 'info')
         self.delete_queue() # ensure that queue would not exist
+
+    def tearDown(self):
+        self.delete_queue() # keep it clean
 
     def create_queue(self):
         create_payload = {
@@ -43,6 +47,14 @@ class QueueManagementTest(BasicQueueTest):
         result_delete = self.delete_queue()
         self.assertEqual(result_delete['success'], True)
 
+        r = requests.get(self.queue_info_url)
+        result_get = r.json()
+
+        self.assertEqual(result_get['success'], True)
+        self.assertEqual(result_get['exists'], False)
+
+
+
     def test_delete_not_created(self):
         result_delete = self.delete_queue()
         self.assertEqual(result_delete['success'], False)
@@ -53,9 +65,6 @@ class QueueTest(BasicQueueTest):
         super(QueueTest, self).setUp()
 
         self.create_queue()
-
-    def tearDown(self):
-        self.delete_queue()
 
     def test_add_element(self):
         TEST_OBJ = {"hello": "world"}
