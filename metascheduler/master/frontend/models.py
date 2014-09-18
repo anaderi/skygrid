@@ -21,12 +21,7 @@ class User(Document):
 
 # Job model and stuff used
 
-
-class JobStatus:
-    Pending = "pending"
-    Running = "running"
-    Failed  = "failed"
-
+from libscheduler.job import JobStatus
 
 def get_current_time():
     return time.time()
@@ -36,7 +31,7 @@ class Job(Document):
     job_type = StringField(default="ANY")
     description = DictField(default={})
 
-    status = StringField(default=JobStatus.Pending)
+    status = StringField(default=JobStatus.pending)
     last_update = FloatField(min_value=0, default=get_current_time)
 
     meta = {

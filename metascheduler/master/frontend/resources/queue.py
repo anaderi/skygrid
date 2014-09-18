@@ -38,10 +38,10 @@ class QueueResource(ExistingQueueResource):
 
         jsoned_jobs = []
 
-        jobs = Job.objects(job_type=job_type, status=JobStatus.Pending)[:n_job]
+        jobs = Job.objects(job_type=job_type, status=JobStatus.pending)[:n_job]
 
         for job in jobs:
-            job.status = JobStatus.Running
+            job.status = JobStatus.running
             job.save()
 
             jsoned_jobs.append(job.to_dict())
@@ -67,6 +67,6 @@ class QueueInfoResource(MetaschedulerResource):
         if not queue_exists(job_type):
             return {'exists': False}
 
-        l = len(Job.objects(job_type=job_type, status=JobStatus.Pending))
+        l = len(Job.objects(job_type=job_type, status=JobStatus.pending))
 
         return {'length': l, 'exists': True}

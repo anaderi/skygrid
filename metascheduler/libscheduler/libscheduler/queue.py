@@ -5,6 +5,7 @@ import unittest
 from time import sleep
 
 import requests
+        
 
 class QueueMS(object):
     def __init__(self, queue_name, api_url="http://localhost:5000/", autocreate=True):
