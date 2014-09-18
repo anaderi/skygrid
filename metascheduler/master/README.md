@@ -24,6 +24,6 @@ There is no heartbears in minimal implementation, API is the next:
 
 * GET `/queue/<str:queue_name>` — get job from queue
 * POST `/queue/<str:queue_name>` — add job to queue
-* GET `/queue/<str:queue_name>/length`
+* GET `/queue/<str:queue_name>/info` - returns info about queue: it existence and length
 
 Jobs are described as dict in arbitrary format.
