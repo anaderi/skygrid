@@ -40,7 +40,7 @@ class Job(Document):
 
     def to_dict(self):
         d = {
-            'id': str(self.pk),
+            'job_id': str(self.pk),
             'status': self.status,
             'description': self.description
         }

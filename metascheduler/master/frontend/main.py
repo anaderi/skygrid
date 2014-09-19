@@ -19,7 +19,7 @@ from resources import (
 )
 
 api = restful.Api(app)
-api.add_resource(JobResource, '/job/<string:job_id>')
+api.add_resource(JobResource, '/jobs/<string:job_id>')
 
 api.add_resource(QueueManagementResource, '/queues')
 api.add_resource(QueueResource, '/queues/<string:job_type>')
