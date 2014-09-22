@@ -1,4 +1,4 @@
 #!/usr/bin/env python
-from master.frontend.main import app
+from master.metascheduler.main import app
 
 app.run(host=app.config['HOSTNAME'])
