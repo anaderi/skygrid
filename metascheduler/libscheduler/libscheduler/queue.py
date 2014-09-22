@@ -56,8 +56,8 @@ class QueueMS(object):
     def get(self):
         response = requests.get(self.queue_url).json()
         jobs = response['jobs']
-        if len(jobs) > 0:
-            return JobMS(**response['jobs'][0]) # FIXME
+        if len(jobs) == 1:
+            return JobMS(**jobs[0])
         else:
             return None
 
