@@ -1,0 +1,33 @@
+from setuptools import setup
+
+setup(
+    name='metascheduler',
+    version='0.1.0',
+    author='Yandex',
+    author_email='sashab1@yandex-team.ru',
+    packages=['metascheduler'],
+    description='Metascheduler',
+    install_requires=[
+        "Flask==0.10.1",
+        "Flask-RESTful==0.2.12",
+        "Flask-WTF==0.10.0",
+        "Jinja2==2.7.3",
+        "MarkupSafe==0.23",
+        "SQLAlchemy==0.9.7",
+        "WTForms==2.0.1",
+        "Werkzeug==0.9.6",
+        "aniso8601==0.83",
+        "argparse==1.2.1",
+        "flask-mongoengine==0.7.1",
+        "itsdangerous==0.24",
+        "kazoo==2.0",
+        "mongoengine==0.8.7",
+        "nose==1.3.4",
+        "nose-testconfig==0.9",
+        "pymongo==2.7.2",
+        "pytz==2014.4",
+        "requests==2.3.0",
+        "six==1.7.3",
+        "wsgiref==0.1.2",
+    ],
+)
