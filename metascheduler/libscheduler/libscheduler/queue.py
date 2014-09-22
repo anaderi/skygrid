@@ -5,20 +5,23 @@ import unittest
 from time import sleep
 
 import requests
+
+from .job import JobMS
         
 
 class QueueMS(object):
-    def __init__(self, queue_name, api_url="http://localhost:5000/", autocreate=True):
+    def __init__(self, queue_name, autocreate=True, api_url="http://localhost:5000/"):
         self.queue_name = queue_name
+        self.api_url = api_url
 
-        self.QUEUE_MANAGEMENT_URL = self.QUEUE_URL = os.path.join(api_url, 'queues')
-        self.QUEUE_URL = os.path.join(
+        self.queue_management_url = self.queue_url = os.path.join(api_url, 'queues')
+        self.queue_url = os.path.join(
             api_url,
             'queues',
             self.queue_name
         )
         
-        self.INFO_URL = os.path.join(self.QUEUE_URL, "info")
+        self.INFO_URL = os.path.join(self.queue_url, "info")
 
         if autocreate and not self._exists():
             self._create_queue()
@@ -48,13 +51,13 @@ class QueueMS(object):
             self.put(i)
 
     def put(self, item):
-        r = requests.post(self.QUEUE_URL, data=json.dumps(item))
+        r = requests.post(self.queue_url, data=json.dumps(item))
 
     def get(self):
-        response = requests.get(self.QUEUE_URL).json()
+        response = requests.get(self.queue_url).json()
         jobs = response['jobs']
         if len(jobs) > 0:
-            return response['jobs'][0]
+            return JobMS(**response['jobs'][0]) # FIXME
         else:
             return None
 
@@ -62,57 +65,14 @@ class QueueMS(object):
         create_payload = {
             'job_type': self.queue_name
         }
-        r = requests.put(self.QUEUE_MANAGEMENT_URL, data=json.dumps(create_payload))
+        r = requests.put(self.queue_management_url, data=json.dumps(create_payload))
         result = r.json()
 
         return result['success']
 
     def _delete_queue(self):
-        return requests.delete(self.QUEUE_URL).json()['success']
+        return requests.delete(self.queue_url).json()['success']
 
     def _exists(self):
         info = self._get_info()
         return info['exists']
-
-
-def test_queue():
-    q = QueueMS("test_queue")
-
-    print "Extract everything from queue..."
-
-    if not q.empty():
-        for el in q:
-            print "Was on queue:", el
-
-    assert q.qsize() == 0
-    print "Queue is empty"
-
-    TEST_OBJ =[
-        {"a": "b"},
-        {"c": "d"}
-    ]
-
-    for obj in TEST_OBJ:
-        print "Putting {} to queue.".format(obj)
-        q.put(obj)
-        print "Sleep..."
-        sleep(0.5)
-
-    assert q.qsize() == len(TEST_OBJ)
-    print "Objects is in queue."
-
-    for obj in TEST_OBJ:
-        item = q.get()
-        print "Pulled object is: ", item
-
-        try:
-            assert item['description'] == obj
-        except Exception, e:
-            print "Something went wrong: ", e
-        else:
-            print "Object is fine."
-
-    print "Got same objects form queue.\nEverything is OK."
-
-if __name__ == '__main__':
-    test_queue()

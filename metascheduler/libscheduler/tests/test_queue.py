@@ -3,18 +3,19 @@ import os
 import random
 import unittest
 import uuid
-
 from time import sleep
 
 import requests
 from testconfig import config
-from queue import QueueMS
+API_URL = config['api']['url']
 
-class TestQueueMS(unittest.TestCase):
+from libscheduler.queue import QueueMS
+
+
+class TestWithQueue(unittest.TestCase):
     def setUp(self):
-        from testconfig import config
         self.queue_name = uuid.uuid4().hex
-        self.queue = QueueMS(self.queue_name, config['api']['url'])
+        self.queue = QueueMS(self.queue_name, API_URL)
 
         if not self.queue.empty():
             for el in q:
@@ -23,6 +24,8 @@ class TestQueueMS(unittest.TestCase):
     def tearDown(self):
         self.queue._delete_queue()
 
+
+class TestQueueMS(TestWithQueue):
     def test_sequence(self):
         TEST_OBJ =[
             {"a": "b"},
@@ -36,7 +39,7 @@ class TestQueueMS(unittest.TestCase):
         assert self.queue.qsize() == len(TEST_OBJ)
 
         for obj in TEST_OBJ:
-            item = self.queue.get()
+            job = self.queue.get()
 
-            self.assertEqual(item['description'], obj)
-            
+            self.assertEqual(job.description, obj)
+            self.assertTrue(job.delete())
