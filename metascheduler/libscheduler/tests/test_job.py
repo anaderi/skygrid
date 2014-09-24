@@ -25,7 +25,6 @@ class TestJobMS(TestWithQueue):
         self.assertTrue(job.update_status('failed'))
         self.assertTrue(job.update_description({"b": "c"}))
 
-        with self.assertRaises(ValueError):
-            job.update_status('some bad status')
+        self.assertRaises(ValueError, job.update_status, 'some bad')
 
         self.assertTrue(job.delete())
