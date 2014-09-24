@@ -17,7 +17,7 @@ class QueueManagementResource(MetaschedulerResource):
         for queue in queues:
             jsoned_queues.append(queue.to_dict())
 
-        return {'jobs': jsoned_jobs}
+        return {'queues': jsoned_queues}
 
     def put(self):
         queue_dict = json.loads(request.data)
