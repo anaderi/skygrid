@@ -8,6 +8,8 @@ setup(
     packages=['libscheduler'],
     description='Metascheduler API library',
     install_requires=[
-        "requests>=2.3.0"
+        "requests>=2.3.0",
+        "nose==1.3.4",
+        "nose-testconfig==0.9",
     ],
 )
