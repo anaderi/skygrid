@@ -15,7 +15,7 @@ from libscheduler.queue import QueueMS
 class TestWithQueue(unittest.TestCase):
     def setUp(self):
         self.queue_name = uuid.uuid4().hex
-        self.queue = QueueMS(self.queue_name, API_URL)
+        self.queue = QueueMS(self.queue_name, api_url=API_URL)
 
         if not self.queue.empty():
             for el in q:

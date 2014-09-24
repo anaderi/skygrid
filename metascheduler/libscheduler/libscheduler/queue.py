@@ -56,7 +56,11 @@ class QueueMS(object):
     def get(self):
         response = requests.get(self.queue_url).json()
         jobs = response['jobs']
+
         if len(jobs) == 1:
+            job = jobs[0]
+            job['api_url'] = self.api_url
+
             return JobMS(**jobs[0])
         else:
             return None
