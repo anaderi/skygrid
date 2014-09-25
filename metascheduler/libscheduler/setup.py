@@ -1,14 +1,17 @@
 from setuptools import setup
 
 setup(
-    name='libscheduler',
+    name='skygrid-libscheduler',
     version='0.1.0',
-    author='Yandex',
+    url='https://github.com/anaderi/skygrid',
+    author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
-    packages=['libscheduler'],
     description='Metascheduler API library',
+    packages=['libscheduler'],
     install_requires=[
         "requests>=2.3.0",
+    ],
+    tests_require=[
         "nose==1.3.4",
         "nose-testconfig==0.9",
     ],
