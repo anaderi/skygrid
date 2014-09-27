@@ -39,8 +39,12 @@ def update_document(document, data_dict):
 
 class JobResource(MetaschedulerResource):
     def get(self, job_id):
-        job = Job.objects.get(pk=job_id)
-        return job.to_dict()
+        if ',' in job_id:
+            return {
+              job_id: Job.objects.get(pk=job_id).to_dict() for job_id in job_id.split(',')
+            }
+        else:
+            return Job.objects.get(pk=job_id).to_dict()
 
     def post(self, job_id):
         job = Job.objects.get(pk=job_id)

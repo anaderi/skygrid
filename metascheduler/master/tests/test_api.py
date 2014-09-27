@@ -15,6 +15,7 @@ class BasicQueueTest(unittest.TestCase):
         self.queue_name = uuid.uuid4().hex
 
         self.all_queues_url = os.path.join(self.api_url, 'queues')
+        self.all_jobs_url = os.path.join(self.api_url, 'jobs')
         self.queue_url = os.path.join(self.all_queues_url, self.queue_name)
         self.queue_info_url = os.path.join(self.queue_url, 'info')
         self.delete_queue() # ensure that queue would not exist
@@ -89,15 +90,26 @@ class QueueTest(BasicQueueTest):
             {"a": "b"},
             {"c": "d"}
         ]
+        IDS = []
 
         for obj in TEST_OBJ:
             r = requests.post(self.queue_url, data=json.dumps(obj))
             result_create = r.json()
+            job = result_create['job']
+            IDS.append(job['job_id'])
 
             self.assertEqual(result_create['success'], True)
-            self.assertEqual(result_create['job']['description'], obj)
-            self.assertEqual(result_create['job']['status'], "pending")
+            self.assertEqual(job['description'], obj)
+            self.assertEqual(job['status'], "pending")
             sleep(0.5) # To prevent equal times inside MS database
+
+        get_created_jobs_url = os.path.join(self.all_jobs_url, ','.join(IDS))
+        r = requests.get(get_created_jobs_url)
+        result = r.json()
+
+        print result
+        self.assertTrue(result['success'])
+
 
         for obj in TEST_OBJ:
             r = requests.get(self.queue_url)
@@ -114,6 +126,10 @@ class NoQueueTest(BasicQueueTest):
             
         r = requests.post(self.queue_url, data=json.dumps(TEST_OBJ))
         result_create = r.json()
+
+        self.assertFalse(result_create['success'])
+
+
 
 
 if __name__ == '__main__':
