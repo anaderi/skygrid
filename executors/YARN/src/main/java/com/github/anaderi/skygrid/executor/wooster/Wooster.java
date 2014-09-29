@@ -53,7 +53,7 @@ public class Wooster {
         LOG.info("ApplicationMaster is registered with response: {}", response.toString());
 
         boolean gotJob = false;
-        String jobDescription;
+        String jobDescription = "";
         while (!gotJob) {
             URL url = new URL(metaSchedulerURL_ + "/queues/main");
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
