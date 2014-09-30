@@ -36,7 +36,7 @@ class Job(Document):
 
     meta = {
         'ordering': ['last_update'],
-        'indexes': ['job_type', 'status']
+        'indexes': ['job_type', 'status', 'last_update']
     }
 
     def to_dict(self):
