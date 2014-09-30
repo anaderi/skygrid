@@ -35,7 +35,8 @@ class Job(Document):
     last_update = FloatField(min_value=0, default=get_current_time)
 
     meta = {
-        'ordering': ['last_update']
+        'ordering': ['last_update'],
+        'indexes': ['job_type', 'status']
     }
 
     def to_dict(self):
