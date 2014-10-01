@@ -3,6 +3,7 @@
 import os
 import argparse
 import logging
+import cPickle
 from util import QueueDir
 import ordereddict
 
@@ -25,7 +26,7 @@ queue_exts = {
     ORIG: '',
     SUCC: '.success',
     FAIL: '.fail',
-    WORK: '.work'
+    # WORK: '.work'
 }
 
 
@@ -46,7 +47,7 @@ def parse_args():
 
 
 def stat_host(basedir, name, exptotal=None):
-    stat = {}
+    stat = {WORK: 0}
     total_count = 0
     for key, suff in queue_exts.iteritems():
         queue_dir = "%s/%s%s" % (basedir, name, suff)
@@ -56,6 +57,11 @@ def stat_host(basedir, name, exptotal=None):
             total_count += stat[key]
         else:
             stat[key] = 0
+    if os.path.exists("%s/%s.locker" % (basedir, name)):
+        with open("%s/%s.locker" % (basedir, name)) as fh:
+            queue_work = cPickle.load(fh)
+            stat[WORK] = len(queue_work)
+            total_count += len(queue_work)
 
     stat[TOTAL] = total_count
     update_calc_stat(stat, exptotal)

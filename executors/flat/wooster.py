@@ -42,6 +42,8 @@ def parse_args():
     args.dir = args.dir.rstrip("/")
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+    if args.niterations == 0:
+        args.niterations = None
     return args
 
 
@@ -246,6 +248,7 @@ def update_results(results, q_success, q_fail, locker, result_log):
 
 def main(args):
     if args.test:
+        print args.niterations
         logger.setLevel(logging.DEBUG)
         test_queue()
         test_slots()

@@ -1,0 +1,29 @@
+{
+  "app_container": {
+    "name": "anaderi/ship-dev:0.0.8", 
+    "volume": "/opt/ship"
+  }, 
+  "args": {
+    "--num-events": 10, 
+    "--output": "$OUTPUT_DIR/root", 
+    "--run-number": "$JOB_ID", 
+    "-f": true
+  }, 
+  "cmd": ". ./config.sh ;python  ./muonShieldOptimization/g4Ex_gap.py", 
+  "cpu_per_container": 1, 
+  "email": "andrey.u@gmail.com", 
+  "env_container": {
+    "app_volume": "$APP_CONTAINER", 
+    "name": "anaderi/ocean:0.3.2", 
+    "output_volume": "$JOB_OUTPUT_DIR:/output", 
+    "workdir": "/opt/ship/FairShip/build"
+  }, 
+  "job_id": 20699, 
+  "job_parent_id": 1, 
+  "job_super_id": 1, 
+  "max_memoryMB": 1024, 
+  "min_memoryMB": 512, 
+  "name": "SHIP-MC.test", 
+  "num_containers": 48, 
+  "status": "SUCCESS"
+}

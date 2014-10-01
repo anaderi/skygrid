@@ -226,6 +226,23 @@ class QueueDir(object):
         else:
             return result[0]
 
+    def peek(self, id):
+        queue_items_names = self.list_files()
+        assert id < len(queue_items_names), "index (%d) out of range (%d)" % (id, len(queue_items_names))
+        filename = queue_items_names[id]
+        item = None
+        with open(filename) as fh:
+            item = json.load(fh)
+        if item is not None:
+            logger.debug("peek: %s" % item)
+        return item
+
+    def remove(self, id):
+        queue_items_names = self.list_files()
+        assert id < len(queue_items_names), "index (%d) out of range (%d)" % (id, len(queue_items_names))
+        filename = queue_items_names[id]
+        os.remove(filename)
+
 
 def test_queue():
     import shutil
@@ -272,6 +289,10 @@ def test_queue():
     with open("%s/sub1" % dirs[1], "w") as fh:
         json.dump("1", fh)
     assert q2.qsize() == 2
+    assert q2.peek(0) == "1"
+    assert q2.peek(1) == "123"
+    assert q2.qsize() == 2
+    q2.remove(1)
     assert q2.get() == "1"
     q2.clear()
     assert q2.qsize() == 0
