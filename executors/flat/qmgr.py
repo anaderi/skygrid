@@ -337,7 +337,7 @@ def create_from_scratch(template):
                 json.dump(jd, fh, sort_keys=True, indent=2)
 
 
-def fill_qms(template, queue_name, count, num_events=EV_PER_JD):
+def fill_qms(template, queue_name, count, num_events=EV_PER_JD, start_id=10):
     assert os.path.exists(template)
     with open(template) as fh:
         t = json.load(fh)
@@ -346,7 +346,7 @@ def fill_qms(template, queue_name, count, num_events=EV_PER_JD):
     count0 = queue.qsize()
     for i in range(count):
          jd = copy(t)
-         jd["job_id"] = 10 + i
+         jd["job_id"] = start_id + i
          queue.put(jd)
     assert queue.qsize() == count + count0
 
@@ -406,7 +406,7 @@ def main(args):
     elif args.cmd == CMD_CHECK_SUCCESS:
         check_success(args.start, args.stop)
     elif args.cmd == CMD_FILL_QMS:
-        fill_qms(args.arg1, args.arg2, args.count, num_events=args.num)
+        fill_qms(args.arg1, args.arg2, args.count, start_id=args.start, num_events=args.num)
     elif args.cmd == CMD_DUMP_QMS:
         dump_qms(args.arg1)
     elif args.cmd == CMD_UNLOCK_QMS:

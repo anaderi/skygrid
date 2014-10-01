@@ -68,6 +68,62 @@ def getargs(jd, subst):
     return s
 
 
+def run_jd_async(jd, output_basedir="output", force=False):
+    global verbose
+    JOB_ID = jd["job_id"]
+    JOB_TAG = jd["app_container"]["name"]
+    JOB_SUPER_ID = jd["job_super_id"]
+    APP_CONTAINER = "JOB_%s_CNT" % JOB_SUPER_ID
+    ENV_CONTAINER = jd["env_container"]["name"]
+    WORK_DIR = jd["env_container"]["workdir"]
+    CMD = jd["cmd"]
+    ENV_VOLUMES = []
+    QUOTE_CMD = True
+    if 'quote_cmd' in jd:
+        QUOTE_CMD = jd['quote_cmd']
+    JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
+    if "data_volume" in jd["env_container"]:
+        ENV_VOLUMES.append(jd["env_container"]["data_volume"])
+    ARGS = getargs(jd, {"$DATA_DIR": "/data", 
+                   "$OUTPUT_DIR": "/output",
+                   "$JOB_ID": JOB_ID
+                        })
+
+    if os.path.exists(JOB_OUTPUT_DIR):
+        if force:
+            print "WARN: Removing '%s'" % JOB_OUTPUT_DIR
+            shutil.rmtree(JOB_OUTPUT_DIR)
+        else:
+            halt("directory '%s' exists" % JOB_OUTPUT_DIR)
+    else:
+        os.makedirs(JOB_OUTPUT_DIR)
+    if not docker_is_running(APP_CONTAINER):
+        result = sh("docker run -d -v %s --name %s %s echo %s app" % 
+                    (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
+                    verbose=verbose)
+        if result['rc'] != SUCCESS:
+            halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
+        time.sleep(3)
+    ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
+    cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
+    if QUOTE_CMD:
+        cmd_args = "'%s'" % cmd_args
+    docker_cmd = "docker run -d --volumes-from {app} -v {volumes} -w {workdir} {env} {cmd_args}".format(
+        app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
+        env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
+    result = sh(docker_cmd, verbose=verbose)
+    if result['rc'] != SUCCESS:
+        halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
+    containerID = result['out'].strip()
+    while True:
+        check_result = sh("docker ps %s" % containerID, verbose=False)
+        if len(check_result['out'].strip().split('\n')) == 1:
+            sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR)
+            sh("docker rm %s" % containerID)
+            break
+        time.sleep(0.1)
+
+
 def run_jd(jd, output_basedir="output", force=False):
     global verbose
     JOB_ID = jd["job_id"]
@@ -129,7 +185,7 @@ def main(args):
         exit(1)
     with open(args.input) as fh:
         jd = json.load(fh)
-        run_jd(jd, output_basedir=args.output, force=args.force)
+        run_jd_async(jd, output_basedir=args.output, force=args.force)
         gather_output(jd, output_basedir=args.output, output_storage=args.storage)
 
 

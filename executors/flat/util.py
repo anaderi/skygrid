@@ -62,7 +62,8 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         if logerr is not None:
             fh_err = open(logerr, "w")
         proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
-        logger.debug("PID: %d" % proc.pid)
+        if verbose:
+            logger.debug("PID: %d" % proc.pid)
         try:
             result['rc'] = proc.wait()
         except KeyboardInterrupt:
@@ -87,15 +88,9 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         if out is not None and len(out) > 0:
             if verbose:
                 print "===OUT===\n%s" % out
-            if logout is not None:
-                with open(logout, "a") as fh:
-                    fh.write(out)
         if err is not None and len(err) > 0:
             if verbose:
                 print "===ERR===\n%s" % err
-            if logerr is not None:
-                with open(logerr, "a") as fh:
-                    fh.write(err)
         result['out'] = out
         result['err'] = err
     except Exception:

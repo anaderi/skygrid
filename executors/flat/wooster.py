@@ -79,6 +79,8 @@ def run_jd(jds, output_dir):
                 result["status"] += sh_result["out"]
             if len(sh_result["err"]) > 0:
                 result["status"] += sh_result["err"]
+            with open("%s/%d/wooster.log" % (output_dir, jds['job_id']), "w") as wooster_log:
+                wooster_log.write(result["status"])
     except Exception, e:
         result["status"] = "EXCEPTION: " + e.__repr__()
     return result

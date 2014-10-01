@@ -9,12 +9,12 @@
     "--run-number": "$JOB_ID", 
     "-f": true
   }, 
-  "cmd": ". ./config.sh ;python  ./muonShieldOptimization/g4Ex_gap.py", 
+  "cmd": "python -c 'print 1'", 
   "cpu_per_container": 1, 
   "email": "andrey.u@gmail.com", 
   "env_container": {
     "app_volume": "$APP_CONTAINER", 
-    "name": "anaderi/ocean:0.3.2", 
+    "name": "anaderi/ocean:latest", 
     "output_volume": "$JOB_OUTPUT_DIR:/output", 
     "workdir": "/opt/ship/FairShip/build"
   }, 
