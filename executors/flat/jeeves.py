@@ -35,7 +35,9 @@ def parse_args():
 
 
 def docker_is_running(container, verbose=False):
-    result = sh("docker ps -a", verbose=verbose)
+    tempfile = "/tmp/jeeves.%d" % os.getpid()
+    result = sh("docker ps -a", verbose=verbose, logout=tempfile)
+    os.remove(tempfile)
     if result["rc"] == ERROR_EXCEPTION:
         return False
     return container in result["out"]

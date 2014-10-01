@@ -51,7 +51,7 @@ Supported commands:
     missing2fail [-m missing.txt]
     create [-t TEMPLATE]
     check_success [--start START] [--stop STOP]
-    fill_qms -c COUNT TEMPLTATE QUEUE 
+    fill_qms -c COUNT [--start START_ID] TEMPLTATE QUEUE 
     dump_qms QUEUE
     unlock_qms LOCKER QUEUE
 
