@@ -7,9 +7,12 @@ import json
 import time
 import shutil
 import argparse
+import datetime
 import logging
 from util import sh, test_sh, SUCCESS, ERROR_EXCEPTION
 
+DELAY_WAIT_DOCKER_MIN = 0.1
+DELAY_WAIT_DOCKER_MAX = 10.0
 verbose = False
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -113,6 +116,7 @@ def run_jd_async(jd, output_basedir="output", force=False):
     docker_cmd = "docker run -d --volumes-from {app} -v {volumes} -w {workdir} {env} {cmd_args}".format(
         app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
         env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
+    time0 = datetime.datetime.now()
     result = sh(docker_cmd, verbose=verbose)
     if result['rc'] != SUCCESS:
         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
@@ -120,10 +124,11 @@ def run_jd_async(jd, output_basedir="output", force=False):
     while True:
         check_result = sh("docker ps %s" % containerID, verbose=False)
         if len(check_result['out'].strip().split('\n')) == 1:
-            sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR)
             sh("docker rm %s" % containerID)
             break
-        time.sleep(0.1)
+        time1 = datetime.datetime.now()
+        sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR)
+        time.sleep(max(DELAY_WAIT_DOCKER_MIN, min(DELAY_WAIT_DOCKER_MAX, (time1-time0).seconds * 0.1)))
 
 
 def run_jd(jd, output_basedir="output", force=False):
