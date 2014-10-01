@@ -67,6 +67,6 @@ class QueueInfoResource(MetaschedulerResource):
         if not queue_exists(job_type):
             return {'exists': False}
 
-        l = len(Job.objects(job_type=job_type, status=JobStatus.pending))
+        l = Job.objects(job_type=job_type, status=JobStatus.pending).count()
 
         return {'length': l, 'exists': True}
