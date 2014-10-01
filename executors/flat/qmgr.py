@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import json
 import glob
 import argparse
@@ -10,23 +11,28 @@ import shutil
 import multiprocessing
 from util import QueueDir
 from copy import copy
+from libscheduler.queue import QueueMS
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
 
+API_URL = "http://mc03.h.cern.yandex.net:5000"
 CMD_MV = "mv"
 CMD_CP = "cp"
 CMD_FILL = "fill"
 CMD_FIX_SPLIT = "fix_split"
 CMD_FIX_INTERRUPT = "fix_int"
 CMD_UNLOCK = "unlock"
+CMD_UNLOCK_QMS = "unlock_qms"
 CMD_CHECK_DUPES = "check_dupes"
 CMD_RESET_FAIL = "reset_fail"
 CMD_MISSING_IDS = "missing"
 CMD_MISSING2FAIL = "missing2fail"
 CMD_CREATE_SCRATCH = "create"
 CMD_CHECK_SUCCESS = "check_success"
+CMD_FILL_QMS = "fill_qms"
+CMD_DUMP_QMS = "dump_qms"
 POOL_SIZE=20
 JD_PER_DIR = 1000
 EV_PER_JD = 5000
@@ -45,11 +51,15 @@ Supported commands:
     missing2fail [-m missing.txt]
     create [-t TEMPLATE]
     check_success [--start START] [--stop STOP]
+    fill_qms -c COUNT TEMPLTATE QUEUE 
+    dump_qms QUEUE
+    unlock_qms LOCKER QUEUE
 
 Example:
     qmgr.py mv mc01.fail mc01
         """)
     p.add_argument("--count", "-c", help="count items", type=int, default=None)
+    p.add_argument("--num", "-n", help="num events", type=int, default=EV_PER_JD)
     p.add_argument("--start", help="start id", type=int, default=1010)
     p.add_argument("--stop", help="stop id", type=int, default=21010)
     p.add_argument("--template", "-t", help="template jd file", default=None)
@@ -124,6 +134,23 @@ def unlock(name):
     queue_succ = QueueDir(name + ".success")
     for job_id, jd in jds.iteritems():
         if _has_output(name, jd):
+            queue_succ.put(jd)
+            logger.info("%d -> success" % job_id)
+        else:
+            queue_orig.put(jd)
+            logger.info("%d -> orig" % job_id)
+    os.remove(lockfile)
+
+
+def unlock_qms(lockfile, name):
+    assert os.path.exists(lockfile)
+    jds = _lock_ids(lockfile)
+    assert len(jds) > 0
+    queue_orig = QueueMS(name, api_url=API_URL)
+    queue_succ = QueueMS(name + ".success", api_url=API_URL)
+    host_id = int(re.match("[^\d]*(\d*).*", lockfile).groups()[0])
+    for job_id, jd in jds.iteritems():
+        if _has_output("mc%02d" % host_id, jd):
             queue_succ.put(jd)
             logger.info("%d -> success" % job_id)
         else:
@@ -310,6 +337,25 @@ def create_from_scratch(template):
                 json.dump(jd, fh, sort_keys=True, indent=2)
 
 
+def fill_qms(template, queue_name, count, num_events=EV_PER_JD):
+    assert os.path.exists(template)
+    with open(template) as fh:
+        t = json.load(fh)
+    t['args']['--num-events'] = num_events
+    queue = QueueMS(queue_name, api_url=API_URL)
+    count0 = queue.qsize()
+    for i in range(count):
+         jd = copy(t)
+         jd["job_id"] = 10 + i
+         queue.put(jd)
+    assert queue.qsize() == count + count0
+
+
+def dump_qms(queue_name):
+    queue = QueueMS(queue_name, api_url=API_URL)
+    print queue_name, API_URL, queue.qsize()
+
+
 def missing2fail(template, missing):
     assert os.path.exists(missing)
     assert os.path.exists(template)
@@ -359,6 +405,12 @@ def main(args):
         missing2fail(args.template, args.missing)
     elif args.cmd == CMD_CHECK_SUCCESS:
         check_success(args.start, args.stop)
+    elif args.cmd == CMD_FILL_QMS:
+        fill_qms(args.arg1, args.arg2, args.count, num_events=args.num)
+    elif args.cmd == CMD_DUMP_QMS:
+        dump_qms(args.arg1)
+    elif args.cmd == CMD_UNLOCK_QMS:
+        unlock_qms(args.arg1, args.arg2)
     else:
         print "Unknown CMD: %s" % args.cmd
 

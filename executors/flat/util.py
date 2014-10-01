@@ -33,11 +33,13 @@ def wait_poll(proc):
 
 def filter_older_than(fh, fh_out, seconds):
     for line in fh:
-        g = re.search("^\s*(((\d+)-)*(\d\d):(\d\d):(\d\d))", line)
+        g = re.search("^\s*(((\d+)-)*((\d\d):)*(\d\d):(\d\d))", line)
         if g is None:
             continue
-        (old, _, days, hours, mins, secs) = g.groups()
-        lifetime = int(secs) + int(mins) * 60 + int(hours) * 3600
+        (old, days_, days, hours_, hours, mins, secs) = g.groups()
+        lifetime = int(secs) + int(mins) * 60
+        if hours is not None:
+            lifetime += int(hours) * 3600
         if days is not None:
             lifetime += int(days) * 3600 * 24
         if lifetime > seconds:
@@ -242,6 +244,45 @@ class QueueDir(object):
         assert id < len(queue_items_names), "index (%d) out of range (%d)" % (id, len(queue_items_names))
         filename = queue_items_names[id]
         os.remove(filename)
+
+
+def test_queue_MS(api_url='http://mc03.h.cern.yandex.net:5000'):
+    from libscheduler.queue import QueueMS
+    dirs = ["_d1", "_d2"]
+    q1 = QueueMS(dirs[0], api_url=api_url)
+    q1.clear()
+    assert q1.empty(), q1.qsize()
+    item = q1.get()
+    assert item is None
+    assert q1.qsize() == 0
+    assert q1.empty()
+    i1 = {'key': 1}
+    q1.put(i1)
+    assert q1.qsize() == 1
+    o1 = q1.get()
+    print o1.status, o1.description
+    assert i1 == o1.description, "i1: %s, o1: %s" % (i1, o1.description)
+    assert q1.qsize() == 0
+    q2 = QueueMS(dirs[1], api_url=api_url)
+    assert q2.empty()
+    print ">>>", i1
+    q2.put(i1)
+    q2.put({'key': 2})
+    assert q2.qsize() == 2
+    l = []
+    for i in q2:
+        logger.info("iter: %s" % i)
+        l.append(i.description)
+    assert q2.empty()
+    q1.extend(l)
+    assert q1.qsize() == 2
+
+    i1 = q1.get()
+    q1.put(i1.description)
+    assert q1.qsize() == 2, q1.qsize()
+
+    q2.clear()
+    assert q2.qsize() == 0
 
 
 def test_queue():
