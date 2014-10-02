@@ -1,6 +1,7 @@
 import os
-import requests
 import json
+
+from .common import *
 
 class JobMS(object):
     """Class for communicating with metascheduler about Jobs"""
@@ -19,8 +20,7 @@ class JobMS(object):
             self.description = description
 
     def load_from_api(self):
-        result = requests.get(self.job_url).json()
-        self._check_server_result(result)
+        result = ms_get(self.job_url)
 
         self.status = result['status']
         self.description = result['description']
@@ -28,25 +28,17 @@ class JobMS(object):
         return self
 
 
-    def _check_server_result(self, result):
-        if result['success']:
-            return True
-        else:
-            message = "Error on server side: " + result['exception']
-            raise Exception(message)
-
     def _post_update(self, update_dict):
-        r = requests.post(self.job_url, data=json.dumps(update_dict))
-        result = r.json()
+        return ms_post(self.job_url, data=json.dumps(update_dict))
 
-        return self._check_server_result(result)
 
     def update_status(self, status):
         return self._post_update({'status': status})
 
+
     def update_description(self, description):
         return self._post_update({'description': description})
 
+
     def delete(self):
-        result = requests.delete(self.job_url).json()
-        return  self._check_server_result(result)
+        return ms_delete(self.job_url)

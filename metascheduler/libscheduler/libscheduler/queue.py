@@ -4,9 +4,8 @@ import json
 import unittest
 from time import sleep
 
-import requests
-
 from .job import JobMS
+from .common import *
         
 
 class QueueMS(object):
@@ -28,7 +27,7 @@ class QueueMS(object):
 
 
     def _get_info(self):
-        return requests.get(self.INFO_URL).json()
+        return ms_get(self.INFO_URL)
 
     def qsize(self):
         info = self._get_info()
@@ -51,10 +50,10 @@ class QueueMS(object):
             self.put(i)
 
     def put(self, item):
-        r = requests.post(self.queue_url, data=json.dumps(item))
+        return ms_post(self.queue_url, data=json.dumps(item))
 
     def get(self):
-        response = requests.get(self.queue_url).json()
+        response = ms_get(self.queue_url)
         jobs = response['jobs']
 
         if len(jobs) == 1:
@@ -69,13 +68,12 @@ class QueueMS(object):
         create_payload = {
             'job_type': self.queue_name
         }
-        r = requests.put(self.queue_management_url, data=json.dumps(create_payload))
-        result = r.json()
+        ms_put(self.queue_management_url, data=json.dumps(create_payload))
 
-        return result['success']
+        return True
 
     def _delete_queue(self):
-        return requests.delete(self.queue_url).json()['success']
+        return ms_delete(self.queue_url)
 
     def _exists(self):
         info = self._get_info()
