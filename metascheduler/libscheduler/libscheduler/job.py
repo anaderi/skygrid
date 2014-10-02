@@ -2,25 +2,6 @@ import os
 import requests
 import json
 
-
-class JobStatus:
-    pending = "pending"
-    running = "running"
-    failed  = "failed"
-
-    valid_statuses = set([pending, running, failed])
-
-
-def check_job_update_valid(update_dict):
-    if 'id' in update_dict:
-        raise Exception('Could not update job id!')
-
-    new_status = update_dict.get('status')
-    if new_status and not new_status in JobStatus.valid_statuses:
-        raise ValueError('Invalid status!')
-
-
-
 class JobMS(object):
     """Class for communicating with metascheduler about Jobs"""
     def __init__(self, job_id, status='', description={}, api_url="http://localhost:5000/", from_api=False):
@@ -55,8 +36,6 @@ class JobMS(object):
             raise Exception(message)
 
     def _post_update(self, update_dict):
-        check_job_update_valid(update_dict)
-
         r = requests.post(self.job_url, data=json.dumps(update_dict))
         result = r.json()
 

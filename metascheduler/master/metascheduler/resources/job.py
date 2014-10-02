@@ -5,7 +5,14 @@ from flask import request
 from api import MetaschedulerResource
 
 from ..models import Job, JobStatus
-from libscheduler.job import check_job_update_valid
+
+def check_job_update_valid(update_dict):
+    if 'id' in update_dict:
+        raise Exception('Could not update job id!')
+
+    new_status = update_dict.get('status')
+    if new_status and not new_status in JobStatus.valid_statuses:
+        raise ValueError('Invalid status!')
 
 
 from mongoengine import fields

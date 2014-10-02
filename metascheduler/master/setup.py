@@ -24,8 +24,7 @@ setup(
         "pytz==2014.4",
         "requests==2.3.0",
         "six==1.7.3",
-        "wsgiref==0.1.2",
-        "skygrid-libscheduler==0.1.0",
+        "wsgiref==0.1.2"
     ],
     tests_require=[
         "nose==1.3.4",

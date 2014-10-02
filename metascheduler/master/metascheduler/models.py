@@ -21,7 +21,12 @@ class User(Document):
 
 # Job model and stuff used
 
-from libscheduler.job import JobStatus
+class JobStatus:
+    pending = "pending"
+    running = "running"
+    failed  = "failed"
+
+    valid_statuses = set([pending, running, failed])
 
 def get_current_time():
     return time.time()
