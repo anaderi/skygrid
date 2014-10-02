@@ -259,7 +259,7 @@ def main(args):
     q_fail = QueueMS(args.queue + ".fail", api_url=API_URL)
     q_success = QueueMS(args.queue + ".success", api_url=API_URL)
     locker = Cache(args.output.strip('/') + ".locker")
-    assert not locker.exists()
+    assert not locker.exists(), args.output.strip('/') + ".locker"
 
     time_start = datetime.datetime.now()
     result_async = ResultSlots(args.nworkers)
