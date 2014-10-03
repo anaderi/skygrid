@@ -8,7 +8,6 @@ import json
 import time
 import socket
 import logging
-import socket
 import smtplib
 import cPickle
 import datetime
@@ -24,24 +23,27 @@ MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
 SLEEP_DELAY = 1
 API_URL = "http://mc03.h.cern.yandex.net:5000"
-
-logger = logging.getLogger()
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.INFO)
+HOSTNAME = socket.gethostname().split('.')[0]
+logger = None
 
 
 def parse_args():
+    global logger
     p = argparse.ArgumentParser()
     p.add_argument("--queue", "-q", help="job descriptor pool", default=None)
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
     p.add_argument("--niterations", help="number of iterations", type=int, default=None)
-    p.add_argument("--output", "-o", help="output folder", default="output-%s" % socket.gethostname().split('.')[0])
+    p.add_argument("--output", "-o", help="output folder", default="output-%s" % HOSTNAME)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
+    p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
     args = p.parse_args()
     if not args.queue is not None and not args.test:
         p.error("MS queue '%s' is not specified" % args.queue)
+
+    logging.basicConfig(filename=args.log, filemode='w', level=logging.INFO)
+
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     if args.niterations == 0:
@@ -259,8 +261,9 @@ def main(args):
     q_input = QueueMS(args.queue, api_url=API_URL)
     q_fail = QueueMS(args.queue + ".fail", api_url=API_URL)
     q_success = QueueMS(args.queue + ".success", api_url=API_URL)
-    locker = Cache(args.output.strip('/') + ".locker")
-    assert not locker.exists(), args.output.strip('/') + ".locker"
+    lock_file = tempfile.mktemp(prefix="lock_%s" % HOSTNAME, suffix=".locker")
+    locker = Cache(lock_file)
+    assert not locker.exists(), lock_file
 
     time_start = datetime.datetime.now()
     result_async = ResultSlots(args.nworkers)
