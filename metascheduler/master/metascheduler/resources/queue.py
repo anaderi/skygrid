@@ -1,10 +1,17 @@
 import json
 import datetime
 
+import pymongo
 from flask import request, jsonify
 from flask.ext.restful import reqparse
 
 from ..models import *
+from ..rabbit import (
+    rmq_push_to_queue,
+    rmq_pull_from_queue,
+    rmq_delete_queue
+)
+
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
 
 
@@ -34,19 +41,7 @@ class QueueManagementResource(MetaschedulerResource):
 
 class QueueResource(ExistingQueueResource):
     def get(self, job_type):
-        n_job = int(request.args.get('njob') or 1) # how many jobs we need to return
-
-        jsoned_jobs = []
-
-        jobs = Job.objects(job_type=job_type, status=JobStatus.pending)[:n_job]
-
-        for job in jobs:
-            job.status = JobStatus.running
-            job.save()
-
-            jsoned_jobs.append(job.to_dict())
-
-        return {'jobs': jsoned_jobs}
+        return {'job': rmq_pull_from_queue(job_type) }
 
     def post(self, job_type):
         job_dict = json.loads(request.data)
@@ -54,11 +49,15 @@ class QueueResource(ExistingQueueResource):
         job = Job(job_type=job_type, description=job_dict)
         job.save()
 
+        rmq_push_to_queue(job_type, json.dumps(job.to_dict()))
+
         return {'job': job.to_dict()}
 
     def delete(self, job_type):
         queue = Queue.objects.get(job_type=job_type)
         queue.delete()
+        rmq_delete_queue(job_type)
+
 
 
 

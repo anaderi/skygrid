@@ -54,15 +54,11 @@ class QueueMS(object):
 
     def get(self):
         response = ms_get(self.queue_url)
-        jobs = response['jobs']
+        job = response['job']
+        job['api_url'] = self.api_url
 
-        if len(jobs) == 1:
-            job = jobs[0]
-            job['api_url'] = self.api_url
+        return JobMS(**job)
 
-            return JobMS(**jobs[0])
-        else:
-            return None
 
     def _create_queue(self):
         create_payload = {

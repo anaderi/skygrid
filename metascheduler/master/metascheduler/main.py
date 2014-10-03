@@ -1,22 +1,23 @@
-from flask import Flask
-from flask.ext import restful
+from .app import *
+from .models import *
 
-from models import *
-
-app = Flask(__name__)
-app.config.from_envvar('SHIP_FRONTEND_CONFIG')
 
 if app.config['DB_USE_AUTH']:
     connect(app.config['DB'], username=app.config['DB_USERNAME'], password=app.config['DB_PASSWORD'])
 else:
     connect(app.config['DB'])
 
-from resources import (
+
+
+from flask.ext import restful
+
+from .resources import (
     JobResource,
     QueueManagementResource,
     QueueResource,
     QueueInfoResource
 )
+
 
 api = restful.Api(app)
 api.add_resource(JobResource, '/jobs/<string:job_id>')

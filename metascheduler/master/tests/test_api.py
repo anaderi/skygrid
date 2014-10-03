@@ -82,8 +82,8 @@ class QueueTest(BasicQueueTest):
 
 
         self.assertEqual(result_get['success'], True)
-        self.assertEqual(result_get['jobs'][0]['description'], TEST_OBJ)
-        self.assertEqual(result_get['jobs'][0]['status'], "running")
+        self.assertEqual(result_get['job']['description'], TEST_OBJ)
+        self.assertEqual(result_get['job']['status'], "pending")
 
     def test_sequence(self):
         TEST_OBJ =[
@@ -116,8 +116,7 @@ class QueueTest(BasicQueueTest):
             result_get = r.json()
 
             self.assertEqual(result_get['success'], True)
-            self.assertEqual(result_get['jobs'][0]['description'], obj)
-            self.assertEqual(result_get['jobs'][0]['status'], "running")
+            self.assertEqual(result_get['job']['description'], obj)
 
 
 class NoQueueTest(BasicQueueTest):
