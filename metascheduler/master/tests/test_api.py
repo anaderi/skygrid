@@ -74,7 +74,7 @@ class QueueTest(BasicQueueTest):
         result_create = r.json()
 
         self.assertEqual(result_create['success'], True)
-        self.assertEqual(result_create['job']['description'], TEST_OBJ)
+        self.assertEqual(result_create['job']['descriptor'], TEST_OBJ)
         self.assertEqual(result_create['job']['status'], "pending")
 
         r = requests.get(self.queue_url)
@@ -82,7 +82,7 @@ class QueueTest(BasicQueueTest):
 
 
         self.assertEqual(result_get['success'], True)
-        self.assertEqual(result_get['job']['description'], TEST_OBJ)
+        self.assertEqual(result_get['job']['descriptor'], TEST_OBJ)
         self.assertEqual(result_get['job']['status'], "pending")
 
     def test_sequence(self):
@@ -99,7 +99,7 @@ class QueueTest(BasicQueueTest):
             IDS.append(job['job_id'])
 
             self.assertEqual(result_create['success'], True)
-            self.assertEqual(job['description'], obj)
+            self.assertEqual(job['descriptor'], obj)
             self.assertEqual(job['status'], "pending")
             sleep(0.5) # To prevent equal times inside MS database
 
@@ -107,7 +107,6 @@ class QueueTest(BasicQueueTest):
         r = requests.get(get_created_jobs_url)
         result = r.json()
 
-        print result
         self.assertTrue(result['success'])
 
 
@@ -116,7 +115,7 @@ class QueueTest(BasicQueueTest):
             result_get = r.json()
 
             self.assertEqual(result_get['success'], True)
-            self.assertEqual(result_get['job']['description'], obj)
+            self.assertEqual(result_get['job']['descriptor'], obj)
 
 
 class NoQueueTest(BasicQueueTest):

@@ -41,5 +41,5 @@ class TestQueueMS(TestWithQueue):
         for obj in TEST_OBJ:
             job = self.queue.get()
 
-            self.assertEqual(job.description, obj)
+            self.assertEqual(job.descriptor, obj)
             self.assertTrue(job.delete())

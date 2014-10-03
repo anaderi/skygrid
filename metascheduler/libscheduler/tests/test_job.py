@@ -20,10 +20,10 @@ class TestJobMS(TestWithQueue):
 
         
         job = self.queue.get()
-        self.assertEqual(job.description, TEST_DESCRIPTION)
+        self.assertEqual(job.descriptor, TEST_DESCRIPTION)
 
         self.assertTrue(job.update_status('failed'))
-        self.assertTrue(job.update_description({"b": "c"}))
+        self.assertTrue(job.update_descriptor({"b": "c"}))
 
         self.assertRaises(Exception, job.update_status, 'some bad')
 

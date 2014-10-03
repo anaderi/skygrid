@@ -34,7 +34,7 @@ def get_current_time():
 
 class Job(Document):
     job_type = StringField(default="ANY")
-    description = DictField(default={})
+    descriptor = DictField(default={})
 
     status = StringField(default=JobStatus.pending)
     last_update = FloatField(min_value=0, default=get_current_time)
@@ -48,7 +48,7 @@ class Job(Document):
         d = {
             'job_id': str(self.pk),
             'status': self.status,
-            'description': self.description
+            'descriptor': self.descriptor
         }
 
         return d

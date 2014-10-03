@@ -5,7 +5,7 @@ from .common import *
 
 class JobMS(object):
     """Class for communicating with metascheduler about Jobs"""
-    def __init__(self, job_id, status='', description={}, api_url="http://localhost:5000/", from_api=False):
+    def __init__(self, job_id, status='', descriptor={}, api_url="http://localhost:5000/", from_api=False):
         self.job_id = job_id
         self.job_url = os.path.join(
             api_url,
@@ -17,13 +17,13 @@ class JobMS(object):
             self.load_from_api()
         else:
             self.status = status
-            self.description = description
+            self.descriptor = descriptor
 
     def load_from_api(self):
         result = ms_get(self.job_url)
 
         self.status = result['status']
-        self.description = result['description']
+        self.descriptor = result['descriptor']
 
         return self
 
@@ -36,8 +36,8 @@ class JobMS(object):
         return self._post_update({'status': status})
 
 
-    def update_description(self, description):
-        return self._post_update({'description': description})
+    def update_descriptor(self, descriptor):
+        return self._post_update({'descriptor': descriptor})
 
 
     def delete(self):

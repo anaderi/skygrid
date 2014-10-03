@@ -46,7 +46,7 @@ class QueueResource(ExistingQueueResource):
     def post(self, job_type):
         job_dict = json.loads(request.data)
 
-        job = Job(job_type=job_type, description=job_dict)
+        job = Job(job_type=job_type, descriptor=job_dict)
         job.save()
 
         rmq_push_to_queue(job_type, json.dumps(job.to_dict()))
