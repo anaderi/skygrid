@@ -6,16 +6,17 @@ import uuid
 from time import sleep
 
 import requests
-from testconfig import config
-API_URL = config['api']['url']
 
-from libscheduler.queue import QueueMS
+from testconfig import config
+from libscheduler import Metascheduler
 
 
 class TestWithQueue(unittest.TestCase):
     def setUp(self):
         self.queue_name = uuid.uuid4().hex
-        self.queue = QueueMS(self.queue_name, api_url=API_URL)
+
+        self.ms = Metascheduler(config['api']['url'])
+        self.queue = self.ms.queue(self.queue_name)
 
         if not self.queue.empty():
             for el in q:
