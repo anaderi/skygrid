@@ -8,6 +8,7 @@ import json
 import time
 import socket
 import logging
+import socket
 import smtplib
 import cPickle
 import datetime
@@ -34,7 +35,7 @@ def parse_args():
     p.add_argument("--queue", "-q", help="job descriptor pool", default=None)
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
     p.add_argument("--niterations", help="number of iterations", type=int, default=None)
-    p.add_argument("--output", "-o", help="output folder", default="output")
+    p.add_argument("--output", "-o", help="output folder", default="output-%s" % socket.gethostname().split('.')[0])
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
