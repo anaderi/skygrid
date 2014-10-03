@@ -262,7 +262,7 @@ def main(args):
     q_input = QueueMS(args.queue, api_url=API_URL)
     q_fail = QueueMS(args.queue + ".fail", api_url=API_URL)
     q_success = QueueMS(args.queue + ".success", api_url=API_URL)
-    lock_file = tempfile.mktemp(prefix="lock_%s" % HOSTNAME, suffix=".locker")
+    lock_file = tempfile.mktemp(prefix="lock_%s" % HOSTNAME, dir=".", suffix=".locker")
     locker = Cache(lock_file)
     assert not locker.exists(), lock_file
 
