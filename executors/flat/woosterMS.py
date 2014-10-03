@@ -43,6 +43,7 @@ def parse_args():
         p.error("MS queue '%s' is not specified" % args.queue)
 
     logging.basicConfig(filename=args.log, filemode='w', level=logging.INFO)
+    logger = logging.getLogger()
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
