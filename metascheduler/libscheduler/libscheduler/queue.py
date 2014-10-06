@@ -55,6 +55,9 @@ class QueueMS(object):
     def get(self):
         response = ms_get(self.queue_url)
         job = response['job']
+        if not job:
+            return None
+
         job['api_url'] = self.api_url
 
         return JobMS(**job)

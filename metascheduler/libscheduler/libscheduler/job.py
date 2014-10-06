@@ -42,3 +42,10 @@ class JobMS(object):
 
     def delete(self):
         return ms_delete(self.job_url)
+
+    def json(self):
+        return json.dumps({
+            'job_id': self.job_id,
+            'status': self.status,
+            'descriptor': self.descriptor
+        })
