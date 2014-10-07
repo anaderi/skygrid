@@ -37,10 +37,15 @@ class TestQueueMS(TestWithQueue):
             self.queue.put(obj)
             sleep(0.5)
 
-        assert self.queue.qsize() == len(TEST_OBJ)
+        self.assertEqual(self.queue.qsize(), len(TEST_OBJ))
+        q_size = len(TEST_OBJ)
 
         for obj in TEST_OBJ:
             job = self.queue.get()
 
+            q_size -= 1
+            self.assertEqual(self.queue.qsize(), q_size)
+
             self.assertEqual(job.descriptor, obj)
             self.assertTrue(job.delete())
+

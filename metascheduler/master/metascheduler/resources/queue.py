@@ -9,7 +9,8 @@ from ..models import *
 from ..rabbit import (
     rmq_push_to_queue,
     rmq_pull_from_queue,
-    rmq_delete_queue
+    rmq_delete_queue,
+    rmq_queue_length
 )
 
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
@@ -66,6 +67,4 @@ class QueueInfoResource(MetaschedulerResource):
         if not queue_exists(job_type):
             return {'exists': False}
 
-        l = Job.objects(job_type=job_type, status=JobStatus.pending).count()
-
-        return {'length': l, 'exists': True}
+        return {'length': rmq_queue_length(job_type), 'exists': True}

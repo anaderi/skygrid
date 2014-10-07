@@ -30,3 +30,9 @@ def rmq_pull_from_queue(queue):
 
 def rmq_delete_queue(queue):
     channel.queue_delete(queue=queue)
+
+
+def rmq_queue_length(queue):
+    q = channel.queue_declare(queue=queue, durable=True)
+
+    return q.method.message_count
