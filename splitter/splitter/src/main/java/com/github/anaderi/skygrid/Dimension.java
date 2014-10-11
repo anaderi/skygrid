@@ -48,4 +48,8 @@ public abstract class Dimension {
         }
         return result;
     }
+
+    public List<Dimension> split(int splitCount) {
+        return split(calculateSplitProportion(splitCount));
+    }
 }

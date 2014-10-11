@@ -1,33 +1,35 @@
 package com.github.anaderi.skygrid;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-public class SetDimension extends Dimension {
-    private final ArrayList<String> enums_;
 
-    SetDimension(Collection<String> enums) {
-        super(enums.size());
-        enums_ = new ArrayList<String>(enums);
+public class RangeDimension extends Dimension {
+    private final int from_;
+    private final int to_;
+
+    RangeDimension(int from, int to) {
+        super(to + 1 - from);
+        from_ = from;
+        to_ = to;
     }
 
     @Override
     public String description() {
-        return "SET";
+        return "RANGE";
     }
 
     @Override
     public List<Dimension> split(List<Integer> proportion) {
         ArrayList<Dimension> result = new ArrayList<Dimension>(proportion.size());
-        int i = 0;
+        int i = from_;
         for (int pieceSize : proportion) {
             if (pieceSize == 0)
                 continue;
-            result.add(new SetDimension(enums_.subList(i, i + pieceSize)));
+            result.add(new RangeDimension(i, i + pieceSize - 1));
             i += pieceSize;
         }
-        assert i == length();
+        assert i == to_ + 1;
         return result;
     }
 }
