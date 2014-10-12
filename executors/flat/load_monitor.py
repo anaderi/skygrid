@@ -15,13 +15,10 @@ def parse_args():
     parser.add_argument("--email", default="anaderi@yandex-team.ru")
     parser.add_argument("--log", default=None)
     args = parser.parse_args()
-    print args.min_hosts
     return args
 
 
 def notify(email, avg_load, num_hosts):
-    print "notify"
-    print "/root/bin/notify.sh 'MC load average' load: %f, hosts: %d" % (avg_load, num_hosts)
     util.sh("/root/bin/notify.sh 'MC load average' load_avg: %f, hosts: %d" % (avg_load, num_hosts), verbose=True)
 
 
