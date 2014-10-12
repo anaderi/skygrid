@@ -65,6 +65,13 @@ public class DimensionTest extends TestCase {
                      d.calculateSplitProportion(4));
     }
 
+    public void testSplitProportionFour() {
+        Dimension d = new MockDimension(4);
+        Integer[] canonResult = {1, 1, 1, 1, 0, 0, 0, 0};
+        assertEquals(Arrays.asList(canonResult),
+                d.calculateSplitProportion(8));
+    }
+
     public void testSplitProportionEleven() {
         Dimension d = new MockDimension(11);
         Integer[] canonResult = {4, 4, 3};
