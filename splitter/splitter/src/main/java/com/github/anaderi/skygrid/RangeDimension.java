@@ -7,6 +7,7 @@ import java.util.List;
 public class RangeDimension extends Dimension {
     private final int from_;
     private final int to_;
+    public static final String TYPE_NAME = "RANGE";
 
     RangeDimension(int from, int to) {
         super(to + 1 - from);
@@ -16,7 +17,7 @@ public class RangeDimension extends Dimension {
 
     @Override
     public String description() {
-        return "RANGE";
+        return RangeDimension.TYPE_NAME;
     }
 
     @Override

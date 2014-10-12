@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Scale extends Dimension {
     private final int volume_;
+    public static final String TYPE_NAME = "SCALE";
 
     Scale(int volume) {
         super(volume);
@@ -13,7 +14,7 @@ public class Scale extends Dimension {
 
     @Override
     public String description() {
-        return "SCALE";
+        return Scale.TYPE_NAME;
     }
 
     @Override

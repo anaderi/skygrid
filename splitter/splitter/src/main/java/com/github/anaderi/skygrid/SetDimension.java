@@ -6,6 +6,7 @@ import java.util.List;
 
 public class SetDimension extends Dimension {
     private final ArrayList<String> enums_;
+    public static final String TYPE_NAME = "SET";
 
     SetDimension(Collection<String> enums) {
         super(enums.size());
@@ -14,7 +15,7 @@ public class SetDimension extends Dimension {
 
     @Override
     public String description() {
-        return "SET";
+        return SetDimension.TYPE_NAME;
     }
 
     @Override
