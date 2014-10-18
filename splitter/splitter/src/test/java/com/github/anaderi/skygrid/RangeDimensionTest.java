@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RangeDimensionTest extends TestCase {
-    private final Dimension originalDimension_ = new RangeDimension(100, 102);
+    private final Dimension originalDimension_ = new RangeDimension(100, 102, "test");
 
     public void testDimensionSize() {
         assertEquals(3, originalDimension_.length());  // 100, 101, 102

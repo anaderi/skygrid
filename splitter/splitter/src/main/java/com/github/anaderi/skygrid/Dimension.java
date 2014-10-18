@@ -5,16 +5,23 @@ import java.util.List;
 
 public abstract class Dimension {
     private final int length_;
+    private final String name_;
 
-    Dimension(int length) {
+    Dimension(int length, String name) {
         length_ = length;
+        name_ = name;
     }
 
     public abstract String description();
     public abstract List<Dimension> split(List<Integer> proportion);
+    public abstract List<Integer> serialize();
 
     public int length() {
         return length_;
+    }
+
+    public String name() {
+        return name_;
     }
 
     /**

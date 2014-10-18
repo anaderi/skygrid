@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ScaleTest extends TestCase {
     public void testScaleGeneration() {
-        Dimension d = new Scale(1000);
+        Dimension d = new Scale(1000, "test");
         List<Dimension> slices = d.split(3);
         assertEquals(3, slices.size());
         assertEquals(Scale.class, slices.get(0).getClass());
@@ -19,7 +19,7 @@ public class ScaleTest extends TestCase {
     }
 
     public void testScaleInternalCheck() {
-        Dimension d = new Scale(1000);
+        Dimension d = new Scale(1000, "test");
         Integer[] sliceSizes = {300, 400, 500};
         boolean wasExceptionThrown = false;
         try {

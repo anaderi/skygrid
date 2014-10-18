@@ -9,9 +9,22 @@ import java.util.List;
 
 public class DimensionTest extends TestCase {
     private class MockDimension extends Dimension {
-        public MockDimension(Integer size) { super(size); }
-        public String description() { return null; }
-        public List<Dimension> split(List<Integer> proportion) { return null; }
+        public MockDimension(Integer size) { super(size, "test"); }
+
+        @Override
+        public String description() {
+            return null;
+        }
+
+        @Override
+        public List<Dimension> split(List<Integer> proportion) {
+            return null;
+        }
+
+        @Override
+        public List<Integer> serialize() {
+            return null;
+        }
     }
 
     public void testSplitOne() {

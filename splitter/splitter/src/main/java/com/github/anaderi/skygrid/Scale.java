@@ -7,8 +7,8 @@ public class Scale extends Dimension {
     private final int volume_;
     public static final String TYPE_NAME = "SCALE";
 
-    Scale(int volume) {
-        super(volume);
+    Scale(int volume, String name) {
+        super(volume, name);
         volume_ = volume;
     }
 
@@ -23,9 +23,16 @@ public class Scale extends Dimension {
         int totalVolume = 0;
         for (Integer volume : proportion) {
             totalVolume += volume;
-            result.add(new Scale(volume));
+            result.add(new Scale(volume, name()));
         }
         assert volume_ == totalVolume;
+        return result;
+    }
+
+    @Override
+    public List<Integer> serialize() {
+        ArrayList<Integer> result = new ArrayList<Integer>(1);
+        result.add(volume_);
         return result;
     }
 }

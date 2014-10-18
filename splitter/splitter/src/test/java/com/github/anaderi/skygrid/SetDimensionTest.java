@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SetDimensionTest extends TestCase {
     private final String[] SET_DATA = {"Robin", "Bobin", "Barabek"};
-    private final SetDimension originalDimension_ = new SetDimension(Arrays.asList(SET_DATA));
+    private final SetDimension originalDimension_ = new SetDimension(Arrays.asList(SET_DATA), "test");
 
     private void checkSingleSplit(List<Dimension> splitResult) {
         assertEquals(1, splitResult.size());

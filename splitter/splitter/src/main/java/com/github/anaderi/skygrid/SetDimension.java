@@ -8,8 +8,8 @@ public class SetDimension extends Dimension {
     private final ArrayList<String> enums_;
     public static final String TYPE_NAME = "SET";
 
-    SetDimension(Collection<String> enums) {
-        super(enums.size());
+    SetDimension(Collection<String> enums, String name) {
+        super(enums.size(), name);
         enums_ = new ArrayList<String>(enums);
     }
 
@@ -25,10 +25,19 @@ public class SetDimension extends Dimension {
         for (int pieceSize : proportion) {
             if (pieceSize == 0)
                 continue;
-            result.add(new SetDimension(enums_.subList(i, i + pieceSize)));
+            result.add(new SetDimension(enums_.subList(i, i + pieceSize), name()));
             i += pieceSize;
         }
         assert i == length();
+        return result;
+    }
+
+    @Override
+    public List<Integer> serialize() {
+        ArrayList<Integer> result = new ArrayList<Integer>(enums_.size());
+        for (String value : enums_) {
+            result.add(Integer.valueOf(value));
+        }
         return result;
     }
 }

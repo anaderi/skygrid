@@ -9,8 +9,8 @@ public class RangeDimension extends Dimension {
     private final int to_;
     public static final String TYPE_NAME = "RANGE";
 
-    RangeDimension(int from, int to) {
-        super(to + 1 - from);
+    RangeDimension(int from, int to, String name) {
+        super(to + 1 - from, name);
         from_ = from;
         to_ = to;
     }
@@ -27,10 +27,18 @@ public class RangeDimension extends Dimension {
         for (int pieceSize : proportion) {
             if (pieceSize == 0)
                 continue;
-            result.add(new RangeDimension(i, i + pieceSize - 1));
+            result.add(new RangeDimension(i, i + pieceSize - 1, name()));
             i += pieceSize;
         }
         assert i == to_ + 1;
+        return result;
+    }
+
+    @Override
+    public List<Integer> serialize() {
+        ArrayList<Integer> result = new ArrayList<Integer>(2);
+        result.add(from_);
+        result.add(to_);
         return result;
     }
 }

@@ -12,6 +12,7 @@ import java.util.*;
  */
 public class Cube
 {
+    public static class ImpossibleToSplit extends Exception {}
     private final List<Dimension> dimensions_;
     private final Scale scale_;
 
@@ -26,6 +27,13 @@ public class Cube
             result *= dimension.length();
         }
         return result;
+    }
+
+    List<Dimension> dimensions() {
+        return dimensions_;
+    }
+    Scale scale() {
+        return scale_;
     }
 
     int selectBestSplitDimension(int splitCount) {
@@ -47,7 +55,7 @@ public class Cube
         return bestSplitDimensionIndex;
     }
 
-    public List<Cube> split(int splitCount) {
+    public List<Cube> split(int splitCount) throws ImpossibleToSplit {
         return Cube.split(this, splitCount);
     }
 
@@ -55,7 +63,7 @@ public class Cube
         return scale_.length();
     }
 
-    private static List<Cube> split(Cube parentCube, int splitCount) {
+    private static List<Cube> split(Cube parentCube, int splitCount) throws ImpossibleToSplit {
         assert splitCount > 0;
         Comparator<Cube> comparator = new CubeComparator();
         PriorityQueue<Cube> result = new PriorityQueue<Cube>(splitCount, comparator);
@@ -75,6 +83,8 @@ public class Cube
         while (result.size() < splitCount) {
             Cube biggestCube = result.poll();
             if (biggestCube.volume() == 1) {
+                if (biggestCube.scale_ == null)
+                    throw new ImpossibleToSplit();
                 List<Dimension> newScales = biggestCube.scale_.split(2);
                 for (Dimension newScale : newScales) {
                     result.add(new Cube(biggestCube.dimensions_, (Scale) newScale));
@@ -101,10 +111,15 @@ public class Cube
     private static class CubeComparator implements Comparator<Cube> {
         @Override
         public int compare(Cube o1, Cube o2) {
+            boolean o1_has_no_scale = o1.scale_ == null;
+            boolean o2_has_no_scale = o2.scale_ == null;
+            assert (o1_has_no_scale == o2_has_no_scale);
             if (o1.volume() < o2.volume())
                 return 1;
             if (o2.volume() < o1.volume())
                 return -1;
+            if (o1_has_no_scale)
+                return 0;
             if (o1.scale_.length() < o2.scale_.length())
                 return 1;
             if (o2.scale_.length() < o1.scale_.length())
