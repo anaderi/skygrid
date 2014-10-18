@@ -88,3 +88,67 @@ And result is:
       "max_memoryMB": 1024,
       "cpu_per_container": 1
     }
+
+I have also tested this code to work with Python (with a help of [Pyjnius](https://github.com/kivy/pyjnius)).
+```python
+"""
+test_splitter.py - a module for testing com.github.anaderi.JobDescriptor
+bindings with Python.
+
+"""
+
+import os
+import sys
+
+from jnius import autoclass
+
+
+ORIGINAL_JD = """
+{
+    "name": null,
+    "environments": ["anaderi/ocean"],
+    "owner": "anaderi",
+    "app": "my_app_container",
+    "email": "andrey@none.com",
+    "workdir": "/opt/ship/build",
+    "cmd": "/opt/ship/python/muonShieldOptimization/g4ex.py",
+    "args": {
+        "default": ["--runNumber=1", "--nEvents=123", "--ecut=1"],
+        "scaleArg": [
+            ["nEvents", "SCALE", 1200],
+            ["ecut", "SET", [1, 10, 100]],
+            ["rcut", "RANGE", [1, 100]]
+        ]
+    },
+    "num_containers": 10,
+    "min_memoryMB": 512,
+    "max_memoryMB": 1024,
+    "cpu_per_container": 1
+}
+"""
+
+
+def main():
+    JobDescriptor = autoclass('com.github.anaderi.skygrid.JobDescriptor')
+    descriptor = JobDescriptor.fromJsonString(ORIGINAL_JD)
+    for sub_descriptor in descriptor.split(4):
+        print sub_descriptor.toString()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+```
+
+And execution (Linux):
+
+    $ CLASSPATH="target/splitter-1.0-SNAPSHOT.jar:\
+        target/dependency/jackson-annotations-2.3.0.jar:\
+        target/dependency/jackson-databind-2.3.3.jar:\
+        target/dependency/jackson-core-2.3.3.jar:\
+        target/dependency/junit-3.8.1.jar" \
+    python test_splitter.py
+    {"name":null,"environments":["anaderi/ocean"],"owner":"anaderi","app":"my_app_container","email":"andrey@none.com","workdir":"/opt/ship/build","cmd":"/opt/ship/python/muonShieldOptimization/g4ex.py","args":{"default":["--runNumber=1","--nEvents=123","--ecut=1"],"scaleArg":[["ecut","SET",[1,10,100]],["rcut","RANGE",[26,50]],["nEvents","SCALE",300]]},"num_containers":10,"min_memoryMB":512,"max_memoryMB":1024,"cpu_per_container":1}
+    {"name":null,"environments":["anaderi/ocean"],"owner":"anaderi","app":"my_app_container","email":"andrey@none.com","workdir":"/opt/ship/build","cmd":"/opt/ship/python/muonShieldOptimization/g4ex.py","args":{"default":["--runNumber=1","--nEvents=123","--ecut=1"],"scaleArg":[["ecut","SET",[1,10,100]],["rcut","RANGE",[1,25]],["nEvents","SCALE",300]]},"num_containers":10,"min_memoryMB":512,"max_memoryMB":1024,"cpu_per_container":1}
+    {"name":null,"environments":["anaderi/ocean"],"owner":"anaderi","app":"my_app_container","email":"andrey@none.com","workdir":"/opt/ship/build","cmd":"/opt/ship/python/muonShieldOptimization/g4ex.py","args":{"default":["--runNumber=1","--nEvents=123","--ecut=1"],"scaleArg":[["ecut","SET",[1,10,100]],["rcut","RANGE",[51,75]],["nEvents","SCALE",300]]},"num_containers":10,"min_memoryMB":512,"max_memoryMB":1024,"cpu_per_container":1}
+    {"name":null,"environments":["anaderi/ocean"],"owner":"anaderi","app":"my_app_container","email":"andrey@none.com","workdir":"/opt/ship/build","cmd":"/opt/ship/python/muonShieldOptimization/g4ex.py","args":{"default":["--runNumber=1","--nEvents=123","--ecut=1"],"scaleArg":[["ecut","SET",[1,10,100]],["rcut","RANGE",[76,100]],["nEvents","SCALE",300]]},"num_containers":10,"min_memoryMB":512,"max_memoryMB":1024,"cpu_per_container":1}
+    $
