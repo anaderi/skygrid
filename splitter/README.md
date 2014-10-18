@@ -89,6 +89,8 @@ And result is:
       "cpu_per_container": 1
     }
 
+Python bindings
+---------------
 I have also tested this code to work with Python (with a help of [Pyjnius](https://github.com/kivy/pyjnius)).
 ```python
 """
