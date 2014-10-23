@@ -4,6 +4,7 @@ import os
 import re
 import json
 import glob
+import datetime
 import argparse
 import logging
 import cPickle
@@ -342,13 +343,15 @@ def fill_qms(template, queue_name, count, num_events=EV_PER_JD, start_id=10):
     with open(template) as fh:
         t = json.load(fh)
     t['args']['--num-events'] = num_events
+    t0 = datetime.datetime.now()
     queue = QueueMS(queue_name, api_url=API_URL)
     count0 = queue.qsize()
     for i in range(count):
          jd = copy(t)
          jd["job_id"] = start_id + i
          queue.put(jd)
-    assert queue.qsize() == count + count0
+    t1 = datetime.datetime.now()
+    print "Time taken:", t1 - t0
 
 
 def dump_qms(queue_name):
