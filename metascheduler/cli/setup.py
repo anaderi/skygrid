@@ -6,7 +6,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'Click',
-        'libscheduler'
+        'skygrid-libscheduler==0.2.0'
     ],
     entry_points='''
         [console_scripts]
