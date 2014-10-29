@@ -49,18 +49,24 @@ class QueueMS(object):
         for i in iterable:
             self.put(i)
 
+
+    def _construct_job(self, server_response):
+        job_dict = server_response.get('job')
+
+        if job_dict:
+            job_dict['api_url'] = self.api_url
+            return JobMS(**job_dict)
+
     def put(self, item):
-        return ms_post(self.queue_url, data=json.dumps(item))
+        response = ms_post(self.queue_url, data=json.dumps(item))
+
+        return self._construct_job(response)
 
     def get(self):
         response = ms_get(self.queue_url)
-        job = response['job']
-        if not job:
-            return None
 
-        job['api_url'] = self.api_url
+        return self._construct_job(response)
 
-        return JobMS(**job)
 
 
     def _create_queue(self):
