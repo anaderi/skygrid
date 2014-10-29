@@ -49,8 +49,6 @@ class QueueResource(ExistingQueueResource):
 
         if job:
             return {'job': job }
-        else:
-            return {'job': 'None'}
 
     def post(self, job_type):
         job_dict = json.loads(request.data)
