@@ -114,6 +114,9 @@ class Job(db.Model):
         self.descriptor = descriptor
         self.job_id = uuid.uuid4().hex
 
+        while Job.query.filter(Job.job_id == self.job_id).count() != 0:
+            self.job_id = uuid.uuid4().hex
+
     def to_dict(self):
         d = {
             'job_id': str(self.job_id),
