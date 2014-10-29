@@ -4,7 +4,8 @@ from time import time
 from flask import request
 from api import MetaschedulerResource
 
-from ..models import Job, JobStatus
+from ..models import db, Job, JobStatus
+
 
 def check_job_update_valid(update_dict):
     if 'id' in update_dict:
@@ -15,57 +16,38 @@ def check_job_update_valid(update_dict):
         raise ValueError('Invalid status!')
 
 
-from mongoengine import fields
-
-def update_document(document, data_dict):
-
-    def field_value(field, value):
-
-        if field.__class__ in (fields.ListField, fields.SortedListField):
-            return [
-                field_value(field.field, item)
-                for item in value
-            ]
-        if field.__class__ in (
-            fields.EmbeddedDocumentField,
-            fields.GenericEmbeddedDocumentField,
-            fields.ReferenceField,
-            fields.GenericReferenceField
-        ):
-            return field.document_type(**value)
-        else:
-            return value
-
-    [setattr(
-        document, key,
-        field_value(document._fields[key], value)
-    ) for key, value in data_dict.items()]
-
-    return document
-
-
 class JobResource(MetaschedulerResource):
+    def _get_job(self, job_id):
+        return Job.query.filter(Job.job_id == job_id).first()
+
+
     def get(self, job_id):
         if ',' in job_id:
+            id_list = job_id.split(',')
+            jobs = Job.query.filter(Job.job_id.in_(id_list))
+
             return {
-              job_id: Job.objects.get(pk=job_id).to_dict() for job_id in job_id.split(',')
+                job.job_id: job.to_dict() for job in jobs
             }
         else:
-            return Job.objects.get(pk=job_id).to_dict()
+            return self._get_job(job_id).to_dict() 
+
 
     def post(self, job_id):
-        job = Job.objects.get(pk=job_id)
         update_dict = json.loads(request.data)
-
         check_job_update_valid(update_dict)
-        update_document(job, update_dict)
+        update_dict['last_update'] = time()
 
-        job.last_update = time()
-        job.save()
+        job = self._get_job(job_id)
+
+        job.query.update(update_dict)
+        db.session.commit()
 
         return {'updated_job': job.to_dict()}
 
-    def delete(self, job_id):
-        job = Job.objects.get(pk=job_id)
-        job.delete()
 
+    def delete(self, job_id):
+        job = self._get_job(job_id)
+    
+        db.session.delete(job)
+        db.session.commit()

@@ -2,13 +2,7 @@ from .app import *
 from .models import *
 
 
-if app.config['DB_USE_AUTH']:
-    connect(app.config['DB'], username=app.config['DB_USERNAME'], password=app.config['DB_PASSWORD'])
-else:
-    connect(app.config['DB'])
-
-
-
+# REST API things
 from flask.ext import restful
 
 from .resources import (

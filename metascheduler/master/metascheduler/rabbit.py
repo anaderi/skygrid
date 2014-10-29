@@ -36,3 +36,6 @@ def rmq_queue_length(queue):
     q = channel.queue_declare(queue=queue, durable=True)
 
     return q.method.message_count
+
+def rmq_queue_create(queue):
+    return channel.queue_declare(queue=queue, durable=True)

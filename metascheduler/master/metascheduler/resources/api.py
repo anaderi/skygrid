@@ -1,7 +1,7 @@
 from flask import jsonify
 from flask.ext.restful import Resource
 
-from ..models import Queue
+from ..models import db, Queue
 
 def api_decorator(f):
     def decorated(*args, **kwargs):
@@ -22,7 +22,7 @@ class MetaschedulerResource(Resource):
 
 
 def queue_exists(job_type):
-    return len(Queue.objects(job_type=job_type)) == 1
+    return db.session.query(Queue).filter(Queue.job_type==job_type).count() == 1
 
 
 def queue_exists_decorator(f):
