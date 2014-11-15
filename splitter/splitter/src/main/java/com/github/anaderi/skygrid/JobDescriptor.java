@@ -120,7 +120,7 @@ public class JobDescriptor {
         return tmp.toString();
     }
 
-    List<JobDescriptor> split(int splitCount) throws Cube.ImpossibleToSplit {
+    public List<JobDescriptor> split(int splitCount) throws Cube.ImpossibleToSplit {
         List<Cube> cubes = argsCube_.split(splitCount);
         ArrayList<JobDescriptor> result = new ArrayList<JobDescriptor>(splitCount);
         for (Cube cube : cubes) {
