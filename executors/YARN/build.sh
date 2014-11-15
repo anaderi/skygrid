@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BUILD_DIR=/tmp/build-jar-dir
-PROJECT_DIR=/Users/stromsund/Development/openlab_ship_proto/executors/YARN
+PROJECT_DIR=/Users/stromsund/Development/skygrid/executors/YARN
 RESULT_JAR=YarnExecutorWithDeps-1.0.jar
 
 cd $PROJECT_DIR

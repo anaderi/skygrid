@@ -1,6 +1,8 @@
 package com.github.anaderi.skygrid.executor.wodehouse;
 
 import com.github.anaderi.skygrid.executor.common.ApplicationMasterExecutor;
+import com.github.anaderi.skygrid.executor.common.ApplicationMasterKiller;
+import org.apache.commons.cli.*;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,22 +30,66 @@ import java.util.ArrayList;
  */
 public class Wodehouse {
     public static void main(String[] args) {
-        Wodehouse client;
-        if (args.length != 2) {
-            System.out.println("Obligatory arguments: path to YarnConfig, MetaScheduler URL");
+        Option help = OptionBuilder.withLongOpt("help")
+                                   .withDescription("display this message")
+                                   .create("h");
+        Option runAgatha = OptionBuilder.withArgName("metascheduler url")
+                                        .hasArg()
+                                        .withLongOpt("run-agatha")
+                                        .withDescription("Starts in instance of Agatha on YARN cluster")
+                                        .create("r");
+        Option yarnConfigDir = OptionBuilder.withArgName("path")
+                                            .hasArg()
+                                            .withLongOpt("yarn-config-dir")
+                                            .withDescription("path to YARN conf dir")
+                                            .create("c");
+        Option killAppId = OptionBuilder.withArgName("AppID")
+                                        .hasArg()
+                                        .withLongOpt("kill-application")
+                                        .withDescription("ApplicationId to be killed")
+                                        .create('k');
+
+        Options options = new Options();
+        options.addOption(help);
+        options.addOption(yarnConfigDir);
+        options.addOption(runAgatha);
+        options.addOption(killAppId);
+        CommandLineParser parser = new PosixParser();
+        CommandLine line;
+        try {
+            line = parser.parse(options, args);
+        }
+        catch (ParseException exp) {
+            System.err.println("Parsing failed.  Reason: " + exp.getMessage());
+            return;
+        }
+
+        if (line.hasOption("help")) {
+            HelpFormatter helpFormatter = new HelpFormatter();
+            helpFormatter.printHelp("java com.github.anaderi.skygrid.executor.wodehouse.Wodehouse", options);
+            return;
+        }
+
+        if (!line.hasOption("c")) {
+            System.err.println("-c/--yarn-config-dir argument is obligatory.");
             return;
         }
 
         try {
-            client = new Wodehouse(args[0], args[1]);
-            client.run();
+            Wodehouse.addPath(line.getOptionValue("c"));
+            if (line.hasOption("k")) {
+                new ApplicationMasterKiller(line.getOptionValue("k"));
+            }
+            if (line.hasOption("r")) {
+                Wodehouse client = new Wodehouse(line.getOptionValue("r"));
+                client.run();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public Wodehouse(String yarnConfigPath, String metashedulerURL) throws Exception {
-        addPath(yarnConfigPath);
+    public Wodehouse(String metashedulerURL) throws Exception {
         fileSystem_ = FileSystem.get(new YarnConfiguration());
         metashedulerURL_ = metashedulerURL;
     }
