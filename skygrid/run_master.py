@@ -1,4 +1,4 @@
 #!/usr/bin/env python
-from skygrid.main import app
+from skygrid.app import app
 
 app.run(host=app.config['HOSTNAME'], port=6000)

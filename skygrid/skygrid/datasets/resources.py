@@ -1,31 +1,33 @@
 import os
-import json
 import hashlib
+import shutil
 from datetime import datetime
 
-from flask import request
+from flask import request, current_app
 from werkzeug import secure_filename
 
-from flask.ext.restful import Resource
-from flask.ext.restful import fields, marshal_with
+from ..api import SkygridResource
+from .blueprint import blueprint
 
-from .api import SkygridResource
-from ..app import app
-from ..models import Dataset
+from .models import Dataset
 
 
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+           filename.rsplit('.', 1)[1] in current_app.config['ALLOWED_EXTENSIONS']
 
 
-def upload_file(ds_file):
+def upload_file(ds_id, ds_file):
     if not (ds_file and allowed_file(ds_file.filename)):
         raise Exception('Bad file!')
 
+    ds_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], ds_id)
+    os.mkdir(ds_dir)
+
     filename = secure_filename(ds_file.filename)
-    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    path = os.path.join(ds_dir, filename)
     ds_file.save(path)
+
     return path
 
 
@@ -60,19 +62,24 @@ class DatasetList(SkygridResource):
 
     def put(self):
         data = request.form
-
-        path = upload_file(request.files['dataset'])
-        ds_hash = hashfile(path)
-
-        ds = Dataset(
+        ds_embryo = Dataset(
             name=data['name'],
-            datatype=data['type'],
-            path=path,
-            filehash=ds_hash,
-            upload_time=datetime.now()
+            datatype=data['type']
         ).save()
 
-        return ds.to_dict()
+        try:
+            path = upload_file(str(ds_embryo.pk), request.files['dataset'])
+            ds_hash = hashfile(path)
+        except Exception, e:
+            ds_embryo.delete()
+            raise Exception(e)
+        else:
+            ds_embryo.path = path
+            ds_embryo.filehash = ds_hash
+            ds_embryo.upload_time = datetime.now()
+            ds_embryo.save()
+
+            return ds_embryo.to_dict()
 
 
 class DatasetDetail(SkygridResource):
@@ -81,5 +88,7 @@ class DatasetDetail(SkygridResource):
 
     def delete(self, ds_id):
         ds = Dataset.objects.get(pk=ds_id)
-        os.remove(ds.path)
-        return Dataset.objects.get(pk=ds_id).delete()
+        ds_workdir = os.path.dirname(ds.path)
+        shutil.rmtree(ds_workdir)
+
+        return ds.delete()

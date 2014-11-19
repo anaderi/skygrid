@@ -32,11 +32,11 @@ def hashfile(path):
 
 class DatasetListTest(BasicSkygridTest):
 
-    def test_upload_csv(self):
+    def test_upload_and_delete_csv(self):
         payload = dict(
             name=str(uuid.uuid4().hex),
             type="csv"
-        )
+        ) 
         files = {'dataset': open('test_data.csv', 'rb')}
 
         r = requests.put(
@@ -45,7 +45,6 @@ class DatasetListTest(BasicSkygridTest):
             files=files
         ).json()
 
-        print r['hash']
         self.assertEqual(r['name'], payload['name'])
         self.assertEqual(r['type'], payload['type'])
 
@@ -59,6 +58,7 @@ class DatasetListTest(BasicSkygridTest):
         ).json()
 
         self.assertEqual(r, {})
+
 
 
 if __name__ == '__main__':

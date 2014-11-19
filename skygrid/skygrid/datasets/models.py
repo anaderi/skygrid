@@ -5,10 +5,10 @@ from mongoengine import *
 
 class Dataset(Document):
     name = StringField(required=True)
-    path = StringField(required=True)
+    path = StringField()
     datatype = StringField(required=True)
-    upload_time = DateTimeField(required=True)
-    filehash = StringField(required=True, unique=True)
+    upload_time = DateTimeField()
+    filehash = StringField()
 
     meta = {
         'ordering': ['upload_ts'],
