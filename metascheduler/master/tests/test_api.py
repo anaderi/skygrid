@@ -9,6 +9,18 @@ from time import sleep
 import requests
 from testconfig import config
 
+
+
+class StatusTest(unittest.TestCase):
+    def setUp(self):
+        self.api_url = config['api']['url']
+        self.status_url = os.path.join(config['api']['url'], 'status')
+
+    def test_alive(self):
+        r = requests.get(self.status_url).json()
+        self.assertTrue(r['alive'])
+
+
 class BasicQueueTest(unittest.TestCase):
     def setUp(self):
         self.api_url = config['api']['url']

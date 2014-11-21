@@ -12,14 +12,16 @@ else:
 from flask.ext import restful
 
 from .resources import (
+    StatusResource,
     JobResource,
     QueueManagementResource,
     QueueResource,
-    QueueInfoResource
+    QueueInfoResource,
 )
 
 
 api = restful.Api(app)
+api.add_resource(StatusResource, '/status')
 api.add_resource(JobResource, '/jobs/<string:job_id>')
 
 api.add_resource(QueueManagementResource, '/queues')
