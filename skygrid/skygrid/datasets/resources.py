@@ -45,9 +45,14 @@ def hashfile(path):
 
 class DatasetList(SkygridResource):
     def get(self):
-        if request.args['hash']:
-            return Dataset.objects.get(filehash=request.args['hash']).to_dict()
-        elif request.args['name']:
+        if 'hash' in request.args:
+            return {
+                'datasets': [
+                    ds.to_dict()
+                    for ds in Dataset.objects(filehash=request.args['hash'])
+                ]
+            }
+        elif 'name' in request.args:
             return {
                 'datasets': [
                     ds.to_dict() 

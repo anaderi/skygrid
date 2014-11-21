@@ -15,11 +15,15 @@ if app.config['DB_USE_AUTH']:
 else:
     connect(app.config['MONGO_DB'])
 
+
 # Configure metascheduler
 app.metascheduler = Metascheduler(app.config['METASCHEDULER_URL'])
 
+
 # Configure blueprints
 from datasets import blueprint as datasets_blueprint
+from classifiers import blueprint as classifiers_blueprint
 
 app.register_blueprint(datasets_blueprint)
+app.register_blueprint(classifiers_blueprint)
 
