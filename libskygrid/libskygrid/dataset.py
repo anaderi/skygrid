@@ -1,7 +1,7 @@
 import os
 import hashlib
 
-from common import *
+from .common import *
 
 
 def hashfile(path):
@@ -86,10 +86,12 @@ class Dataset(object):
 
 
     def __eq__(self, other):
-        return all((
-            (self.filehash == other.filehash),
-            (self.ds_id == other.ds_id),
-            (self.name == other.name),
-            (self.filetype == other.filetype),
-            (self.uploaded_at == other.uploaded_at),
-        ))
+        if type(self) != type(other):
+            return False
+
+        attrs = ("filehash", "ds_id", "name", "filetype", "uploaded_at")
+        return all(
+            tuple(
+                getattr(self, attr) == getattr(other, attr) for attr in attrs
+            )
+        )
