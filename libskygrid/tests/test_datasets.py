@@ -1,20 +1,8 @@
-import json
-import os
-import random
-import unittest
-import uuid
-from time import sleep
+from common import SkygridTest
 
-import requests
-
-from testconfig import config
 from libskygrid.common import SkygridServerError
 from libskygrid.dataset import Dataset, hashfile
 
-
-class SkygridTest(unittest.TestCase):
-    def setUp(self):
-        self.api_url = config['api']['url']
 
 class TestDataset(SkygridTest):
     def test_upload(self):
