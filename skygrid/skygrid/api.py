@@ -16,7 +16,7 @@ def api_decorator(f):
 
             if current_app.config['DEBUG']:
                 d['traceback'] = traceback.format_exc()
-                d['exception'] = e
+                d['exception'] = str(e)
 
             return jsonify(d)
 
