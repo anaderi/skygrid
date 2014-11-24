@@ -1,4 +1,6 @@
 import os
+import json
+
 import requests
 
 class SkygridServerError(Exception): pass
