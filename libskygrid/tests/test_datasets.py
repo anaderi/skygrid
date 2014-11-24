@@ -1,6 +1,5 @@
-from common import SkygridTest
+from common import SkygridTest, SkygridServerError
 
-from libskygrid.common import SkygridServerError
 from libskygrid.dataset import Dataset, hashfile
 
 
