@@ -4,6 +4,9 @@ import requests
 class SkygridServerError(Exception): pass
 
 class u(str):
+    """
+        Class to deal with urls concat.
+    """
     def __init__(self, url):
         self.url = url
 
