@@ -3,6 +3,8 @@ import time
 
 from mongoengine import *
 
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 class Dataset(Document):
     name = StringField(required=True)
     path = StringField()
@@ -21,7 +23,7 @@ class Dataset(Document):
             'name': self.name,
             'type': self.datatype,
             'hash': self.filehash,
-            'uploaded': str(self.upload_time)
+            'uploaded': self.upload_time.strftime(TIME_FORMAT)
         }
 
 
