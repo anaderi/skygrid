@@ -84,7 +84,7 @@ class ClassifierTest(BasicSkygridTest):
     def test_create(self):
         ds_id = self.upload_ds()
         payload = {
-            'name' : str(uuid.uuid4().hex),
+            'description' : str(uuid.uuid4().hex),
             'type' : "mn",
             'parameters' : {'a': 'b'},
             'dataset': ds_id
@@ -99,7 +99,7 @@ class ClassifierTest(BasicSkygridTest):
         self.assertTrue(r['success'])
         data = r['data']
 
-        self.assertEqual(data['name'], payload['name'])
+        self.assertEqual(data['description'], payload['description'])
         self.assertEqual(data['type'], payload['type'])
         self.assertEqual(data['parameters'], payload['parameters'])
 
