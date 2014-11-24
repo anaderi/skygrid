@@ -76,7 +76,7 @@ class Dataset(object):
 
     def delete(self):
         if not hasattr(self, 'ds_id'):
-            raise Exception('Dataset id is not seet. Seems like dataset is not uploaded.')
+            raise Exception('Dataset id is not set. Seems like dataset is not uploaded.')
 
         result = sg_delete(self.ds_url + self.ds_id)
         assert result == {}
@@ -86,10 +86,10 @@ class Dataset(object):
 
 
     def __eq__(self, other):
-        return (
-            (self.filehash == other.filehash) and
-            (self.ds_id == other.ds_id) and
-            (self.name == other.name) and
-            (self.filetype == other.filetype) and
-            (self.uploaded_at == other.uploaded_at)
-        )
+        return all((
+            (self.filehash == other.filehash),
+            (self.ds_id == other.ds_id),
+            (self.name == other.name),
+            (self.filetype == other.filetype),
+            (self.uploaded_at == other.uploaded_at),
+        ))
