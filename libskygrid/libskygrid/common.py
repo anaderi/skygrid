@@ -8,7 +8,7 @@ class u(str):
         Class to deal with urls concat.
     """
     def __init__(self, url):
-        self.url = url
+        self.url = str(url)
 
     def __add__(self, other):
         if isinstance(other, u):
