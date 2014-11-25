@@ -19,10 +19,11 @@ class Classifier(Document):
 
     def to_dict(self):
         return {
-            'id': str(self.pk),
+            'classifier_id': str(self.pk),
+            'dataset_id': str(self.dataset.pk),
+
             'description': self.description,
             'type': self.classifier_type,
-            'dataset_id': str(self.dataset.pk),
             'parameters': self.parameters,
             'status': self.status
         }

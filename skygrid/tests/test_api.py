@@ -105,7 +105,7 @@ class ClassifierTest(BasicSkygridTest):
 
 
         r = requests.delete(
-            os.path.join(self.classifiers_url, data['id'])
+            os.path.join(self.classifiers_url, data['classifier_id'])
         ).json()
 
         self.assertTrue(r['success'])

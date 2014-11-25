@@ -31,13 +31,13 @@ class Classifier(object):
 
 
     def _update_with_dict(self, data):
-        self.cl_id = data['id']
+        self.cl_id = data['classifier_id']
+        self.dataset = Dataset(self.api_url, ds_id=data['dataset_id'])
+
         self.status = data['status']
         self.description = data['description']
         self.parameters = data['parameters']
         self.cl_type = data['type']
-
-        self.dataset = Dataset(self.api_url, ds_id=data['dataset_id'])
 
 
     def load_from_api(self):
