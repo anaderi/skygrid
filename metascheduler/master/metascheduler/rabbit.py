@@ -5,7 +5,7 @@ from .app import app
 
 rmq_connection = pika.BlockingConnection(pika.ConnectionParameters(host=app.config['RMQ_HOST']))
 channel = rmq_connection.channel()
-
+channel.basic_qos(prefetch_count=1)
 
 def rmq_push_to_queue(queue, msg):
     channel.queue_declare(queue=queue, durable=True)
@@ -23,6 +23,7 @@ def rmq_pull_from_queue(queue):
     method_frame, header_frame, body = channel.basic_get(queue)
 
     if method_frame:
+        channel.basic_ack(delivery_tag = method_frame.delivery_tag)
         return json.loads(body)
     else:
         return None
