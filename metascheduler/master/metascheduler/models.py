@@ -25,8 +25,9 @@ class JobStatus:
     pending = "pending"
     running = "running"
     failed  = "failed"
+    completed = "completed"
 
-    valid_statuses = set([pending, running, failed])
+    valid_statuses = set([pending, running, failed, completed])
 
 def get_current_time():
     return time.time()
