@@ -12,19 +12,23 @@ from .blueprint import blueprint
 from .models import Dataset
 
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in current_app.config['ALLOWED_EXTENSIONS']
+def get_extension(filename):
+    assert '.' in filename
+    return filename.rsplit('.', 1)[1]
+
+def allowed_extension(extension):
+    return extension in current_app.config['ALLOWED_EXTENSIONS']
 
 
 def upload_file(ds_id, ds_file):
-    if not (ds_file and allowed_file(ds_file.filename)):
+    extension = get_extension(ds_file.filename)
+    if not allowed_extension(extension):
         raise Exception('Bad file!')
 
     ds_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], ds_id)
     os.mkdir(ds_dir)
 
-    filename = secure_filename(ds_file.filename)
+    filename = "data." + extension
     path = os.path.join(ds_dir, filename)
     ds_file.save(path)
 
