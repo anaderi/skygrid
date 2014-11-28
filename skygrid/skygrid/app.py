@@ -7,7 +7,7 @@ from libscheduler import Metascheduler
 
 
 app = Flask(__name__)
-app.config.from_envvar('SKYGRID_FRONTEND_CONFIG')
+app.config.from_envvar('SKYGRID_CONFIG')
 
 # Configure DB
 if app.config['DB_USE_AUTH']:
