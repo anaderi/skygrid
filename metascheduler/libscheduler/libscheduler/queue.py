@@ -55,10 +55,15 @@ class QueueMS(object):
 
         if job_dict:
             job_dict['api_url'] = self.api_url
+
             return JobMS(**job_dict)
 
     def put(self, item):
-        response = ms_post(self.queue_url, data=json.dumps(item))
+        response = ms_post(
+            self.queue_url,
+            data=json.dumps(item),
+            headers=JSON_HEADERS
+        )
 
         return self._construct_job(response)
 

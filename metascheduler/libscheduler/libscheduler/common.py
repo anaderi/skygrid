@@ -20,7 +20,10 @@ class u(object):
         return self.url
 
 
+JSON_HEADERS = {'content-type': 'application/json'}
+
 def check_result(result):
+    assert result
     result.raise_for_status()
     result = result.json()
 

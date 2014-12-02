@@ -14,13 +14,13 @@ from test_queue import TestWithQueue
 
 class TestJobMS(TestWithQueue):
     def test_update_and_delete(self):
-        TEST_DESCRIPTION ={"a": "b"}
+        TEST_OBJ = {"descriptor": {"a": "b"}}
 
-        self.queue.put(TEST_DESCRIPTION)
+        self.queue.put(TEST_OBJ)
 
         
         job = self.queue.get()
-        self.assertEqual(job.descriptor, TEST_DESCRIPTION)
+        self.assertEqual(job.descriptor, TEST_OBJ['descriptor'])
 
         self.assertTrue(job.update_status('failed'))
         self.assertTrue(job.update_descriptor({"b": "c"}))
