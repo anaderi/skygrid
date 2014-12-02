@@ -1,22 +1,8 @@
 import os
 import time
+from datetime import datetime
 
 from mongoengine import *
-
-# User model and stuff used
-
-def generate_salt():
-    return os.urandom(128).encode('base_64')[:-1] # "\n" always at the end
-
-
-class User(Document):
-    username = StringField(unique=True)
-    pass_hash = StringField(default="") # PBKDF2
-    salt = StringField(default=generate_salt)
-    info = DictField()
-
-    def __unicode__(self):
-        return "{}".format(self.username)
 
 
 # Job model and stuff used
@@ -29,16 +15,15 @@ class JobStatus:
 
     valid_statuses = set([pending, running, failed, completed])
 
-def get_current_time():
-    return time.time()
-
 
 class Job(Document):
     job_type = StringField(default="ANY")
     descriptor = DictField(default={})
 
     status = StringField(default=JobStatus.pending)
-    last_update = FloatField(min_value=0, default=get_current_time)
+    last_update = DateTimeField(default=datetime.now)
+
+    callback = StringField()
 
     meta = {
         'ordering': ['last_update'],

@@ -45,9 +45,11 @@ class QueueResource(ExistingQueueResource):
         return {'job': rmq_pull_from_queue(job_type) }
 
     def post(self, job_type):
-        job_dict = json.loads(request.data)
+        descriptor = request.json.get('descriptor')
+        callback = request.json.get('callback')
+        assert descriptor
 
-        job = Job(job_type=job_type, descriptor=job_dict)
+        job = Job(job_type=job_type, descriptor=descriptor, callback=callback)
         job.save()
 
         rmq_push_to_queue(job_type, json.dumps(job.to_dict()))

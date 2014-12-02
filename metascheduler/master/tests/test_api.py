@@ -11,9 +11,15 @@ from testconfig import config
 
 
 
-class StatusTest(unittest.TestCase):
+class BasicMetaschedulerTest(unittest.TestCase):
     def setUp(self):
         self.api_url = config['api']['url']
+        self.json_headers =  {'content-type': 'application/json'}
+
+
+class StatusTest(BasicMetaschedulerTest):
+    def setUp(self):
+        super(StatusTest, self).setUp()
         self.status_url = os.path.join(config['api']['url'], 'status')
 
     def test_alive(self):
@@ -21,9 +27,9 @@ class StatusTest(unittest.TestCase):
         self.assertTrue(r['alive'])
 
 
-class BasicQueueTest(unittest.TestCase):
+class BasicQueueTest(BasicMetaschedulerTest):
     def setUp(self):
-        self.api_url = config['api']['url']
+        super(BasicQueueTest, self).setUp()
         self.queue_name = uuid.uuid4().hex
 
         self.all_queues_url = os.path.join(self.api_url, 'queues')
@@ -80,40 +86,74 @@ class QueueTest(BasicQueueTest):
         self.create_queue()
 
     def test_add_element(self):
-        TEST_OBJ = {"hello": "world"}
+        TEST_OBJ = {"descriptor": {"hello": "world"}}
         
-        r = requests.post(self.queue_url, data=json.dumps(TEST_OBJ))
+        r = requests.post(
+            self.queue_url,
+            data=json.dumps(TEST_OBJ),
+            headers=self.json_headers
+        )
         result_create = r.json()
 
         self.assertEqual(result_create['success'], True)
-        self.assertEqual(result_create['job']['descriptor'], TEST_OBJ)
+        self.assertEqual(result_create['job']['descriptor'], TEST_OBJ['descriptor'])
         self.assertEqual(result_create['job']['status'], "pending")
 
         r = requests.get(self.queue_url)
         result_get = r.json()
 
-
         self.assertEqual(result_get['success'], True)
-        self.assertEqual(result_get['job']['descriptor'], TEST_OBJ)
+        self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
         self.assertEqual(result_get['job']['status'], "pending")
 
+
+    def test_add_element_with_callback(self):
+        TEST_OBJ = {
+            "descriptor": {"hello": "world"},
+            "callback": "http://callback.site.com"
+        }
+        
+        r = requests.post(
+            self.queue_url,
+            data=json.dumps(TEST_OBJ),
+            headers=self.json_headers
+        )
+        result_create = r.json()
+
+        self.assertEqual(result_create['success'], True)
+        self.assertEqual(result_create['job']['descriptor'], TEST_OBJ['descriptor'])
+        self.assertEqual(result_create['job']['status'], "pending")
+
+        r = requests.get(self.queue_url)
+        result_get = r.json()
+
+        self.assertEqual(result_get['success'], True)
+        self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
+        self.assertEqual(result_get['job']['status'], "pending")
+
+
     def test_sequence(self):
-        TEST_OBJ =[
-            {"a": "b"},
-            {"c": "d"}
+        TEST_OBJS =[
+            {"descriptor": {"a": "b"}},
+            {"descriptor": {"c": "d"}}
         ]
         IDS = []
 
-        for obj in TEST_OBJ:
-            r = requests.post(self.queue_url, data=json.dumps(obj))
+        for obj in TEST_OBJS:
+            r = requests.post(
+                self.queue_url,
+                data=json.dumps(obj),
+                headers=self.json_headers
+            )
             result_create = r.json()
+
             job = result_create['job']
             IDS.append(job['job_id'])
 
             self.assertEqual(result_create['success'], True)
-            self.assertEqual(job['descriptor'], obj)
+            self.assertEqual(job['descriptor'], obj['descriptor'])
             self.assertEqual(job['status'], "pending")
-            sleep(0.5) # To prevent equal times inside MS database
+            sleep(0.2) # To prevent equal times inside MS database
 
         get_created_jobs_url = os.path.join(self.all_jobs_url, ','.join(IDS))
         r = requests.get(get_created_jobs_url)
@@ -122,12 +162,12 @@ class QueueTest(BasicQueueTest):
         self.assertTrue(result['success'])
 
 
-        for obj in TEST_OBJ:
+        for obj in TEST_OBJS:
             r = requests.get(self.queue_url)
             result_get = r.json()
 
             self.assertEqual(result_get['success'], True)
-            self.assertEqual(result_get['job']['descriptor'], obj)
+            self.assertEqual(result_get['job']['descriptor'], obj['descriptor'])
 
 
 class NoQueueTest(BasicQueueTest):
