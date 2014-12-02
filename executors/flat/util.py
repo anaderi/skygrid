@@ -47,7 +47,7 @@ def filter_older_than(fh, fh_out, seconds):
 
 
 def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
-    if verbose: logger.info("`%s`" % cmd)
+    if verbose: logger.info("util.sh: `%s`" % cmd)
     cmd_args = shlex.split(cmd.encode('ascii'))
     result = {
         'status': "",
@@ -56,11 +56,8 @@ def sh(cmd, input=None, verbose=False, logout=None, logerr=None):
         'rc': 0
     }
     try:
-        fh_out, fh_err = (subprocess.PIPE, subprocess.PIPE)
-        if logout is not None:
-            fh_out = open(logout, "w")
-        if logerr is not None:
-            fh_err = open(logerr, "w")
+        fh_out = subprocess.PIPE if logout is None else open(logout, "w") 
+        fh_err = subprocess.PIPE if logerr is None else open(logerr, "w") 
         proc = subprocess.Popen(cmd_args, stdout=fh_out, stderr=fh_err)
         if verbose:
             logger.debug("PID: %d" % proc.pid)

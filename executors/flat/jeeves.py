@@ -3,6 +3,7 @@
     runner of a job by job descriptor
 """
 import os
+import re
 import json
 import time
 import shutil
@@ -10,6 +11,7 @@ import argparse
 import datetime
 import logging
 from util import sh, test_sh, SUCCESS, ERROR_EXCEPTION
+from lockfile import LockFile
 
 DELAY_WAIT_DOCKER_MIN = 0.1
 DELAY_WAIT_DOCKER_MAX = 10.0
@@ -73,6 +75,14 @@ def getargs(jd, subst):
     return s
 
 
+def docker_pull_image(image):
+    with LockFile("/tmp/jeeves_lock_pull_%s" % re.sub("[:/]", "_", image)):
+        result = sh("docker pull %s" % image)
+    if result['rc'] != SUCCESS:
+        halt("error pulling image '%s' (rc: %d, status: %s)\nERR: %s" %
+            (image, result['rc'], result['status'], result['err']))
+
+
 def run_jd_async(jd, output_basedir="output", force=False):
     global verbose
     JOB_ID = jd["job_id"]
@@ -102,6 +112,8 @@ def run_jd_async(jd, output_basedir="output", force=False):
             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
     else:
         os.makedirs(JOB_OUTPUT_DIR)
+
+    docker_pull_image(jd["app_container"]["name"])
     if not docker_is_running(APP_CONTAINER):
         result = sh("docker run -d -v %s --name %s %s echo %s app" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
@@ -117,17 +129,22 @@ def run_jd_async(jd, output_basedir="output", force=False):
         app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
         env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
     time0 = datetime.datetime.now()
+    docker_pull_image(ENV_CONTAINER)
     result = sh(docker_cmd, verbose=verbose)
     if result['rc'] != SUCCESS:
         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
     containerID = result['out'].strip()
     while True:
         check_result = sh("docker ps %s" % containerID, verbose=False)
+        sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
+            logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=False)
         if len(check_result['out'].strip().split('\n')) == 1:
+            if verbose: 
+                sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
+                    logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=True)
             sh("docker rm %s" % containerID)
             break
         time1 = datetime.datetime.now()
-        sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR)
         time.sleep(max(DELAY_WAIT_DOCKER_MIN, min(DELAY_WAIT_DOCKER_MAX, (time1-time0).seconds * 0.1)))
 
 

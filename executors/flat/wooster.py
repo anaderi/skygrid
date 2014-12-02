@@ -4,6 +4,7 @@
 """
 
 import os
+import sys
 import json
 import time
 import socket
@@ -21,27 +22,32 @@ from util import QueueDir, test_queue, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEP
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
 SLEEP_DELAY = 1
-
-logger = logging.getLogger()
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.INFO)
+HOSTNAME = socket.gethostname().split('.')[0]
+logger = None
 
 
 def parse_args():
+    global logger
     p = argparse.ArgumentParser()
     p.add_argument("--dir", "-d", help="job descriptor pool", default="jobs")
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
     p.add_argument("--niterations", help="number of iterations", type=int, default=None)
-    p.add_argument("--output", "-o", help="output folder", default="output")
+    p.add_argument("--output", "-o", help="output folder", default="output-%s" % HOSTNAME)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
+    p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
     args = p.parse_args()
     if not os.path.exists(args.dir) and not args.test:
         p.error("directory '%s' does not exists" % args.dir)
+    logging.basicConfig(filename=args.log, filemode='w', level=logging.INFO)
+    logger = logging.getLogger()    
     args.dir = args.dir.rstrip("/")
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(logging.DEBUG)
+        logger.addHandler(stream_handler)
     if args.niterations == 0:
         args.niterations = None
     return args
@@ -79,10 +85,11 @@ def run_jd(jds, output_dir):
                 result["status"] += sh_result["out"]
             if len(sh_result["err"]) > 0:
                 result["status"] += sh_result["err"]
-            with open("%s/%d/wooster.log" % (output_dir, jds['job_id']), "w") as wooster_log:
-                wooster_log.write(result["status"])
+            logger.info("JEEVES_OUTPUT (JOB_ID={job})\n{sep}\n{out}\n{sep}".format(
+                job=jds['job_id'], out=result['status'], sep='='*80))
     except Exception, e:
         result["status"] = "EXCEPTION: " + e.__repr__()
+        logger.error(result['status'])
     return result
 
 
