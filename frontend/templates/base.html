@@ -57,23 +57,35 @@
             </div>
             <!-- /.navbar-header -->
 
+            {% set navigation_bar = [
+                ('/', 'dashboard', '<i class="fa fa-dashboard fa-fw"></i> Dashboard'),
+                ('/datasets', 'datasets', '<i class="fa fa-database fa-fw"></i> Datasets'),
+                ('/classifiers', 'classifiers', '<i class="fa fa-sitemap fa-fw"></i> Classifiers'),
+                ('/metascheduler', 'metascheduler', '<i class="fa fa-cog fa-fw"></i> metaScheduler'),
+            ] -%}
+            {% set active_page = active_page|default('dashboard') -%}
 
             <div class="navbar-default sidebar" role="navigation">
                 <div class="sidebar-nav navbar-collapse">
 
 
                     <ul class="nav" id="side-menu">
-                        <li>
-                            <a class="active" href="/"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                        {% for href, id, caption in navigation_bar %}
+                          <li>
+                            <a {% if id == active_page %} class="active"{% endif%} href="{{ href|e }}">{{ caption|safe }}</a>
+                          </li>
+                        {% endfor %}
+                        <!-- <li>
+                            <a class="active" href="/"></a>
                         </li>
                         
                         <li>
-                            <a href="/datasets"><i class="fa fa-database fa-fw"></i> Datasets</a>
+                            <a href="/datasets"></a>
                         </li>
 
                         <li>
-                            <a href="/"><i class="fa fa-sitemap fa-fw"></i> Classifiers</a>
-                        </li>
+                            <a href="/classifiers"></a>
+                        </li> -->
 
                         <li>
                             <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> MC<span class="fa arrow"></span></a>
