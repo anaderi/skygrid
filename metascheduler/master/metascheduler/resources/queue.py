@@ -44,17 +44,27 @@ class QueueResource(ExistingQueueResource):
     def get(self, job_type):
         return {'job': rmq_pull_from_queue(job_type) }
 
+
     def post(self, job_type):
         descriptor = request.json.get('descriptor')
-        callback = request.json.get('callback')
         assert descriptor
 
-        job = Job(job_type=job_type, descriptor=descriptor, callback=callback)
-        job.save()
+        callback = request.json.get('callback')
+        replicate = request.json.get('multiply') or 1
 
-        rmq_push_to_queue(job_type, json.dumps(job.to_dict()))
+        job_ids = []
 
-        return {'job': job.to_dict()}
+        for i in xrange(replicate):
+            job = Job(job_type=job_type, descriptor=descriptor, callback=callback)
+            job.save()
+
+            rmq_push_to_queue(job_type, json.dumps(job.to_dict()))
+            job_ids.append(str(job.pk))
+
+        if replicate == 1:
+            return {'job': job.to_dict()}
+        else:
+            return {"job_ids": job_ids}
 
     def delete(self, job_type):
         queue = Queue.objects.get(job_type=job_type)

@@ -57,7 +57,6 @@ class BasicQueueTest(BasicMetaschedulerTest):
 class QueueManagementTest(BasicQueueTest):
     def test_create_and_delete(self):
         result_create = self.create_queue()
-        
 
         self.assertEqual(result_create['success'], True)
         self.assertEqual(result_create['queue']['name'], self.queue_name)
@@ -72,8 +71,6 @@ class QueueManagementTest(BasicQueueTest):
         self.assertEqual(result_get['success'], True)
         self.assertEqual(result_get['exists'], False)
 
-
-
     def test_delete_not_created(self):
         result_delete = self.delete_queue()
         self.assertEqual(result_delete['success'], False)
@@ -87,7 +84,6 @@ class QueueTest(BasicQueueTest):
 
     def test_add_element(self):
         TEST_OBJ = {"descriptor": {"hello": "world"}}
-        
         r = requests.post(
             self.queue_url,
             data=json.dumps(TEST_OBJ),
@@ -105,14 +101,12 @@ class QueueTest(BasicQueueTest):
         self.assertEqual(result_get['success'], True)
         self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
         self.assertEqual(result_get['job']['status'], "pending")
-
 
     def test_add_element_with_callback(self):
         TEST_OBJ = {
             "descriptor": {"hello": "world"},
             "callback": "http://callback.site.com"
         }
-        
         r = requests.post(
             self.queue_url,
             data=json.dumps(TEST_OBJ),
@@ -130,7 +124,6 @@ class QueueTest(BasicQueueTest):
         self.assertEqual(result_get['success'], True)
         self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
         self.assertEqual(result_get['job']['status'], "pending")
-
 
     def test_sequence(self):
         TEST_OBJS =[
@@ -169,11 +162,41 @@ class QueueTest(BasicQueueTest):
             self.assertEqual(result_get['success'], True)
             self.assertEqual(result_get['job']['descriptor'], obj['descriptor'])
 
+    def test_add_replicated(self):
+        N_OBJ = 5
+        TEST_OBJ = {
+            "descriptor": {"hello": "world"},
+            "multiply": N_OBJ
+        }
+
+        r = requests.post(
+            self.queue_url,
+            data=json.dumps(TEST_OBJ),
+            headers=self.json_headers
+        )
+        result_create = r.json()
+
+        self.assertEqual(result_create['success'], True)
+        self.assertEqual(len(result_create['job_ids']), N_OBJ)
+
+        IDS = set(result_create['job_ids'])
+
+        for _ in xrange(N_OBJ):
+            r = requests.get(self.queue_url)
+            result_get = r.json()
+
+            self.assertEqual(result_get['success'], True)
+            self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
+            self.assertTrue(result_get['job']['job_id'] in IDS)
+
+            IDS.remove(result_get['job']['job_id'])
+
+        self.assertEqual(IDS, set([]))
+
 
 class NoQueueTest(BasicQueueTest):
     def test_add_no_queue(self):
         TEST_OBJ = {"hello": "world"}
-            
         r = requests.post(self.queue_url, data=json.dumps(TEST_OBJ))
         result_create = r.json()
 
