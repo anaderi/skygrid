@@ -20,10 +20,13 @@ class QueueManagementResource(MetaschedulerResource):
     def get(self):
         jsoned_queues = []
 
-        queues = Queue.objects()
+        queues = Queue.objects().all()
 
         for queue in queues:
-            jsoned_queues.append(queue.to_dict())
+            q_dict = queue.to_dict()
+            q_dict['length'] = rmq_queue_length(queue.job_type)
+
+            jsoned_queues.append(q_dict)
 
         return {'queues': jsoned_queues}
 
