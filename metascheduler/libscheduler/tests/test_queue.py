@@ -29,13 +29,13 @@ class TestWithQueue(unittest.TestCase):
 class TestQueueMS(TestWithQueue):
     def test_sequence(self):
         TEST_OBJ =[
-            {"a": "b"},
-            {"c": "d"}
+            {'descriptor': {"a": "b"}},
+            {'descriptor': {"c": "d"}}
         ]
 
         for obj in TEST_OBJ:
             self.queue.put(obj)
-            sleep(0.5)
+            sleep(0.2)
 
         self.assertEqual(self.queue.qsize(), len(TEST_OBJ))
         q_size = len(TEST_OBJ)
@@ -46,6 +46,6 @@ class TestQueueMS(TestWithQueue):
             q_size -= 1
             self.assertEqual(self.queue.qsize(), q_size)
 
-            self.assertEqual(job.descriptor, obj)
+            self.assertEqual(job.descriptor, obj['descriptor'])
             self.assertTrue(job.delete())
 

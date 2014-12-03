@@ -11,6 +11,9 @@ app = Flask(__name__)
 app.config.from_envvar('SKYGRID_CONFIG')
 cors = CORS(app)
 
+# FIXME: handle https scenario
+app.config['FULL_URL'] = "http://{}:{}/".format(app.config['HOSTNAME'], app.config['PORT'])
+
 # Configure DB
 if app.config['DB_USE_AUTH']:
     connect(app.config['MONGO_DB'], username=app.config['MONGO_DB_USERNAME'], password=app.config['MONGO_DB_PASSWORD'])

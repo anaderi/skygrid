@@ -63,6 +63,21 @@ class Classifier(object):
 
         return True
 
+    def update_status(self, new_status):
+        self.status = new_status
+        payload = {
+            'status': new_status
+        }
+
+        data = sg_post(
+            self.cl_url + self.cl_id,
+            data=json.dumps(payload),
+            headers=JSON_HEADER
+        )
+
+        return True
+
+
 
     def delete(self):
         if not hasattr(self, 'cl_id'):

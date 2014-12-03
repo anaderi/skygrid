@@ -29,14 +29,20 @@ class JobMS(object):
 
 
     def _post_update(self, update_dict):
-        return ms_post(self.job_url, data=json.dumps(update_dict))
+        return ms_post(
+            self.job_url,
+            data=json.dumps(update_dict),
+            headers=JSON_HEADERS
+        )
 
 
     def update_status(self, status):
+        self.status = status
         return self._post_update({'status': status})
 
 
     def update_descriptor(self, descriptor):
+        self.descriptor = descriptor
         return self._post_update({'descriptor': descriptor})
 
 

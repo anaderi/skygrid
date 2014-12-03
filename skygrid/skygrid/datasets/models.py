@@ -3,7 +3,7 @@ import time
 
 from mongoengine import *
 
-TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+from flask import current_app
 
 class Dataset(Document):
     name = StringField(required=True)
@@ -23,7 +23,7 @@ class Dataset(Document):
             'name': self.name,
             'type': self.datatype,
             'hash': self.filehash,
-            'uploaded': self.upload_time.strftime(TIME_FORMAT)
+            'uploaded': self.upload_time.strftime(current_app.config['TIME_FORMAT']),
         }
 
 
