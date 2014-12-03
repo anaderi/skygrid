@@ -33,9 +33,8 @@ def ms_job(job_id):
 
 
 @app.route("/metascheduler")
-def queues(job_id):
+def queues():
     return render_template("queues.html")
-
 
 
 @app.template_filter('to_json')
@@ -43,4 +42,4 @@ def to_json(value):
     return json.dumps(value, indent=4)
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="cern-dev01i.vs.os.yandex.net", debug=True, port=5002)
