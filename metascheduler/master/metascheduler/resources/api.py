@@ -1,7 +1,9 @@
-from flask import jsonify
+from flask import jsonify, current_app
 from flask.ext.restful import Resource
 
 from ..models import Queue
+
+import traceback
 
 def api_decorator(f):
     def decorated(*args, **kwargs):
@@ -11,7 +13,10 @@ def api_decorator(f):
                 result = {}
             return jsonify(success=True, **result)
         except Exception, e:
-            return jsonify(success=False, exception=str(e))
+            if current_app.config['DEBUG']:
+                return jsonify(success=False, exception=str(e), traceback=traceback.format_exc())
+            else:
+                return jsonify(success=False)
 
     return decorated
 
