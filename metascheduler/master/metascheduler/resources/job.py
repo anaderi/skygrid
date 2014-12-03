@@ -13,10 +13,9 @@ def update_job(job, update_dict):
         raise Exception('Could not update job id!')
 
     new_status = update_dict.get('status')
-    if new_status and not new_status in JobStatus.valid_statuses:
-        raise ValueError('Invalid status!')
-
-    job.status = new_status
+    if new_status:
+        assert new_status in JobStatus.valid_statuses
+        job.status = new_status
 
     new_descriptor = update_dict.get('descriptor')
     if new_descriptor:
