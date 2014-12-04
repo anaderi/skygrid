@@ -6,7 +6,7 @@ from time import sleep
 
 from .job import JobMS
 from .common import *
-        
+
 
 class QueueMS(object):
     def __init__(self, queue_name, autocreate=True, api_url="http://localhost:5000/"):
@@ -19,7 +19,7 @@ class QueueMS(object):
             'queues',
             self.queue_name
         )
-        
+
         self.INFO_URL = os.path.join(self.queue_url, "info")
 
         if autocreate and not self._exists():
@@ -65,7 +65,10 @@ class QueueMS(object):
             headers=JSON_HEADERS
         )
 
-        return self._construct_job(response)
+        if 'multiply' in item:
+            return response['job_ids']
+        else:
+            return self._construct_job(response)
 
     def get(self):
         response = ms_get(self.queue_url)

@@ -49,3 +49,25 @@ class TestQueueMS(TestWithQueue):
             self.assertEqual(job.descriptor, obj['descriptor'])
             self.assertTrue(job.delete())
 
+    def test_multiplication(self):
+        N_OBJ = 5
+        TEST_OBJ ={
+            'descriptor': {"a": "b"},
+            'multiply': N_OBJ
+        }
+        job_ids = self.queue.put(TEST_OBJ)
+        q_size = N_OBJ
+
+        self.assertEqual(self.queue.qsize(), q_size)
+        self.assertIsInstance(job_ids, list)
+
+        for jid in job_ids:
+            job = self.queue.get()
+
+            q_size -= 1
+            self.assertEqual(self.queue.qsize(), q_size)
+
+            self.assertEqual(job.descriptor, TEST_OBJ['descriptor'])
+            self.assertEqual(job.job_id, jid)
+            self.assertTrue(job.delete())
+
