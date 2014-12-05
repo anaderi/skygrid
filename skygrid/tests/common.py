@@ -15,5 +15,6 @@ class BasicSkygridTest(unittest.TestCase):
         self.api_url = config['api']['url']
         self.datasets_url = os.path.join(config['api']['url'], 'datasets')
         self.classifiers_url = os.path.join(config['api']['url'], 'classifiers')
+        self.montecarlo_url = os.path.join(config['api']['url'], 'montecarlo')
         self.json_headers =  {'content-type': 'application/json'}
 

@@ -26,9 +26,11 @@ app.metascheduler = Metascheduler(app.config['METASCHEDULER_URL'])
 
 
 # Configure blueprints
-from datasets import blueprint as datasets_blueprint
-from classifiers import blueprint as classifiers_blueprint
+import datasets
+import classifiers
+import montecarlo
 
-app.register_blueprint(datasets_blueprint)
-app.register_blueprint(classifiers_blueprint)
 
+app.register_blueprint(datasets.blueprint)
+app.register_blueprint(classifiers.blueprint)
+app.register_blueprint(montecarlo.blueprint)
