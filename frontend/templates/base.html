@@ -63,6 +63,10 @@
                 ('/classifiers', 'classifiers', '<i class="fa fa-sitemap fa-fw"></i> Classifiers'),
                 ('/metascheduler', 'metascheduler', '<i class="fa fa-cog fa-fw"></i> metaScheduler'),
             ] -%}
+            {% set mc_nav = [
+                ('/mc/list', 'mc-list', 'List'),
+                ('/mc/submit', 'mc-submit', 'Submit'),
+            ] -%}
             {% set active_page = active_page|default('dashboard') -%}
 
             <div class="navbar-default sidebar" role="navigation">
@@ -75,27 +79,21 @@
                             <a {% if id == active_page %} class="active"{% endif%} href="{{ href|e }}">{{ caption|safe }}</a>
                           </li>
                         {% endfor %}
-                        <!-- <li>
-                            <a class="active" href="/"></a>
-                        </li>
 
-                        <li>
-                            <a href="/datasets"></a>
-                        </li>
-
-                        <li>
-                            <a href="/classifiers"></a>
-                        </li> -->
-
-                        <li>
+                        <li class="active">
                             <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> MC<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
-                                <li>
+                                {% for href, id, caption in mc_nav %}
+                                  <li>
+                                    <a {% if id == active_page %} class="active"{% endif%} href="{{ href|e }}">{{ caption|safe }}</a>
+                                  </li>
+                                {% endfor %}
+                                <!-- <li>
                                     <a href="/mc/list">List</a>
                                 </li>
                                 <li>
                                     <a href="/mc/submit">Submit</a>
-                                </li>
+                                </li> -->
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
