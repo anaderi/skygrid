@@ -65,8 +65,12 @@ class QueueMS(object):
             headers=JSON_HEADERS
         )
 
-        if 'multiply' in item:
-            return response['job_ids']
+        multipiler = item.get('multiply')
+        if multipiler:
+            if multipiler == 1:
+                return [response['job']['job_id']]
+            else:
+                return response['job_ids']
         else:
             return self._construct_job(response)
 
