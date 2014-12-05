@@ -10,7 +10,8 @@ from ..rabbit import (
     rmq_push_to_queue,
     rmq_pull_from_queue,
     rmq_delete_queue,
-    rmq_queue_length
+    rmq_queue_length,
+    rmq_declare,
 )
 
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
@@ -32,12 +33,16 @@ class QueueManagementResource(MetaschedulerResource):
 
     def put(self):
         queue_dict = json.loads(request.data)
+        queue_name = queue_dict['job_type']
 
-        if len(Queue.objects(job_type=queue_dict['job_type'])) > 0:
+        if len(Queue.objects(job_type=queue_name)) > 0:
             raise Exception('Queue with same job_type already exists')
+
 
         queue = Queue(**queue_dict)
         queue.save()
+
+        rmq_declare(queue_name)
 
         return {'queue': queue.to_dict()}
 
@@ -52,22 +57,22 @@ class QueueResource(ExistingQueueResource):
         descriptor = request.json.get('descriptor')
         assert descriptor
 
+        rmq_declare(job_type)
+
         callback = request.json.get('callback')
         replicate = request.json.get('multiply') or 1
 
-        job_ids = []
+        jobs = [Job(job_type=job_type, descriptor=descriptor, callback=callback) for _ in xrange(replicate)]
+        jobs = Job.objects.insert(jobs)
+
 
         for i in xrange(replicate):
-            job = Job(job_type=job_type, descriptor=descriptor, callback=callback)
-            job.save()
-
-            rmq_push_to_queue(job_type, json.dumps(job.to_dict()))
-            job_ids.append(str(job.pk))
+            rmq_push_to_queue(job_type, json.dumps(jobs[i].to_dict()))
 
         if replicate == 1:
-            return {'job': job.to_dict()}
+            return {'job': jobs[0].to_dict()}
         else:
-            return {"job_ids": job_ids}
+            return {"job_ids": [str(j.pk) for j in jobs]}
 
     def delete(self, job_type):
         queue = Queue.objects.get(job_type=job_type)

@@ -4,12 +4,16 @@ import pika
 from .app import app
 
 rmq_connection = pika.BlockingConnection(pika.ConnectionParameters(host=app.config['RMQ_HOST']))
+
 channel = rmq_connection.channel()
 channel.basic_qos(prefetch_count=1)
 
-def rmq_push_to_queue(queue, msg):
+
+
+def rmq_declare(queue):
     channel.queue_declare(queue=queue, durable=True)
 
+def rmq_push_to_queue(queue, msg):
     channel.basic_publish(
         exchange='',
         routing_key=queue,
