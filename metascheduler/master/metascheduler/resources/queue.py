@@ -6,15 +6,11 @@ from flask import request, jsonify
 from flask.ext.restful import reqparse
 
 from ..models import *
-from ..rabbit import (
-    rmq_push_to_queue,
-    rmq_pull_from_queue,
-    rmq_delete_queue,
-    rmq_queue_length,
-    rmq_declare,
-)
 
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
+
+def queue_length(queue_name):
+    return len(Job.objects(job_type=queue_name, status=JobStatus.pending))
 
 
 class QueueManagementResource(MetaschedulerResource):
@@ -25,7 +21,7 @@ class QueueManagementResource(MetaschedulerResource):
 
         for queue in queues:
             q_dict = queue.to_dict()
-            q_dict['length'] = rmq_queue_length(queue.job_type)
+            q_dict['length'] = queue_length(queue.job_type)
 
             jsoned_queues.append(q_dict)
 
@@ -42,7 +38,6 @@ class QueueManagementResource(MetaschedulerResource):
         queue = Queue(**queue_dict)
         queue.save()
 
-        rmq_declare(queue_name)
 
         return {'queue': queue.to_dict()}
 
@@ -89,7 +84,6 @@ class QueueResource(ExistingQueueResource):
         queue.delete()
 
         Job.objects(job_type=job_type).delete()
-        # rmq_delete_queue(job_type)
 
 
 
@@ -99,4 +93,4 @@ class QueueInfoResource(MetaschedulerResource):
         if not queue_exists(job_type):
             return {'exists': False}
 
-        return {'length': len(Job.objects(job_type=job_type, status=JobStatus.pending)), 'exists': True}
+        return {'length': queue_length(job_type), 'exists': True}
