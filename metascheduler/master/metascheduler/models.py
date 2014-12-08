@@ -12,8 +12,9 @@ class JobStatus:
     running = "running"
     failed  = "failed"
     completed = "completed"
+    pulled = "pulled"
 
-    valid_statuses = set([pending, running, failed, completed])
+    valid_statuses = set([pending, running, failed, completed, pulled])
 
 
 class Job(Document):
@@ -47,7 +48,7 @@ class Job(Document):
 
 class Queue(Document):
     job_type = StringField(required=True, unique=True)
-    
+
     timeout = FloatField(min_value=0)
     use_timeout = BooleanField(default=False, required=True)
 

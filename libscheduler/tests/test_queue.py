@@ -68,6 +68,6 @@ class TestQueueMS(TestWithQueue):
             self.assertEqual(self.queue.qsize(), q_size)
 
             self.assertEqual(job.descriptor, TEST_OBJ['descriptor'])
-            self.assertEqual(job.job_id, jid)
+            self.assertTrue(job.job_id in job_ids)
             self.assertTrue(job.delete())
 

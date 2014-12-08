@@ -50,14 +50,27 @@ class QueueManagementResource(MetaschedulerResource):
 
 class QueueResource(ExistingQueueResource):
     def get(self, job_type):
-        return {'job': rmq_pull_from_queue(job_type) }
+        pulled_job = Job._collection.find_and_modify(
+            query={'job_type': job_type, 'status': JobStatus.pending},
+            sort={'last_update': 1},
+            update={'$set': {'status': JobStatus.pulled}},
+            fields={'job_type': False, 'last_update': False},
+            new=True
+        )
+        if not pulled_job:
+            return
+
+        pulled_job['job_id'] = str(pulled_job['_id'])
+        del pulled_job['_id']
+
+
+        return {'job': pulled_job }
 
 
     def post(self, job_type):
         descriptor = request.json.get('descriptor')
         assert descriptor
 
-        rmq_declare(job_type)
 
         callback = request.json.get('callback')
         replicate = request.json.get('multiply') or 1
@@ -65,9 +78,6 @@ class QueueResource(ExistingQueueResource):
         jobs = [Job(job_type=job_type, descriptor=descriptor, callback=callback) for _ in xrange(replicate)]
         jobs = Job.objects.insert(jobs)
 
-
-        for i in xrange(replicate):
-            rmq_push_to_queue(job_type, json.dumps(jobs[i].to_dict()))
 
         if replicate == 1:
             return {'job': jobs[0].to_dict()}
@@ -77,7 +87,9 @@ class QueueResource(ExistingQueueResource):
     def delete(self, job_type):
         queue = Queue.objects.get(job_type=job_type)
         queue.delete()
-        rmq_delete_queue(job_type)
+
+        Job.objects(job_type=job_type).delete()
+        # rmq_delete_queue(job_type)
 
 
 
@@ -87,4 +99,4 @@ class QueueInfoResource(MetaschedulerResource):
         if not queue_exists(job_type):
             return {'exists': False}
 
-        return {'length': rmq_queue_length(job_type), 'exists': True}
+        return {'length': len(Job.objects(job_type=job_type, status=JobStatus.pending)), 'exists': True}

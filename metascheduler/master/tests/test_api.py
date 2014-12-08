@@ -100,7 +100,7 @@ class QueueTest(BasicQueueTest):
 
         self.assertEqual(result_get['success'], True)
         self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
-        self.assertEqual(result_get['job']['status'], "pending")
+        self.assertEqual(result_get['job']['status'], "pulled")
 
     def test_add_element_with_callback(self):
         TEST_OBJ = {
@@ -123,7 +123,7 @@ class QueueTest(BasicQueueTest):
 
         self.assertEqual(result_get['success'], True)
         self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
-        self.assertEqual(result_get['job']['status'], "pending")
+        self.assertEqual(result_get['job']['status'], "pulled")
 
     def test_sequence(self):
         TEST_OBJS =[
