@@ -6,8 +6,8 @@ setup(
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
-    packages=['skygrid', 'skygrid.resources'],
-    description='Metascheduler',
+    packages=find_packages(),
+    description='SkyGrid server',
     install_requires=[
         "Flask==0.10.1",
         "Flask-RESTful==0.2.12",
