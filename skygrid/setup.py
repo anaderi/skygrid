@@ -26,8 +26,8 @@ setup(
         "six==1.7.3",
         "wsgiref==0.1.2",
         "pika==0.9.14",
-        "skygrid-libscheduler==0.2.0",
-	"flask-cors",
+        "skygrid-libscheduler==0.3.2",
+        "flask-cors",
     ],
     tests_require=[
         "nose==1.3.4",
