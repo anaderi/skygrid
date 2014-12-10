@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='libskygrid',
+    name='skygrid-libskygrid',
     version='0.1.0',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
