@@ -55,6 +55,7 @@ class QueueMS(object):
 
         if job_dict:
             job_dict['api_url'] = self.api_url
+            del job_dict['callback']
 
             return JobMS(**job_dict)
 
