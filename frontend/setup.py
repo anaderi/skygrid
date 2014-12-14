@@ -22,4 +22,5 @@ setup(
         "skygrid-libskygrid==0.1.0",
         "wsgiref==0.1.2",
     ],
+    include_package_data=True
 )
