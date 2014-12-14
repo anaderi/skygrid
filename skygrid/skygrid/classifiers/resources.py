@@ -4,10 +4,10 @@ import hashlib
 import shutil
 from datetime import datetime
 
-from flask import request, current_app
+from flask import request, current_app, send_file
 from werkzeug import secure_filename
 
-from ..api import SkygridResource
+from ..api import *
 
 from .blueprint import blueprint
 from .models import Classifier, Dataset
@@ -98,3 +98,15 @@ class ClassifierCallback(SkygridResource):
 
         cl.status = self.get_classifier_status(data['status'])
         cl.save()
+
+
+class ClassifierFormula(Resource):
+    def get(self, cl_id):
+        cl = Classifier.objects.get(pk=cl_id)
+        job = current_app.metascheduler.job(cl.job_id, from_api=True)
+
+        formula_path = job.descriptor.get('output_formula')
+        if not formula_path:
+            return
+
+        return send_file(formula_path)
