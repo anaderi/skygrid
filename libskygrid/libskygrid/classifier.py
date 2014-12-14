@@ -1,3 +1,5 @@
+import shutil
+
 from .common import *
 from . import Dataset
 
@@ -62,6 +64,15 @@ class Classifier(object):
         self._update_with_dict(data)
 
         return True
+
+
+    def save_formula(self, path):
+        r = requests.get(self.cl_url + self.cl_id + 'formula', stream=True)
+
+        assert r.ok
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+
 
     def update_status(self, new_status):
         self.status = new_status
