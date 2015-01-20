@@ -1,0 +1,2 @@
+recursive-include skyfront/templates *
+recursive-include skyfront/static *
