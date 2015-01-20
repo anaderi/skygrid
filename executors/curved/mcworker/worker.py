@@ -12,7 +12,7 @@ def main():
     worker = WorkerMS(
         config.METASCHEDULER_URL,
         "queue6",
-        do_mn_job,
+        do_mc_job,
         threads_num=4,
         sleep_time=1
     )
