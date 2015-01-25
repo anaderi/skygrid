@@ -22,6 +22,18 @@ do
   rm -rf META-INF
 done
 
+cp /Users/stromsund/Development/skygrid/splitter/splitter/target/splitter-1.0-SNAPSHOT.jar $BUILD_DIR
+jar -xf splitter-1.0-SNAPSHOT.jar
+rm -rf META-INF
+
+
+for dep_jar in $(find /Users/stromsund/Development/skygrid/splitter/splitter/target/dependency -type f)
+do
+  cp $dep_jar $BUILD_DIR
+  jar -xf $(basename $dep_jar)
+  rm -rf META-INF
+done
+
 rm $BUILD_DIR/*.jar
 jar -cf $RESULT_JAR *
 
