@@ -1,30 +1,32 @@
 package com.github.anaderi.skygrid.executor.wooster;
 
+import com.github.anaderi.skygrid.Cube;
+import com.github.anaderi.skygrid.JobDescriptor;
 import com.github.anaderi.skygrid.executor.common.WoosterBusynessSubscriber;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
-import org.apache.hadoop.yarn.api.records.NodeReport;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
+import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
+import org.apache.hadoop.yarn.client.api.async.impl.NMClientAsyncImpl;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.util.Records;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.ByteBuffer;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.List;
+import java.util.*;
 
 /**
  * Woosters responsibility is receiving new tasks,
@@ -34,18 +36,33 @@ import java.util.List;
 public class Wooster {
     private static final Logger LOG = LoggerFactory.getLogger(Wooster.class);
     private AMRMClientAsync<AMRMClient.ContainerRequest> amRMClient_;
+    private NMClientAsyncImpl nmClient_;
+    private NMCallbackHandler containerListener_;
     private final String metaSchedulerURL_;
     private final int SLEEP_BETWEEN_POLLING = 1000;
+    private final List<JobDescriptor> tasksToBeExecuted_ = new LinkedList<JobDescriptor>();
+    private final List<JobDescriptor> completedTasks_ = new LinkedList<JobDescriptor>();
+    private final List<Thread> containerLaunchingThreads_ = new LinkedList<Thread>();
+    private final HashMap<ContainerId, String> processingDescriptors_ = new HashMap<ContainerId, String>();
+    private final YarnConfiguration yarnConfiguration_ = new YarnConfiguration();
+    private int totalContainersCount_ = 1;
+    private String agathaHostname_;
 
     public static void main(String[] args) throws IOException, YarnException, NotBoundException, InterruptedException {
-        new Wooster(args[1]);
+        new Wooster(args[0], args[1]);
     }
 
-    public Wooster(String metaSchedulerURL) throws IOException, YarnException, NotBoundException, InterruptedException {
-        YarnConfiguration yarnConfiguration_ = new YarnConfiguration();
+    public Wooster(String agathaHostname, String metaSchedulerURL) throws IOException, YarnException, NotBoundException, InterruptedException {
+        agathaHostname_ = agathaHostname;
         amRMClient_ = AMRMClientAsync.createAMRMClientAsync(1000, new RMCallbackHandler());
         amRMClient_.init(yarnConfiguration_);
         amRMClient_.start();
+
+        containerListener_ = new NMCallbackHandler();
+        nmClient_ = new NMClientAsyncImpl(containerListener_);
+        nmClient_.init(yarnConfiguration_);
+        nmClient_.start();
+
         metaSchedulerURL_ = metaSchedulerURL;
 
         RegisterApplicationMasterResponse response;
@@ -63,56 +80,241 @@ public class Wooster {
             BufferedReader in = new BufferedReader(new InputStreamReader(stream));
             jobDescription = "";
             for (String x = in.readLine(); x != null; x = in.readLine()) {
-                if (x.contains("description")) {
+                if (x.contains("{")) {
                     gotJob = true;
-                    break;
                 }
                 jobDescription += x;
             }
-           Thread.sleep(SLEEP_BETWEEN_POLLING);
+            if (gotJob)
+                break;
+            Thread.sleep(SLEEP_BETWEEN_POLLING);
         }
 
         LOG.info("Wooster got job: {}", jobDescription);
-        Thread.sleep(20000);
+        processJobDescription(jobDescription);
+
         informAgathaAboutWoosterIsBusy();
+        Thread.sleep(50000);
         amRMClient_.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "ok", "ok");
     }
 
-    public static void informAgathaAboutWoosterIsBusy() throws NotBoundException, RemoteException {
-        Registry registry = LocateRegistry.getRegistry("master.local", 25497);
+    public void informAgathaAboutWoosterIsBusy() throws NotBoundException, RemoteException {
+        String agathaIP = agathaHostname_.split("/")[1];
+        LOG.info("Sending onWoosterBusy to {}", agathaIP);
+        Registry registry = LocateRegistry.getRegistry(agathaIP, 25497);
         WoosterBusynessSubscriber subscriber = (WoosterBusynessSubscriber)registry.lookup("WoosterBusynessSubscriber");
         subscriber.onWoosterBusy();
+    }
+
+    private void requestContainers(int amount) {
+        for (int i = 0; i < amount; ++i) {
+            AMRMClient.ContainerRequest containerAsk = setupContainerAskForRM();
+            amRMClient_.addContainerRequest(containerAsk);
+        }
+    }
+
+    /* Parse jobDescription and create containers. One per cube. */
+    private void processJobDescription(String jobDescription) {
+        JobDescriptor descriptor = null;
+        boolean wasError = false;
+        try {
+            descriptor = JobDescriptor.fromJsonString(jobDescription);
+        } catch (JobDescriptor.JobDescriptorFormatException e) {
+            LOG.error("Bad job description format: {}", jobDescription);
+            wasError = true;
+        } catch (IOException e) {
+            LOG.error("IOException");
+            wasError = true;
+        }
+        if (wasError) {
+            LOG.info("Wooster is terminating");
+            return;
+        }
+        try {
+            synchronized (tasksToBeExecuted_) {
+                totalContainersCount_ = descriptor.volume();
+                tasksToBeExecuted_.addAll(descriptor.split(descriptor.volume()));
+            }
+        } catch (Cube.ImpossibleToSplit e) {
+            LOG.error("Impossible to split cube {} to {} pieces", jobDescription, descriptor.volume());
+            return;
+        }
+        requestContainers(tasksToBeExecuted_.size());
+    }
+
+    private AMRMClient.ContainerRequest setupContainerAskForRM() {
+        Priority pri = Records.newRecord(Priority.class);
+        pri.setPriority(0);
+        Resource capability = Records.newRecord(Resource.class);
+        capability.setMemory(128);
+        capability.setVirtualCores(1);
+
+        AMRMClient.ContainerRequest request = new AMRMClient.ContainerRequest(capability, null, null, pri);
+        LOG.info("Requested container ask: " + request.toString());
+        return request;
     }
 
     public class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
         @Override
         public void onContainersCompleted(List<ContainerStatus> statuses) {
-            LOG.debug("onContainersCompleted");
+            LOG.info("onContainersCompleted on thread {}", Thread.currentThread());
+            for (ContainerStatus status : statuses) {
+                LOG.info("Completion status for container {}: {} ({})", status.getContainerId(),
+                        status.getExitStatus(), status.getDiagnostics());
+                String currentJobSerialized;
+                JobDescriptor currentJob;
+                synchronized (processingDescriptors_) {
+                    currentJobSerialized = processingDescriptors_.get(status.getContainerId());
+                    processingDescriptors_.remove(status.getContainerId());
+                }
+                try {
+                    currentJob = JobDescriptor.fromJsonString(currentJobSerialized);
+                } catch (JobDescriptor.JobDescriptorFormatException e) {
+                    LOG.error("Wow! I was unable to parse JSON I've created recently! {}",
+                            processingDescriptors_.get(status.getContainerId()));
+                    continue;
+                } catch (IOException e) {
+                    LOG.error("IOError on parsing JSON from processingDescriptors_.");
+                    continue;
+                }
+                if (status.getExitStatus() != 0) {
+                    synchronized (tasksToBeExecuted_) {
+                        tasksToBeExecuted_.add(currentJob);
+                    }
+                    requestContainers(1);
+                } else {
+                    synchronized (completedTasks_) {
+                        completedTasks_.add(currentJob);
+                    }
+                }
+            }
         }
 
         @Override
         public void onContainersAllocated(List<Container> containers) {
-            LOG.debug("onContainersAllocated");
+            LOG.info("onContainersAllocated on thread {}", Thread.currentThread());
+            int count = 0;
+            synchronized (tasksToBeExecuted_) {
+                for (Container container : containers) {
+                    JobDescriptor jobDescriptor = tasksToBeExecuted_.get(0);
+                    ++count;
+                    tasksToBeExecuted_.remove(0);
+                    synchronized (processingDescriptors_) {
+                        processingDescriptors_.put(container.getId(), jobDescriptor.toString());
+                    }
+                    ContainerLauncher launcher = new ContainerLauncher(container, jobDescriptor);
+                    Thread launchingThread = new Thread(launcher);
+                    containerLaunchingThreads_.add(launchingThread);
+                    launchingThread.start();
+                }
+            }
+            LOG.info("Allocated {} containers", count);
         }
 
         @Override
         public void onShutdownRequest() {
-            LOG.debug("onShutdownRequest");
+            LOG.info("onShutdownRequest");
         }
 
         @Override
         public void onNodesUpdated(List<NodeReport> updatedNodes) {
-            LOG.debug("onNodesUpdated");
+            LOG.info("onNodesUpdated");
         }
 
         @Override
         public float getProgress() {
-            return 0.0f;
+            return 1.0f * totalContainersCount_ / completedTasks_.size();
         }
 
         @Override
         public void onError(Throwable e) {
             amRMClient_.stop();
+        }
+    }
+
+    class ContainerLauncher implements Runnable {
+        private Container allocatedContainer_;
+        private JobDescriptor jobDescriptor_;
+        public static final String APP_JAR_NAME = "app.jar";
+
+        ContainerLauncher(Container allocatedContainer, JobDescriptor jobDescriptor) {
+            this.allocatedContainer_ = allocatedContainer;
+            this.jobDescriptor_ = jobDescriptor;
+        }
+
+        private Map<String, LocalResource> getApplicationsResources() throws IOException {
+            LocalResource jarResource = Records.newRecord(LocalResource.class);
+
+            Map<String, String> env = System.getenv();
+            String[] url_paths = env.get("AMJAR").split(" ");
+            org.apache.hadoop.yarn.api.records.URL jarToExecute = org.apache.hadoop.yarn.api.records.URL.newInstance(
+                    url_paths[1], url_paths[3], Integer.valueOf(url_paths[5]), url_paths[7]);
+
+            jarResource.setResource(jarToExecute);
+            jarResource.setSize(Long.valueOf(env.get("AMJARLEN")));
+            jarResource.setTimestamp(Long.valueOf(env.get("AMJARTIMESTAMP")));
+            jarResource.setType(LocalResourceType.FILE);
+            jarResource.setVisibility(LocalResourceVisibility.APPLICATION);
+            Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
+            localResources.put(APP_JAR_NAME, jarResource);
+            return localResources;
+        }
+
+        private String getApplicationsClasspath() {
+            StringBuilder classPathEnv = new StringBuilder().append(File.pathSeparatorChar).append("./" + APP_JAR_NAME);
+            for (String c : yarnConfiguration_.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+                    YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
+                classPathEnv.append(File.pathSeparatorChar);
+                classPathEnv.append(c.trim());
+            }
+            classPathEnv.append(File.pathSeparatorChar);
+            classPathEnv.append(ApplicationConstants.Environment.CLASSPATH.$());
+            return classPathEnv.toString();
+        }
+
+        private Map<String, String> getApplicationsEnvironment() {
+            Map<String, String> env = new HashMap<String, String>();
+            env.put("CLASSPATH", getApplicationsClasspath());
+            return env;
+        }
+
+        @Override
+        public void run() {
+            String job_descriptor_encoded;
+            try {
+                job_descriptor_encoded = URLEncoder.encode(jobDescriptor_.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return;
+            }
+            LOG.info("Starting container on thread {}", Thread.currentThread());
+            Vector<CharSequence> vargs = new Vector<CharSequence>(5);
+            vargs.add(ApplicationConstants.Environment.JAVA_HOME.$() + "/bin/java");
+            vargs.add(com.github.anaderi.skygrid.executor.jeeves.Jeeves.class.getCanonicalName());
+            vargs.add(job_descriptor_encoded);
+            vargs.add("1><LOG_DIR>/AM.stdout");
+            vargs.add("2><LOG_DIR>/AM.stderr");
+            // Get final commmand
+            StringBuilder command = new StringBuilder();
+            for (CharSequence str : vargs) {
+                command.append(str).append(" ");
+            }
+
+            List<String> commands = new ArrayList<String>();
+            commands.add(command.toString());
+
+            ContainerLaunchContext ctx = null;
+            try {
+                ctx = ContainerLaunchContext.newInstance(
+                        getApplicationsResources(),
+                        getApplicationsEnvironment(),
+                        commands,
+                        null, null, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // containerListener.addContainer(container.getId(), container);
+            nmClient_.startContainerAsync(allocatedContainer_, ctx);
         }
     }
 }
