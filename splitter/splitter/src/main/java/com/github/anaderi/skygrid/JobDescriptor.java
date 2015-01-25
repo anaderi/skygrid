@@ -128,4 +128,8 @@ public class JobDescriptor {
         }
         return result;
     }
+
+    public int volume() {
+        return argsCube_.volume();
+    }
 }

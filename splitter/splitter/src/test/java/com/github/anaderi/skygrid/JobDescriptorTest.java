@@ -30,6 +30,11 @@ public class JobDescriptorTest extends TestCase {
         }
     }
 
+    public void testDescriptorsVolume() throws Exception {
+        JobDescriptor jd = getJobDescriptor();
+        assertEquals(300, jd.volume());
+    }
+
     private JobDescriptor getJobDescriptor() throws JobDescriptor.JobDescriptorFormatException, IOException {
         String input =
                 "{\n" +
