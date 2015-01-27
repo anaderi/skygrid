@@ -40,13 +40,15 @@ public class Wooster {
     private NMCallbackHandler containerListener_;
     private final String metaSchedulerURL_;
     private final int SLEEP_BETWEEN_POLLING = 1000;
-    private final List<JobDescriptor> tasksToBeExecuted_ = new LinkedList<JobDescriptor>();
-    private final List<JobDescriptor> completedTasks_ = new LinkedList<JobDescriptor>();
+    private final int FAILED_COUNTER_THRESHOLD = 3;
     private final List<Thread> containerLaunchingThreads_ = new LinkedList<Thread>();
     private final HashMap<ContainerId, String> processingDescriptors_ = new HashMap<ContainerId, String>();
+    private final HashMap<Integer, Integer> failureCounter_ = new HashMap<Integer, Integer>();
     private final YarnConfiguration yarnConfiguration_ = new YarnConfiguration();
     private int totalContainersCount_ = 1;
     private String agathaHostname_;
+    private String taskUUID_;
+    private final JobDescriptorProcessingQueue processingQueue_ = new JobDescriptorProcessingQueue();
 
     public static void main(String[] args) throws IOException, YarnException, NotBoundException, InterruptedException {
         new Wooster(args[0], args[1]);
@@ -64,6 +66,7 @@ public class Wooster {
         nmClient_.start();
 
         metaSchedulerURL_ = metaSchedulerURL;
+        taskUUID_ = UUID.randomUUID().toString();
 
         RegisterApplicationMasterResponse response;
         response = amRMClient_.registerApplicationMaster(NetUtils.getHostname(), -1, "");
@@ -131,15 +134,15 @@ public class Wooster {
             return;
         }
         try {
-            synchronized (tasksToBeExecuted_) {
-                totalContainersCount_ = descriptor.volume();
-                tasksToBeExecuted_.addAll(descriptor.split(descriptor.volume()));
+            totalContainersCount_ = descriptor.volume();
+            for (JobDescriptor jobDescriptor : descriptor.split(totalContainersCount_)) {
+                processingQueue_.AppendJobDescriptor(jobDescriptor);
             }
         } catch (Cube.ImpossibleToSplit e) {
             LOG.error("Impossible to split cube {} to {} pieces", jobDescription, descriptor.volume());
             return;
         }
-        requestContainers(tasksToBeExecuted_.size());
+        requestContainers(processingQueue_.UpcomingQueueSize());
     }
 
     private AMRMClient.ContainerRequest setupContainerAskForRM() {
@@ -178,14 +181,18 @@ public class Wooster {
                     continue;
                 }
                 if (status.getExitStatus() != 0) {
-                    synchronized (tasksToBeExecuted_) {
-                        tasksToBeExecuted_.add(currentJob);
+                    Integer counter = 0;
+                    Integer job_index = processingQueue_.FindJobDescriptorIndex(currentJob);
+                    if (failureCounter_.containsKey(job_index)) {
+                        counter = failureCounter_.get(job_index);
                     }
-                    requestContainers(1);
+                    failureCounter_.put(job_index, counter);
+                    if (counter < FAILED_COUNTER_THRESHOLD) {
+                        processingQueue_.MarkJobDescriptorAsFailed(currentJob);
+                        requestContainers(1);
+                    }
                 } else {
-                    synchronized (completedTasks_) {
-                        completedTasks_.add(currentJob);
-                    }
+                    processingQueue_.MarkJobDescriptorAsCompleted(currentJob);
                 }
             }
         }
@@ -194,19 +201,16 @@ public class Wooster {
         public void onContainersAllocated(List<Container> containers) {
             LOG.info("onContainersAllocated on thread {}", Thread.currentThread());
             int count = 0;
-            synchronized (tasksToBeExecuted_) {
-                for (Container container : containers) {
-                    JobDescriptor jobDescriptor = tasksToBeExecuted_.get(0);
-                    ++count;
-                    tasksToBeExecuted_.remove(0);
-                    synchronized (processingDescriptors_) {
-                        processingDescriptors_.put(container.getId(), jobDescriptor.toString());
-                    }
-                    ContainerLauncher launcher = new ContainerLauncher(container, jobDescriptor);
-                    Thread launchingThread = new Thread(launcher);
-                    containerLaunchingThreads_.add(launchingThread);
-                    launchingThread.start();
+            for (Container container : containers) {
+                JobDescriptor jobDescriptor = processingQueue_.GetNextTask();
+                ++count;
+                synchronized (processingDescriptors_) {
+                    processingDescriptors_.put(container.getId(), jobDescriptor.toString());
                 }
+                ContainerLauncher launcher = new ContainerLauncher(container, jobDescriptor);
+                Thread launchingThread = new Thread(launcher);
+                containerLaunchingThreads_.add(launchingThread);
+                launchingThread.start();
             }
             LOG.info("Allocated {} containers", count);
         }
@@ -223,7 +227,7 @@ public class Wooster {
 
         @Override
         public float getProgress() {
-            return 1.0f * totalContainersCount_ / completedTasks_.size();
+            return 1.0f * processingQueue_.UpcomingQueueSize() / totalContainersCount_;
         }
 
         @Override
@@ -278,10 +282,17 @@ public class Wooster {
             return env;
         }
 
+        private String generateUrlForJobDescriptor() {
+            return String.format("Woosters/%s/%s", taskUUID_, processingQueue_.FindJobDescriptorIndex(jobDescriptor_));
+        }
+
         @Override
         public void run() {
             String job_descriptor_encoded;
             try {
+                // $ getconf ARG_MAX
+                // 262144
+                // so, about 250kB may be transferred as a job descriptor.
                 job_descriptor_encoded = URLEncoder.encode(jobDescriptor_.toString(), "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
@@ -292,6 +303,7 @@ public class Wooster {
             vargs.add(ApplicationConstants.Environment.JAVA_HOME.$() + "/bin/java");
             vargs.add(com.github.anaderi.skygrid.executor.jeeves.Jeeves.class.getCanonicalName());
             vargs.add(job_descriptor_encoded);
+            vargs.add(generateUrlForJobDescriptor());
             vargs.add("1><LOG_DIR>/AM.stdout");
             vargs.add("2><LOG_DIR>/AM.stderr");
             // Get final commmand
