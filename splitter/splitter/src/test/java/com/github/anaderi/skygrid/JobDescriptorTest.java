@@ -35,6 +35,77 @@ public class JobDescriptorTest extends TestCase {
         assertEquals(300, jd.volume());
     }
 
+    public void testDescriptorsEqual() throws Exception {
+        String input1 =
+                "{\n" +
+                        "    \"name\": null,\n" +
+                        "    \"environments\": [\"anaderi/ocean\"],\n" +
+                        "    \"owner\": \"anaderi\",\n" +
+                        "    \"app\": \"my_app_container\",\n" +
+                        "    \"email\": \"andrey@none.com\",\n" +
+                        "    \"workdir\": \"/opt/ship/build\",\n" +
+                        "    \"cmd\": \"/opt/ship/python/muonShieldOptimization/g4ex.py\",\n" +
+                        "    \"args\": {\n" +
+                        "        \"default\": [\"--runNumber=1\", \"--nEvents=123\", \"--ecut=1\"],\n" +
+                        "        \"scaleArg\": [\n" +
+                        "            [\"nEvents\", \"SCALE\", 1200],\n" +
+                        "            [\"ecut\", \"SET\", [1, 10, 100]],\n" +
+                        "            [\"rcut\", \"RANGE\", [1, 100]]\n" +
+                        "        ]\n" +
+                        "    },\n" +
+                        "    \"num_containers\": 10,\n" +
+                        "    \"min_memoryMB\": 512,\n" +
+                        "    \"max_memoryMB\": 1024,\n" +
+                        "    \"cpu_per_container\": 1\n" +
+                        "}";
+        String input2 =
+                "{\n" +
+                        "    \"name\": null,\n" +
+                        "    \"owner\": \"anaderi\",\n" +
+                        "    \"environments\": [\"anaderi/ocean\"],\n" +
+                        "    \"email\": \"andrey@none.com\",\n" +
+                        "    \"app\": \"my_app_container\",\n" +
+                        "    \"workdir\": \"/opt/ship/build\",\n" +
+                        "    \"cmd\": \"/opt/ship/python/muonShieldOptimization/g4ex.py\",\n" +
+                        "    \"args\": {\n" +
+                        "        \"scaleArg\": [\n" +
+                        "            [\"nEvents\", \"SCALE\", 1200],\n" +
+                        "            [\"ecut\", \"SET\", [1,10,100]],\n" +
+                        "            [\"rcut\", \"RANGE\", [1, 100]]\n" +
+                        "        ],\n" +
+                        "        \"default\": [\"--runNumber=1\", \"--nEvents=123\", \"--ecut=1\"]\n" +
+                        "    },\n" +
+                        "    \"num_containers\": 10,\n" +
+                        "    \"max_memoryMB\": 1024,\n" +
+                        "    \"min_memoryMB\": 512,\n" +
+                        "    \"cpu_per_container\": 1\n" +
+                        "}";
+        String input3 =
+                "{\n" +
+                        "    \"name\": null,\n" +
+                        "    \"owner\": \"anaderi\",\n" +
+                        "    \"environments\": [\"anaderi/ocean\"],\n" +
+                        "    \"email\": \"andrey@none.com\",\n" +
+                        "    \"app\": \"my_app_container\",\n" +
+                        "    \"workdir\": \"/opt/ship/build\",\n" +
+                        "    \"cmd\": \"/opt/ship/python/muonShieldOptimization/g4ex.py\",\n" +
+                        "    \"args\": {\n" +
+                        "        \"scaleArg\": [\n" +
+                        "            [\"nEvents\", \"SCALE\", 12000],\n" +
+                        "            [\"ecut\", \"SET\", [1, 10, 100]],\n" +
+                        "            [\"rcut\", \"RANGE\", [1, 100]]\n" +
+                        "        ],\n" +
+                        "        \"default\": [\"--runNumber=1\", \"--nEvents=123\", \"--ecut=1\"]\n" +
+                        "    },\n" +
+                        "    \"num_containers\": 10,\n" +
+                        "    \"max_memoryMB\": 1024,\n" +
+                        "    \"min_memoryMB\": 512,\n" +
+                        "    \"cpu_per_container\": 1\n" +
+                        "}";
+        assertTrue(JobDescriptor.fromJsonString(input1).equals(JobDescriptor.fromJsonString(input2)));
+        assertFalse(JobDescriptor.fromJsonString(input1).equals(JobDescriptor.fromJsonString(input3)));
+    }
+
     private JobDescriptor getJobDescriptor() throws JobDescriptor.JobDescriptorFormatException, IOException {
         String input =
                 "{\n" +
