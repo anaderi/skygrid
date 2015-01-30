@@ -1,11 +1,20 @@
 from .app import *
 from .models import *
 
+mongo_host = app.config.get('DB_HOST') or 'localhost'
 
 if app.config['DB_USE_AUTH']:
-    connect(app.config['DB'], username=app.config['DB_USERNAME'], password=app.config['DB_PASSWORD'])
+    connect(
+        app.config['DB'],
+        username=app.config['DB_USERNAME'],
+        password=app.config['DB_PASSWORD'],
+        host=mongo_host
+    )
 else:
-    connect(app.config['DB'])
+    connect(
+        app.config['DB'],
+        host=mongo_host
+    )
 
 
 
