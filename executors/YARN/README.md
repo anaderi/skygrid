@@ -15,7 +15,7 @@ Clone this repository to `REPO_DIR`.
 As a result you have a JAR created at `REPO_DIR/YARN/target/YarnTestClient-1.0.jar`.
 
 Running the Application
-----------------------
+-----------------------
 The [vagrant](http://www.vagrantup.com/)-based virtual machine from [here](https://github.com/Cascading/vagrant-cascading-hadoop-cluster#single-node-setup) was used for Yarn . After you start a virtual machine, you need to make YarnConfigs visible to a client. As I start my client on my host machine, I execute the following:
 
     $ cd ~/vagrant-cascading-hadoop-cluster/single-node
@@ -47,7 +47,7 @@ Then run the application:
     14/07/13 13:25:34 INFO yarntest.AppClient: Node ID = master.local:34277, address = master.local:8042, containers = 0
     14/07/13 13:25:34 INFO yarntest.AppClient: Available queue: default with capacity 1.0 to 1.0
     14/07/13 13:25:34 INFO yarntest.AppClient: AMJAR environment variable is set to hdfs://master.local:9000/user/stromsund/CernYarnApp/4/app.jar
-    14/07/13 13:25:34 INFO yarntest.AppClient: Command to execute ApplicationMaster = $JAVA_HOME/bin/java ru.yandex.cern.yarntest.ApplicationMaster TestArgument 1><LOG_DIR>/AM.stdout 2><LOG_DIR>/AM.stderr 
+    14/07/13 13:25:34 INFO yarntest.AppClient: Command to execute ApplicationMaster = $JAVA_HOME/bin/java ru.yandex.cern.yarntest.ApplicationMaster TestArgument 1><LOG_DIR>/AM.stdout 2><LOG_DIR>/AM.stderr
     14/07/13 13:25:34 INFO impl.YarnClientImpl: Submitted application application_1405190480286_0004
 
 You may check the status of your task execution at (http://master.local:8088/cluster). When the task is completed, you will see 5 files containing prime numbers each in HDFS.
@@ -76,3 +76,21 @@ You may check the status of your task execution at (http://master.local:8088/clu
     Found prime: 3079
     $ exit
 
+Running Docker containers
+-------------------------
+
+For running docker containers `/etc/sudoers.d/skygrid` file must be created
+with the following contents:
+
+    Cmnd_Alias  DOCKER = /usr/bin/docker ps, /usr/bin/docker pull *, /usr/bin/docker run *
+    User_Alias  DOCKER_OWNER = root
+    User_Alias  YARN_USER = stromsund
+
+    YARN_USER ALL = (ALL) NOPASSWD: DOCKER
+
+Do not forget to ensure that `/etc/sudoers.d/skygrid` has `0440` access mode
+and `/etc/sudoers` contains
+
+    #includedir /etc/sudoers.d
+
+and `requiretty` option is not set.
