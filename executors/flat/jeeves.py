@@ -75,12 +75,30 @@ def getargs(jd, subst):
     return s
 
 
+#def docker_has_image(image, always_check_unknown_version=True):
+#    repo_tag = image.split(':')
+#    assert len(repo_tag) > 0, "incorrect image name: %s" % image 
+#    result = sh("docker images %s" % repo_tag[0])
+#    if len(result['output'].split(
+#    if len(repo_tag) == 1 
+#        return not always_check_unknown_version
+
+
 def docker_pull_image(image):
     with LockFile("/tmp/jeeves_lock_pull_%s" % re.sub("[:/]", "_", image)):
         result = sh("docker pull %s" % image)
     if result['rc'] != SUCCESS:
         halt("error pulling image '%s' (rc: %d, status: %s)\nERR: %s" %
             (image, result['rc'], result['status'], result['err']))
+
+
+def is_container_running(containerID):
+    result = False
+    check_result = sh("docker ps", verbose=False)
+    assert len(check_result['err']) == 0, "got error while 'docker ps': %s" % check_result['err'] 
+    assert check_result['rc'] == 0, "got non-zero result while 'docker ps'"
+    result = containerID[:12] in check_result['out']
+    return result
 
 
 def run_jd_async(jd, output_basedir="output", force=False):
@@ -113,6 +131,8 @@ def run_jd_async(jd, output_basedir="output", force=False):
     else:
         os.makedirs(JOB_OUTPUT_DIR)
 
+    with open("%s/jd.json" % JOB_OUTPUT_DIR, "w") as fh:
+         json.dump(jd, fh, indent=2, sort_keys=True)
     docker_pull_image(jd["app_container"]["name"])
     if not docker_is_running(APP_CONTAINER):
         result = sh("docker run -d -v %s --name %s %s echo %s app" % 
@@ -135,17 +155,19 @@ def run_jd_async(jd, output_basedir="output", force=False):
         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
     containerID = result['out'].strip()
     while True:
-        check_result = sh("docker ps %s" % containerID, verbose=False)
+        is_running = is_container_running(containerID)
         sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
             logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=False)
-        if len(check_result['out'].strip().split('\n')) == 1:
+        if not is_running:
             if verbose: 
                 sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
                     logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=True)
             sh("docker rm %s" % containerID)
             break
         time1 = datetime.datetime.now()
-        time.sleep(max(DELAY_WAIT_DOCKER_MIN, min(DELAY_WAIT_DOCKER_MAX, (time1-time0).seconds * 0.1)))
+        delay = max(DELAY_WAIT_DOCKER_MIN, min(DELAY_WAIT_DOCKER_MAX, (time1-time0).seconds * 0.1))
+        print "DELAY:", delay
+        time.sleep(delay)
 
 
 def run_jd(jd, output_basedir="output", force=False):
