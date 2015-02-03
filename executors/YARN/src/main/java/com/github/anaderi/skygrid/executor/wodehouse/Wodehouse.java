@@ -113,7 +113,7 @@ public class Wodehouse {
     private Path copyJarToHDFS(String agathaAppId) throws IOException {
         Path sourceJarPath = new Path(Wodehouse.class.getProtectionDomain().getCodeSource().getLocation().getFile());
         String destRelativeJarPath = String.format(
-                "%s/%s/%s",APP_NAME, agathaAppId, ApplicationMasterExecutor.APP_JAR_NAME);
+                "%s/%s/%s", APP_NAME, agathaAppId, ApplicationMasterExecutor.APP_JAR_NAME);
         Path destJarPath = new Path(fileSystem_.getHomeDirectory(), destRelativeJarPath);
         fileSystem_.copyFromLocalFile(false, true, sourceJarPath, destJarPath);
         LOG.debug("Application Jar is successfully put to HDFS");

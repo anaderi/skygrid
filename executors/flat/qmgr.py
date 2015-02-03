@@ -342,7 +342,8 @@ def fill_qms(template, queue_name, count, num_events=EV_PER_JD, start_id=10):
     assert os.path.exists(template)
     with open(template) as fh:
         t = json.load(fh)
-    t['args']['--num-events'] = num_events
+    if num_events > 0:
+      t['args']['--num-events'] = num_events
     t0 = datetime.datetime.now()
     queue = QueueMS(queue_name, api_url=API_URL)
     count0 = queue.qsize()

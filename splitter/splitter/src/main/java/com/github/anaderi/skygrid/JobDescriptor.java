@@ -128,4 +128,18 @@ public class JobDescriptor {
         }
         return result;
     }
+
+    public int volume() {
+        return argsCube_.volume();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // Only args cube matters.
+        if (o instanceof JobDescriptor) {
+            JobDescriptor j = (JobDescriptor)o;
+            return this.argsCube_.equals(j.argsCube_);
+        }
+        return false;
+    }
 }

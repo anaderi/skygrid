@@ -35,4 +35,13 @@ public class Scale extends Dimension {
         result.add(volume_);
         return result;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Scale) {
+            Scale s = (Scale)o;
+            return s.volume_ == volume_;
+        }
+        return false;
+    }
 }
