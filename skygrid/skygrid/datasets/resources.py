@@ -59,10 +59,10 @@ class DatasetList(SkygridResource):
         elif 'name' in request.args:
             return {
                 'datasets': [
-                    ds.to_dict() 
+                    ds.to_dict()
                     for ds in Dataset.objects(name=request.args['name'])
                 ]
-            }            
+            }
         else:
             return {
                 'datasets': [ds.to_dict() for ds in Dataset.objects]
@@ -76,19 +76,21 @@ class DatasetList(SkygridResource):
             datatype=data['type']
         ).save()
 
-        try:
-            path = upload_file(str(ds_embryo.pk), request.files['dataset'])
-            ds_hash = hashfile(path)
-        except Exception, e:
-            ds_embryo.delete()
-            raise Exception(e)
-        else:
-            ds_embryo.path = path
-            ds_embryo.filehash = ds_hash
-            ds_embryo.upload_time = datetime.now()
-            ds_embryo.save()
+        path, ds_hash = data.get('uri'), data.get('hash')
+        if not path:
+            try:
+                path = upload_file(str(ds_embryo.pk), request.files['dataset'])
+                ds_hash = hashfile(path)
+            except Exception, e:
+                ds_embryo.delete()
+                raise Exception(e)
 
-            return ds_embryo.to_dict()
+        ds_embryo.path = path
+        ds_embryo.filehash = ds_hash
+        ds_embryo.upload_time = datetime.now()
+        ds_embryo.save()
+
+        return ds_embryo.to_dict()
 
 
 class DatasetDetail(SkygridResource):
@@ -97,7 +99,9 @@ class DatasetDetail(SkygridResource):
 
     def delete(self, ds_id):
         ds = Dataset.objects.get(pk=ds_id)
-        ds_workdir = os.path.dirname(ds.path)
-        shutil.rmtree(ds_workdir)
+
+        if os.path.isfile(ds.path):
+            ds_workdir = os.path.dirname(ds.path)
+            shutil.rmtree(ds_workdir)
 
         return ds.delete()

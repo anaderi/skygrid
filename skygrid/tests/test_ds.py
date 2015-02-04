@@ -41,3 +41,32 @@ class DatasetTest(BasicSkygridTest):
         ).json()
 
         self.assertTrue(r['success'])
+
+    def test_upload_and_delete_by_uri(self):
+        payload = dict(
+            name=str(uuid.uuid4().hex),
+            type="root",
+            uri="/eos/lhcb/user/a/albarano/test.root"
+        )
+
+        r = requests.put(
+            self.datasets_url,
+            data=payload
+        ).json()
+
+        self.assertTrue(r['success'])
+        data = r['data']
+
+        self.assertEqual(data['name'], payload['name'])
+        self.assertEqual(data['type'], payload['type'])
+
+        self.assertEqual(
+            data['hash'],
+            None
+        )
+
+        r = requests.delete(
+            os.path.join(self.datasets_url, data['id'])
+        ).json()
+
+        self.assertTrue(r['success'])
