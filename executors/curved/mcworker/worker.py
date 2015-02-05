@@ -2,7 +2,7 @@ import json
 
 from libscheduler.worker import WorkerMS
 
-import config
+from config import config
 from mc import do_mc_job
 from log import logger
 
@@ -11,7 +11,7 @@ from log import logger
 def main():
     worker = WorkerMS(
         config.METASCHEDULER_URL,
-        "queue6",
+        "montecarlo_queue",
         do_mc_job,
         threads_num=4,
         sleep_time=1

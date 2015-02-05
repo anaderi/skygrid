@@ -1,7 +1,9 @@
-SKYGRID_URL = "http://skygrid-api.dev.vs.os.yandex.net/"
-METASCHEDULER_URL = "http://metascheduler.dev.vs.os.yandex.net/"
+import os
+import imp
 
-OUTPUT_DIR = "/var/common/prod_g6/output"
+conf_file = os.environ.get('MC_WORKER_CONFIG')
 
-verbose = False
-force   = False
+if not conf_file:
+    raise Exception("Environment variable $MC_WORKER_SETTINGS is not set.")
+
+config = imp.load_source('config', conf_file)
