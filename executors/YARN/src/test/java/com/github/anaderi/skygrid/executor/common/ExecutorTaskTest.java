@@ -38,5 +38,8 @@ public class ExecutorTaskTest extends TestCase {
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ExecutionTask task = mapper.readValue(jd1, ExecutionTask.class);
         assertEquals("my_app_container", task.getApp());
+        assertEquals(1, task.getEnvironments().size());
+        assertEquals("anaderi/ocean", task.getEnvironments().get(0));
+        assertEquals("/opt/ship/python/muonShieldOptimization/g4ex.py", task.getCmd());
     }
 }
