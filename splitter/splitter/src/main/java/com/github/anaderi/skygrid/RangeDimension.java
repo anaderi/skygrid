@@ -41,4 +41,13 @@ public class RangeDimension extends Dimension {
         result.add(to_);
         return result;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof RangeDimension) {
+            RangeDimension d = (RangeDimension)o;
+            return d.from_ == from_ && d.to_ == to_;
+        }
+        return false;
+    }
 }

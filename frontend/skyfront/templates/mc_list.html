@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% set active_page = active_page|default('mc-list') -%}
+
+{% block title %}SkyGrid - MC{% endblock %}
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">MC generation</h1>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover" id="dataTables-example">
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>Name</th>
+                        <th>Created</th>
+                        <th>Multiplier</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <!-- /.table-responsive -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<!-- DataTables JavaScript -->
+<script src="{{ url_for('static', filename='js/plugins/dataTables/jquery.dataTables.js') }}"></script>
+<script src="{{ url_for('static', filename='js/plugins/dataTables/dataTables.bootstrap.js') }}"></script>
+
+
+<script type="text/javascript">
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+</script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+
+    $.getJSON( "{{ config.SKYGRID_URL }}/montecarlo", function( response ) {
+        var mc_list = response['data'];
+        var list_for_datatables = Array();
+
+        $.each(mc_list, function(index, mc) {
+            list_for_datatables.push(new Array(
+                mc['montecarlo_id'],
+                mc['descriptor']['name'],
+                mc['created'],
+                mc['multiplier'],
+                mc['status']
+            ));
+        });
+
+        $('#dataTables-example').dataTable( {
+            "data": list_for_datatables,
+            "aaSorting": [[ 2, "desc" ]]
+        });
+    });
+});
+</script>
+
+{% endblock %}

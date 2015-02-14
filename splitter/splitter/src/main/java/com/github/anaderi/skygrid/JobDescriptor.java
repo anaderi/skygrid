@@ -120,12 +120,26 @@ public class JobDescriptor {
         return tmp.toString();
     }
 
-    List<JobDescriptor> split(int splitCount) throws Cube.ImpossibleToSplit {
+    public List<JobDescriptor> split(int splitCount) throws Cube.ImpossibleToSplit {
         List<Cube> cubes = argsCube_.split(splitCount);
         ArrayList<JobDescriptor> result = new ArrayList<JobDescriptor>(splitCount);
         for (Cube cube : cubes) {
             result.add(new JobDescriptor(cube, root_.deepCopy()));
         }
         return result;
+    }
+
+    public int volume() {
+        return argsCube_.volume();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // Only args cube matters.
+        if (o instanceof JobDescriptor) {
+            JobDescriptor j = (JobDescriptor)o;
+            return this.argsCube_.equals(j.argsCube_);
+        }
+        return false;
     }
 }

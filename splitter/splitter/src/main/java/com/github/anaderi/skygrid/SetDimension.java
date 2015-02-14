@@ -40,4 +40,13 @@ public class SetDimension extends Dimension {
         }
         return result;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof SetDimension) {
+            SetDimension d = (SetDimension)o;
+            return d.enums_.equals(enums_);
+        }
+        return false;
+    }
 }

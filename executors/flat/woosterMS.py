@@ -21,7 +21,7 @@ from libscheduler.queue import QueueMS
 
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
-SLEEP_DELAY = 1
+SLEEP_DELAY = 2
 API_URL = "http://mc03.h.cern.yandex.net:5000"
 HOSTNAME = socket.gethostname().split('.')[0]
 logger = None
@@ -37,12 +37,13 @@ def parse_args():
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
-    p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
+    p.add_argument("--logdir", help="logfile folder (current dir by default)", default=".")
     args = p.parse_args()
     if not args.queue is not None and not args.test:
         p.error("MS queue '%s' is not specified" % args.queue)
 
-    logging.basicConfig(filename=args.log, filemode='w', level=logging.INFO)
+    logfile = os.path.join(args.logdir, "wooster_%s.log" % HOSTNAME)
+    logging.basicConfig(filename=logfile, format='%(asctime)s %(message)s', filemode='a', level=logging.INFO)
     logger = logging.getLogger()
 
     if args.verbose:
@@ -75,6 +76,7 @@ def run_jd(jds, output_dir):
             runner = os.path.join(my_dir(), "jeeves.py")
             cmd = "{runner} --input {file} --output {out} -v".format(
                 runner=runner, file=fh.name, out=output_dir)
+            logger.info("JOB_ID: %d" % jds['job_id'])
             logger.info("CMD: " + cmd)
             sh_result = sh(cmd)
             result["rc"] = sh_result["rc"]

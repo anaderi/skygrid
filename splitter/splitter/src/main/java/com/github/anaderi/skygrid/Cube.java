@@ -127,4 +127,14 @@ public class Cube
             return 0;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Cube) {
+            Cube c = (Cube)o;
+            return c.scale_.equals(scale_) &&
+                    c.dimensions_.equals(dimensions_);
+        }
+        return false;
+    }
 }

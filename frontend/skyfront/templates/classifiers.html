@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% set active_page = active_page|default('classifiers') -%}
+
+{% block title %}SkyGrid - Classifiers{% endblock %}
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Classifiers</h1>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover" id="dataTables-example">
+                <thead>
+                    <tr>
+                        <th>Classifier id</th>
+                        <th>Created</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Dataset id</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <!-- /.table-responsive -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<!-- DataTables JavaScript -->
+<script src="{{ url_for('static', filename='js/plugins/dataTables/jquery.dataTables.js') }}"></script>
+<script src="{{ url_for('static', filename='js/plugins/dataTables/dataTables.bootstrap.js') }}"></script>
+
+
+<script type="text/javascript">
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+</script>
+
+<script type="text/javascript">
+var labels = {
+    'trained': ['Trained', 'label-success'],
+    'not_trained': ['Not trained', 'label-default'],
+    'in_queue': ['In queue', 'label-warning'],
+    'failed_to_train': ['Failed', 'label-danger'],
+    'training': ['Training', 'label-primary'],
+};
+
+$(document).ready(function() {
+
+    $.getJSON( "{{ config.SKYGRID_URL }}/classifiers", function( response ) {
+        var cl_list = response['data']['classifiers'];
+        var list_for_datatables = Array();
+
+        $.each(cl_list, function(index, cl) {
+            var label = labels[cl['status']];
+            var status = '<a href="/metascheduler/jobs/{0}"><span class="label {1}">{2}</span></a>'.format(cl['training_job_id'], label[1], label[0]);
+            list_for_datatables.push(new Array(cl['classifier_id'], cl['created'], cl['type'], status, cl['dataset_id'], cl['description']));
+        });
+
+        $('#dataTables-example').dataTable( {
+            "data": list_for_datatables,
+            "aaSorting": [[ 1, "desc" ]]
+        });
+    });
+});
+</script>
+
+{% endblock %}
