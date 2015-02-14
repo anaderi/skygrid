@@ -1,0 +1,28 @@
+{
+  "app_container": {
+    "name": "anaderi/ship-dev:0.0.15", 
+    "volume": "/opt/ship"
+  }, 
+  "args": {
+    "--nEvents": 3,
+    "--output": "$OUTPUT_DIR/root", 
+    "--seed": "$JOB_ID"
+  }, 
+  "cmd": "cd /opt/ship/FairShip/build; . ./config.sh; cp -r gconfig geometry python ..; export PYTHONPATH+=:/opt/ship/FairShip/build/python; ls -l $VMCWORKDIR/gconfig/; python macro/run_simScript.py", 
+  "cpu_per_container": 1, 
+  "email": "andrey.u@gmail.com", 
+  "env_container": {
+    "app_volume": "$APP_CONTAINER", 
+    "name": "anaderi/ocean:latest", 
+    "output_volume": "$JOB_OUTPUT_DIR:/output", 
+    "workdir": "/opt/ship/FairShip/build"
+  }, 
+  "job_id": 20699, 
+  "job_parent_id": 5, 
+  "job_super_id": 5, 
+  "max_memoryMB": 1024, 
+  "min_memoryMB": 512, 
+  "name": "SHIP-MC.test", 
+  "num_containers": 48, 
+  "status": "SUCCESS"
+}
