@@ -193,6 +193,33 @@ class QueueTest(BasicQueueTest):
 
         self.assertEqual(IDS, set([]))
 
+    def test_job_with_input(self):
+        TEST_OBJ = {
+            "descriptor": {"hello": "world"},
+            "input": ['root://blah/blah/blah/test.file', 'moosefs://1/2/3/file.txt']
+        }
+
+        r = requests.post(
+            self.queue_url,
+            data=json.dumps(TEST_OBJ),
+            headers=self.json_headers
+        )
+        result_create = r.json()
+
+        self.assertEqual(result_create['success'], True)
+        self.assertEqual(result_create['job']['descriptor'], TEST_OBJ['descriptor'])
+        self.assertEqual(result_create['job']['status'], "pending")
+        self.assertEqual(result_create['job']['input'], TEST_OBJ['input'])
+
+
+        r = requests.get(self.queue_url)
+        result_get = r.json()
+
+        self.assertEqual(result_get['success'], True)
+        self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
+        self.assertEqual(result_get['job']['status'], "pulled")
+        self.assertEqual(result_create['job']['input'], TEST_OBJ['input'])
+
 
 class NoQueueTest(BasicQueueTest):
     def test_add_no_queue(self):

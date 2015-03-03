@@ -66,11 +66,20 @@ class QueueResource(ExistingQueueResource):
         descriptor = request.json.get('descriptor')
         assert descriptor
 
+        input_files = request.json.get('input') or []
 
         callback = request.json.get('callback')
         replicate = request.json.get('multiply') or 1
 
-        jobs = [Job(job_type=job_type, descriptor=descriptor, callback=callback) for _ in xrange(replicate)]
+        jobs = [
+            Job(
+                job_type=job_type,
+                descriptor=descriptor,
+                callback=callback,
+                input_files=input_files
+            )
+            for _ in xrange(replicate)
+        ]
         jobs = Job.objects.insert(jobs)
 
 
