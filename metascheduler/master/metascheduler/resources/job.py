@@ -75,7 +75,7 @@ class JobOutputResource(MetaschedulerResource):
         new_output = update_dict.get('output')
 
         job = Job.objects.get(pk=job_id)
-        job.output_files = output
+        job.output_files = new_output
         job.save()
 
         return {'updated_output': job.output_files}

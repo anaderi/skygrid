@@ -193,7 +193,7 @@ class QueueTest(BasicQueueTest):
 
         self.assertEqual(IDS, set([]))
 
-    def test_job_with_input(self):
+    def test_job_input_output(self):
         TEST_OBJ = {
             "descriptor": {"hello": "world"},
             "input": ['root://blah/blah/blah/test.file', 'moosefs://1/2/3/file.txt']
@@ -211,7 +211,6 @@ class QueueTest(BasicQueueTest):
         self.assertEqual(result_create['job']['status'], "pending")
         self.assertEqual(result_create['job']['input'], TEST_OBJ['input'])
 
-
         r = requests.get(self.queue_url)
         result_get = r.json()
 
@@ -219,6 +218,18 @@ class QueueTest(BasicQueueTest):
         self.assertEqual(result_get['job']['descriptor'], TEST_OBJ['descriptor'])
         self.assertEqual(result_get['job']['status'], "pulled")
         self.assertEqual(result_create['job']['input'], TEST_OBJ['input'])
+
+
+        OUTPUT_URIS = ['some://output/uri/1', 'another://output/uri/2']
+        r = requests.post(
+            os.path.join(self.all_jobs_url, result_get['job']['job_id'], 'output'),
+            data=json.dumps({'output': OUTPUT_URIS}),
+            headers=self.json_headers
+        )
+        result_update = r.json()
+
+        self.assertEqual(result_update['success'], True)
+        self.assertEqual(OUTPUT_URIS, result_update['updated_output'])
 
 
 class NoQueueTest(BasicQueueTest):
