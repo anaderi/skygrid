@@ -21,8 +21,8 @@ class Job(Document):
     job_type = StringField(default="ANY")
     descriptor = DictField(default={})
 
-    output_files = ListField(StringField())
-    input_files = ListField(StringField())
+    output = ListField(StringField())
+    input = ListField(StringField())
 
     status = StringField(default=JobStatus.pending)
     last_update = DateTimeField(default=datetime.now)
@@ -39,8 +39,8 @@ class Job(Document):
             'job_id': str(self.pk),
             'status': self.status,
             'descriptor': self.descriptor,
-            'input': self.input_files,
-            'output': self.output_files
+            'input': self.input,
+            'output': self.output
         }
 
         return d

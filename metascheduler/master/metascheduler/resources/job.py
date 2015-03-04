@@ -67,7 +67,7 @@ class JobStatusResource(MetaschedulerResource):
 class JobOutputResource(MetaschedulerResource):
     def get(self, job_id):
         return {
-            'output': Job.objects.get(pk=job_id).output_files
+            'output': Job.objects.get(pk=job_id).output
         }
 
     def post(self, job_id):
@@ -75,14 +75,14 @@ class JobOutputResource(MetaschedulerResource):
         new_output = update_dict.get('output')
 
         job = Job.objects.get(pk=job_id)
-        job.output_files = new_output
+        job.output = new_output
         job.save()
 
-        return {'updated_output': job.output_files}
+        return {'updated_output': job.output}
 
 
 class JobInputResource(MetaschedulerResource):
     def get(self, job_id):
         return {
-            'input_files': Job.objects.get(pk=job_id).input_files
+            'input': Job.objects.get(pk=job_id).input
         }

@@ -76,7 +76,7 @@ class QueueResource(ExistingQueueResource):
                 job_type=job_type,
                 descriptor=descriptor,
                 callback=callback,
-                input_files=input_files
+                input=input_files
             )
             for _ in xrange(replicate)
         ]
