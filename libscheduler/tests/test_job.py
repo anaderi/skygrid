@@ -18,12 +18,12 @@ class TestJobMS(TestWithQueue):
 
         self.queue.put(TEST_OBJ)
 
-        
+
         job = self.queue.get()
         self.assertEqual(job.descriptor, TEST_OBJ['descriptor'])
 
         self.assertTrue(job.update_status('failed'))
-        self.assertTrue(job.update_descriptor({"b": "c"}))
+        self.assertTrue(job.update_output(['hello', 'world']))
 
         self.assertRaises(Exception, job.update_status, 'some bad')
 
