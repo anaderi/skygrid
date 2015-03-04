@@ -11,8 +11,8 @@ from log import logger
 def main():
     worker = WorkerMS(
         config.METASCHEDULER_URL,
-        "montecarlo_queue",
-        do_mc_job,
+        config.WORK_QUEUE,
+        do_docker_job,
         threads_num=4,
         sleep_time=1
     )
