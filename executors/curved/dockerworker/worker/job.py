@@ -17,7 +17,7 @@ DELAY_WAIT_DOCKER_MIN = 0.1
 DELAY_WAIT_DOCKER_MAX = 10.0
 
 
-def do_mc_job(job):
+def do_docker_job(job):
     logger.debug("Got job #{} with descriptor: {}".format(job.job_id, job.descriptor))
     try:
         process(job)

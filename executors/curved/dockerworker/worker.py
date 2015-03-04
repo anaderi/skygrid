@@ -3,7 +3,7 @@ import json
 from libscheduler.worker import WorkerMS
 
 from config import config
-from mc import do_mc_job
+from worker import do_docker_job
 from log import logger
 
 

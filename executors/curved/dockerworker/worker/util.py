@@ -238,7 +238,7 @@ class QueueDir(object):
         os.remove(filename)
 
 
-def test_queue_MS(api_url='http://mc03.h.cern.yandex.net:5000'):
+def test_queue_MS(api_url='http://metascheduler.test.vs.os.yandex.net/'):
     from libscheduler.queue import QueueMS
     dirs = ["_d1", "_d2"]
     q1 = QueueMS(dirs[0], api_url=api_url)
