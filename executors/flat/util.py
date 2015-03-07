@@ -239,11 +239,15 @@ class QueueDir(object):
 
 
 def test_queue_MS(api_url='http://mc03.h.cern.yandex.net:5000'):
+    """ deprecated, use test in libscheduler """
     from libscheduler.queue import QueueMS
+    # from libscheduler.common import ms_delete
     dirs = ["_d1", "_d2"]
     q1 = QueueMS(dirs[0], api_url=api_url)
-    q1.clear()
-    assert q1.empty(), q1.qsize()
+    print "size:", q1.qsize()
+    # ms_delete(q1.queue_url)
+    # q1.clear()
+    assert q1.empty(), "not empty"  # q1.qsize()
     item = q1.get()
     assert item is None
     assert q1.qsize() == 0
@@ -273,8 +277,8 @@ def test_queue_MS(api_url='http://mc03.h.cern.yandex.net:5000'):
     q1.put(i1.description)
     assert q1.qsize() == 2, q1.qsize()
 
-    q2.clear()
-    assert q2.qsize() == 0
+    # q2.clear()
+    # assert q2.qsize() == 0
 
 
 def test_queue():

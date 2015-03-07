@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 """
-    run job pool
+Run jobs packed in docker containers
+Authors:
+* Andrey Ustyuzhanin
+* Alexander Baranov
 """
+
+#-----------------------------------------------------------------------------
+#  Copyright (C) 2014-2015  Yandex Data Factory team
+#
+#  Distributed under the terms of the BSD License.
+#
+#  The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 
 import os
 import sys
@@ -18,7 +29,9 @@ import argparse
 import itertools
 import multiprocessing
 from email.mime.text import MIMEText
-from util import QueueDir, test_queue, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEPTION
+from util import QueueDir, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEPTION
+from libscheduler import Metascheduler
+
 
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
@@ -26,12 +39,14 @@ SLEEP_DELAY = 2
 MAX_DELAY_BEFORE_JEEVES_START = 2
 HOSTNAME = socket.gethostname().split('.')[0]
 logger = None
+API_URL = "http://metascheduler.test.vs.os.yandex.net:80"
 
 
 def parse_args():
     global logger
     p = argparse.ArgumentParser()
-    p.add_argument("--dir", "-d", help="job descriptor pool", default="jobs")
+    p.add_argument("--dir", "-d", help="job descriptor pool (Dir)", default=None)
+    p.add_argument("--queue", "-q", help="job descriptor pool (MS Queue)", default=None)
     p.add_argument("--nworkers", "-n", help="number of workers", type=int, default=multiprocessing.cpu_count())
     p.add_argument("--niterations", help="number of iterations", type=int, default=None)
     p.add_argument("--output", "-o", help="output folder", default="output-%s" % HOSTNAME)
@@ -39,13 +54,20 @@ def parse_args():
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
     p.add_argument("--nopull", action='store_true', default=False)
-    p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
+    p.add_argument("--logdir", help="logfile folder (current dir by default)", default=".")
+    # p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
     args = p.parse_args()
-    if not os.path.exists(args.dir) and not args.test:
-        p.error("directory '%s' does not exists" % args.dir)
-    logging.basicConfig(filename=args.log, filemode='w', level=logging.INFO)
+    if args.dir is not None and args.queue is not None:
+        p.error("Specify either --dir or --queue, not both")
+    if args.dir is not None:
+        if not os.path.exists(args.dir) and not args.test:
+            p.error("directory '%s' does not exists" % args.dir)
+
+    logfile = os.path.join(args.logdir, "wooster_%s.log" % HOSTNAME)
+    logging.basicConfig(filename=logfile, format='%(asctime)s %(message)s', filemode='a', level=logging.INFO)
     logger = logging.getLogger()    
-    args.dir = args.dir.rstrip("/")
+    if args.dir is not None:
+        args.dir = args.dir.rstrip("/")
     if args.verbose:
         logger.setLevel(logging.DEBUG)
         stream_handler = logging.StreamHandler(sys.stdout)
@@ -61,15 +83,12 @@ def my_dir():
     return os.path.dirname(os.path.join(my_dir, __file__))
 
 
-# def run_jd_wrapper(args):
-#     return run_jd(*args)
-# 
 def dict2args(**kwargs):
     result=[]
     for k, v in kwargs.iteritems():
         if type(v) == bool:
-	    result.append("--%s" % k)
-	else:
+            result.append("--%s" % k)
+        else:
             result.append("--%s=%s" % (k, v))
     return ' '.join(result)
 
@@ -81,6 +100,7 @@ def run_jd(jds, output_dir, jeeves_kwargs):
         "jd": jds
     }
     time.sleep(random.random() * MAX_DELAY_BEFORE_JEEVES_START)
+    logger.info("JOB_ID: %d" % jds['job_id'])
     try:
         with tempfile.NamedTemporaryFile() as fh:
             json.dump(jds, fh, indent=2, sort_keys=True)
@@ -88,11 +108,12 @@ def run_jd(jds, output_dir, jeeves_kwargs):
             runner = os.path.join(my_dir(), "jeeves.py")
             cmd = "{runner} --input {file} --output {out} -v".format(
                 runner=runner, file=fh.name, out=output_dir)
-	    if len(jeeves_kwargs) > 0: 
-	        cmd += " %s" % dict2args(**jeeves_kwargs)
+            if len(jeeves_kwargs) > 0: 
+                cmd += " %s" % dict2args(**jeeves_kwargs)
             logger.info("CMD: " + cmd)
-            sh_result = sh(cmd, logout="jeeves_out_%d.log" % jds['job_id'],
-                logerr="jeeves_err_%d.log" % jds['job_id'])
+            jeeves_log_out = "%s_out.log" % fh.name
+            jeeves_log_err = "%s_err.log" % fh.name
+            sh_result = sh(cmd, logout=jeeves_log_out, logerr=jeeves_log_err)
             result["rc"] = sh_result["rc"]
             if len(sh_result["status"]) > 0:
                 result["status"] = sh_result["status"]
@@ -100,6 +121,8 @@ def run_jd(jds, output_dir, jeeves_kwargs):
                 result["status"] += sh_result["out"]
             if len(sh_result["err"]) > 0:
                 result["status"] += sh_result["err"]
+            os.remove(jeeves_log_out)
+            os.remove(jeeves_log_err)
             logger.info("JEEVES_OUTPUT (JOB_ID={job})\n{sep}\n{out}\n{sep}".format(
                 job=jds['job_id'], out=result['status'], sep='='*80))
     except Exception, e:
@@ -196,7 +219,7 @@ def test_slots():
     slots[0] = None
     assert slots.get_empty_idx() == 0
     assert slots.is_slot_available()
-    assert slots.empty() == False
+    assert not slots.empty()
     slots[2] = None
     assert slots.empty()
     for i in slots:
@@ -269,16 +292,18 @@ def update_results(results, q_success, q_fail, locker, result_log):
     for i, r in enumerate(results):
         if r is None:
             continue
-        print "#### Checking if slot %d is ready: %s" % (i, r.ready())
+        logger.debug("#### Checking if slot %d is ready: %s" % (i, r.ready()))
         if r.ready():
             rd = r.get()
             if rd['rc'] == SUCCESS:
                 rd['jd']['status'] = "SUCCESS"
-                q_success.put(rd['jd'])
+                if q_success is not None:
+                    q_success.put(rd['jd'])
             else:
                 rd['jd']['status'] = rd['rc']
                 rd['jd']['status'] = rd['status']
-                q_fail.put(rd['jd'])
+                if q_fail is not None:
+                    q_fail.put(rd['jd'])
                 logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
             unlock_result = locker.unlock(rd['jd'])
             assert unlock_result
@@ -286,27 +311,54 @@ def update_results(results, q_success, q_fail, locker, result_log):
             result_log.append(rd)
 
 
+def _queue_dir_init(dir_name):
+    q_input = QueueDir(dir_name)
+    q_fail = QueueDir(dir_name + ".fail", default_mask=q_input.mask)
+    q_success = QueueDir(dir_name + ".success", default_mask=q_input.mask)
+    return (q_input, q_fail, q_success)
+
+
+def _queue_ms_init(queue_name, api_url):
+    # q_input = QueueMS(queue_name, api_url=API_URL)
+    ms = Metascheduler(API_URL)
+    q_input = ms.queue(queue_name)
+    return (q_input, None, None)
+
+
+def queue_init(dir_name=None, queue_name=None, api_url=None):
+    assert not (dir_name is not None and queue_name is not None), "cannot init both dir and MS queues"
+    assert not (dir_name is None and queue_name is None), "specify dir or queue name"
+    if dir_name:
+        return _queue_dir_init(dir_name)
+    else:
+        return _queue_ms_init(queue_name, api_url)
+
+
 def main(args):
     if args.test:
-        print args.niterations
-        logger.setLevel(logging.DEBUG)
-        test_queue()
-        test_slots()
-        test_cache()
+        # logger.setLevel(logging.DEBUG)
+        # test_queue()
+        # test_slots()
+        # test_cache()
         exit(1)
     pool = multiprocessing.Pool(args.nworkers)
-    q_input = QueueDir(args.dir)
-    q_fail = QueueDir(args.dir + ".fail", default_mask=q_input.mask)
-    q_success = QueueDir(args.dir + ".success", default_mask=q_input.mask)
-    locker = Cache(args.dir + ".locker")
-    assert not locker.exists()
+    lock_file = tempfile.mktemp(prefix="lock_%s" % HOSTNAME, dir=".", suffix=".locker")
+    locker = Cache(lock_file)
+    assert not locker.exists(), lock_file
 
+    (q_input, q_fail, q_success) = queue_init(args.dir, args.queue, API_URL)
     time_start = datetime.datetime.now()
     result_async = ResultSlots(args.nworkers)
     result_log = []
 
     try:
-        for jd in itertools.islice(q_input, args.niterations):
+        for job in itertools.islice(q_input, args.niterations):
+            if hasattr(job, "descriptor"):
+                jd = job.descriptor
+                job_id = int(job.job_id, 16) % 10000000
+                jd['job_id'] = job_id
+            else:
+                jd = job
             locker.lock(jd)
             while not result_async.is_slot_available():
                 time.sleep(SLEEP_DELAY)
@@ -325,7 +377,8 @@ def main(args):
         for jd in locker.load().values():
             jd['status'] = "INTERRUPT"
             result_log.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
-            q_fail.put(jd)
+            if q_fail is not None:
+                q_fail.put(jd)
         logger.warn("Terminate pool")
         pool.close()
         pool.terminate()

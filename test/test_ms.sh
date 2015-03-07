@@ -1,6 +1,5 @@
 #!/bin/bash
 
-QDIR="_local_queue"
 QUEUE="montecarlo_queue"
 OUTDIR=output
 INDIR=input
@@ -22,20 +21,16 @@ function check_docker_connect() {
 }
 
 [ "$1" == "--nopull" ] && ARGS+=" $1" && shift
-[[ "$1" == "" || ! -f "$1" ]] && halt "Usage: $0 [--nopull] TEST_JD*"
+# [[ "$1" == "" || ! -f "$1" ]] && halt "Usage: $0 [--nopull] TEST_JD*"
 check_docker_connect 
 
-rm -rf $QDIR* $OUTDIR $INDIR
-mkdir -p $QDIR
+# TODO: send $1 to QUEUE
+
+rm -rf $OUTDIR $INDIR
 mkdir $OUTDIR
 mkdir $INDIR
-i=1
-for f in $* ; do
-  cp $f $QDIR/$i.json
-  i=$[$i+1]
-done
 
-$DIR/../executors/flat/wooster.py -d $QDIR -v -n 2 -o $OUTDIR $ARGS
+$DIR/../executors/flat/wooster.py -q $QUEUE -v -n 2 -o $OUTDIR $ARGS
 
 ls -lR $OUTDIR*
 ls -lR $INDIR*
