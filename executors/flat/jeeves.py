@@ -159,14 +159,10 @@ def run_jd_async(jd, output_basedir="output", force=False):
         sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
             logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=False)
         if not is_running:
-            if verbose: 
-                sh("docker logs %s" % containerID, logout="%s/out.log" % JOB_OUTPUT_DIR,
-                    logerr="%s/err.log" % JOB_OUTPUT_DIR, verbose=True)
             sh("docker rm %s" % containerID)
             break
         time1 = datetime.datetime.now()
         delay = max(DELAY_WAIT_DOCKER_MIN, min(DELAY_WAIT_DOCKER_MAX, (time1-time0).seconds * 0.1))
-        print "DELAY:", delay
         time.sleep(delay)
 
 

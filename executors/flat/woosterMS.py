@@ -23,6 +23,7 @@ MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
 SLEEP_DELAY = 2
 API_URL = "http://mc03.h.cern.yandex.net:5000"
+API_URL = "http://metascheduler.test.vs.os.yandex.net:80"
 HOSTNAME = socket.gethostname().split('.')[0]
 logger = None
 
@@ -78,7 +79,11 @@ def run_jd(jds, output_dir):
                 runner=runner, file=fh.name, out=output_dir)
             logger.info("JOB_ID: %d" % jds['job_id'])
             logger.info("CMD: " + cmd)
-            sh_result = sh(cmd)
+            jeeves_log_out = "%s_out.log" % fh.name
+            jeeves_log_err = "%s_err.log" % fh.name
+            logger.info("LOGOUT: " + jeeves_log_out)
+            logger.info("LOGERR: " + jeeves_log_err)
+            sh_result = sh(cmd, logout=jeeves_log_out, logerr=jeeves_log_err)
             result["rc"] = sh_result["rc"]
             if len(sh_result["status"]) > 0:
                 result["status"] = sh_result["status"]
@@ -86,6 +91,8 @@ def run_jd(jds, output_dir):
                 result["status"] += sh_result["out"]
             if len(sh_result["err"]) > 0:
                 result["status"] += sh_result["err"]
+            os.remove(jeeves_log_out)
+            os.remove(jeeves_log_err)
     except Exception, e:
         result["status"] = "EXCEPTION: " + e.__repr__()
     return result
@@ -241,11 +248,11 @@ def update_results(results, q_success, q_fail, locker, result_log):
             rd = r.get()
             if rd['rc'] == SUCCESS:
                 rd['jd']['status'] = "SUCCESS"
-                q_success.put(rd['jd'])
+                # q_success.put(rd['jd'])
             else:
                 rd['jd']['status'] = rd['rc']
                 rd['jd']['status'] = rd['status']
-                q_fail.put(rd['jd'])
+                # q_fail.put(rd['jd'])
                 logger.warn("FAIL (%d):\nJD: %s\n%s" % (rd["rc"], rd["jd"], rd["status"]))
             unlock_result = locker.unlock(rd['jd'])
             assert unlock_result
@@ -274,7 +281,9 @@ def main(args):
 
     try:
         for job in itertools.islice(q_input, args.niterations):
-            jd = job.description
+            jd = job.descriptor
+            job_id = int(job.job_id, 16) % 10000000
+            jd['job_id'] = job_id
             locker.lock(jd)
             while not result_async.is_slot_available():
                 time.sleep(SLEEP_DELAY)
@@ -291,7 +300,7 @@ def main(args):
         for jd in locker.load().values():
             jd['status'] = "INTERRUPT"
             result_log.append({'status': "^C", 'rc': ERROR_INTERRUPT, 'jd': jd})
-            q_fail.put(jd)
+            # q_fail.put(jd)
         logger.warn("Terminate pool")
         pool.close()
         pool.terminate()

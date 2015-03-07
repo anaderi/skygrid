@@ -77,7 +77,8 @@ def run_jd(jds, output_dir):
             cmd = "{runner} --input {file} --output {out} -v".format(
                 runner=runner, file=fh.name, out=output_dir)
             logger.info("CMD: " + cmd)
-            sh_result = sh(cmd)
+            sh_result = sh(cmd, logout="jeeves_out_%d.log" % jds['job_id'],
+                logerr="jeeves_err_%d.log" % jds['job_id'])
             result["rc"] = sh_result["rc"]
             if len(sh_result["status"]) > 0:
                 result["status"] = sh_result["status"]
@@ -167,6 +168,7 @@ class ResultSlots(object):
 
 
 def test_slots():
+    print "## test slots"
     slots = ResultSlots(4)
     assert slots.is_slot_available()
     assert slots.get_empty_idx() == 0
@@ -175,8 +177,17 @@ def test_slots():
     assert slots[0] == 1
     assert slots.get_empty_idx() == 1
     assert slots.is_slot_available()
+    slots[2] = 1
+    assert slots.get_empty_idx() == 1
+    slots[0] = None
+    assert slots.get_empty_idx() == 0
+    assert slots.is_slot_available()
+    assert slots.empty() == False
+    slots[2] = None
+    assert slots.empty()
     for i in slots:
         print i
+    print "OK"
 
 
 def test_cache():
@@ -238,8 +249,12 @@ class Cache(object):
 
 
 def update_results(results, q_success, q_fail, locker, result_log):
+    print "### update_result"
     for i, r in enumerate(results):
-        if r is not None and r.ready():
+        if r is None:
+            continue
+        print "#### %d, %s, %s" % (i, r, r.ready())
+        if r.ready():
             rd = r.get()
             if rd['rc'] == SUCCESS:
                 rd['jd']['status'] = "SUCCESS"
@@ -283,6 +298,8 @@ def main(args):
             slot_id = result_async.get_empty_idx()
             result_async[slot_id] = pool.apply_async(run_jd, [jd, args.output])
         while not result_async.empty():
+            print "## Non empty"
+            print result_log 
             update_results(result_async, q_success, q_fail, locker, result_log)
             time.sleep(SLEEP_DELAY)
 
