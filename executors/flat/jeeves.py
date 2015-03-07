@@ -15,6 +15,7 @@ from lockfile import LockFile
 
 DELAY_WAIT_DOCKER_MIN = 0.1
 DELAY_WAIT_DOCKER_MAX = 10.0
+DELAY_DOCKER_START = 3.
 verbose = False
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -29,6 +30,7 @@ def parse_args():
     p.add_argument("--storage", "-s", help="output storage folder", default="storage")
     p.add_argument("--force", "-f", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
+    p.add_argument("--nopull", action='store_true', default=False)
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     args = p.parse_args()
     if not os.path.exists(args.input) and not args.test:
@@ -53,23 +55,29 @@ def halt(msg):
     exit(1)
 
 
-def getargs(jd, subst):
+def getargs(arg_dict, subst):
+    """
+    transofrm dict of arguments (kw and positional) to string of arguments, 
+    and substitute $VARS from subst dict
+    """
     args = []
-    kw_keys = [k for k in jd["args"].keys() if k.startswith("-")]
+    kw_keys = [k for k in arg_dict.keys() if k.startswith('-')]
     for k in kw_keys:
-        v = jd["args"][k]
-        if v is True:
+        v = arg_dict[k]
+        if v is True:  # TODO: take care of False value or not?
             args.append(k)
-        else:
+        elif k.startswith('--'):
             args.append("%s=%s" % (k, str(v)))
-    pos_keys = sorted([k for k in jd["args"].keys() if k.startswith("__POS")])
+        else:
+            args.append("%s %s" % (k, str(v)))
+    pos_keys = sorted([k for k in arg_dict.keys() if k.startswith("__POS")])
     for k in pos_keys:
-        v = jd["args"][k]
+        v = arg_dict[k]
         if type(v) == str or type(v) == unicode:
             args.append(v)
         else:
             args.extend(v)
-    s = " ".join(args)
+    s = ' '.join(args)
     for k, v in subst.iteritems():
         s = s.replace(k, str(v))
     return s
@@ -101,7 +109,18 @@ def is_container_running(containerID):
     return result
 
 
-def run_jd_async(jd, output_basedir="output", force=False):
+def recreate_dir(dirname, force=False):
+    if os.path.exists(dirname):
+        if force:
+            print "WARN: Removing '%s'" % dirname
+            shutil.rmtree(dirname)
+        else:
+            halt("directory '%s' exists" % dirname)
+    else:
+        os.makedirs(dirname)
+
+
+def run_jd_async(jd, output_basedir="output", input_basedir="input", force=False, nopull=False):
     global verbose
     JOB_ID = jd["job_id"]
     JOB_TAG = jd["app_container"]["name"]
@@ -115,33 +134,39 @@ def run_jd_async(jd, output_basedir="output", force=False):
     if 'quote_cmd' in jd:
         QUOTE_CMD = jd['quote_cmd']
     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
-    if "data_volume" in jd["env_container"]:
+    JOB_INPUT_DIR = os.path.abspath("%s/%s" % (input_basedir, JOB_ID))
+    if 'data_volume' in jd["env_container"]:
         ENV_VOLUMES.append(jd["env_container"]["data_volume"])
-    ARGS = getargs(jd, {"$DATA_DIR": "/data", 
-                   "$OUTPUT_DIR": "/output",
-                   "$JOB_ID": JOB_ID
-                        })
+    VM_INPUT = '/input'  # input folder inside VM
+    VM_OUTPUT = '/output'  # output folder inside VM
+    ARGS = getargs(jd['args'], 
+                   {"$DATA_DIR": "/data", 
+                    "$OUTPUT_DIR": VM_OUTPUT,
+                    "$INPUT_DIR": VM_INPUT,
+                    "$JOB_ID": JOB_ID
+                    })
 
-    if os.path.exists(JOB_OUTPUT_DIR):
-        if force:
-            print "WARN: Removing '%s'" % JOB_OUTPUT_DIR
-            shutil.rmtree(JOB_OUTPUT_DIR)
-        else:
-            halt("directory '%s' exists" % JOB_OUTPUT_DIR)
-    else:
-        os.makedirs(JOB_OUTPUT_DIR)
-
+    recreate_dir(JOB_OUTPUT_DIR, force=force)
     with open("%s/jd.json" % JOB_OUTPUT_DIR, "w") as fh:
          json.dump(jd, fh, indent=2, sort_keys=True)
-    docker_pull_image(jd["app_container"]["name"])
+    recreate_dir(JOB_INPUT_DIR, force=force)
+    for f in jd['input_files']:
+        assert os.path.exists(f), "input file not found: %s" % f
+        assert os.path.isfile(f), "input file is not a regular file: %s" % f
+        shutil.copy(f, JOB_INPUT_DIR)
+
+    if not nopull:
+        docker_pull_image(jd["app_container"]["name"])
     if not docker_is_running(APP_CONTAINER):
         result = sh("docker run -d -v %s --name %s %s echo %s app" % 
                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
                     verbose=verbose)
         if result['rc'] != SUCCESS:
             halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
-        time.sleep(3)
-    ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
+        time.sleep(DELAY_DOCKER_START)
+    ENV_VOLUMES.append("%s:%s" % (JOB_OUTPUT_DIR, VM_OUTPUT))
+    ENV_VOLUMES.append("%s:%s" % (JOB_INPUT_DIR, VM_INPUT))
+
     cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
     if QUOTE_CMD:
         cmd_args = "'%s'" % cmd_args
@@ -149,7 +174,8 @@ def run_jd_async(jd, output_basedir="output", force=False):
         app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
         env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
     time0 = datetime.datetime.now()
-    docker_pull_image(ENV_CONTAINER)
+    if not nopull:
+        docker_pull_image(ENV_CONTAINER)
     result = sh(docker_cmd, verbose=verbose)
     if result['rc'] != SUCCESS:
         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
@@ -166,52 +192,52 @@ def run_jd_async(jd, output_basedir="output", force=False):
         time.sleep(delay)
 
 
-def run_jd(jd, output_basedir="output", force=False):
-    global verbose
-    JOB_ID = jd["job_id"]
-    JOB_TAG = jd["app_container"]["name"]
-    JOB_SUPER_ID = jd["job_super_id"]
-    APP_CONTAINER = "JOB_%s_CNT" % JOB_SUPER_ID
-    ENV_CONTAINER = jd["env_container"]["name"]
-    WORK_DIR = jd["env_container"]["workdir"]
-    CMD = jd["cmd"]
-    ENV_VOLUMES = []
-    QUOTE_CMD = True
-    if 'quote_cmd' in jd:
-        QUOTE_CMD = jd['quote_cmd']
-    JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
-    if "data_volume" in jd["env_container"]:
-        ENV_VOLUMES.append(jd["env_container"]["data_volume"])
-    ARGS = getargs(jd, {"$DATA_DIR": "/data", 
-                   "$OUTPUT_DIR": "/output",
-                   "$JOB_ID": JOB_ID
-                        })
+# def run_jd(jd, output_basedir="output", force=False):
+#     global verbose
+#     JOB_ID = jd["job_id"]
+#     JOB_TAG = jd["app_container"]["name"]
+#     JOB_SUPER_ID = jd["job_super_id"]
+#     APP_CONTAINER = "JOB_%s_CNT" % JOB_SUPER_ID
+#     ENV_CONTAINER = jd["env_container"]["name"]
+#     WORK_DIR = jd["env_container"]["workdir"]
+#     CMD = jd["cmd"]
+#     ENV_VOLUMES = []
+#     QUOTE_CMD = True
+#     if 'quote_cmd' in jd:
+#         QUOTE_CMD = jd['quote_cmd']
+#     JOB_OUTPUT_DIR = os.path.abspath("%s/%s" % (output_basedir, JOB_ID))
+#     if "data_volume" in jd["env_container"]:
+#         ENV_VOLUMES.append(jd["env_container"]["data_volume"])
+#     ARGS = getargs(jd, {"$DATA_DIR": "/data", 
+#                    "$OUTPUT_DIR": "/output",
+#                    "$JOB_ID": JOB_ID
+#                         })
 
-    if os.path.exists(JOB_OUTPUT_DIR):
-        if force:
-            print "WARN: Removing '%s'" % JOB_OUTPUT_DIR
-            shutil.rmtree(JOB_OUTPUT_DIR)
-        else:
-            halt("directory '%s' exists" % JOB_OUTPUT_DIR)
-    else:
-        os.makedirs(JOB_OUTPUT_DIR)
-    if not docker_is_running(APP_CONTAINER):
-        result = sh("docker run -d -v %s --name %s %s echo %s app" % 
-                    (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
-                    verbose=verbose)
-        if result['rc'] != SUCCESS:
-            halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
-        time.sleep(3)
-    ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
-    cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
-    if QUOTE_CMD:
-        cmd_args = "'%s'" % cmd_args
-    docker_cmd = "docker run --rm -t --volumes-from {app} -v {volumes} -w {workdir} {env} {cmd_args}".format(
-        app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
-        env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
-    result = sh(docker_cmd, verbose=verbose, logout="%s/out.log" % JOB_OUTPUT_DIR, logerr="%s/err.log" % JOB_OUTPUT_DIR, )
-    if result['rc'] != SUCCESS:
-        halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
+#     if os.path.exists(JOB_OUTPUT_DIR):
+#         if force:
+#             print "WARN: Removing '%s'" % JOB_OUTPUT_DIR
+#             shutil.rmtree(JOB_OUTPUT_DIR)
+#         else:
+#             halt("directory '%s' exists" % JOB_OUTPUT_DIR)
+#     else:
+#         os.makedirs(JOB_OUTPUT_DIR)
+#     if not docker_is_running(APP_CONTAINER):
+#         result = sh("docker run -d -v %s --name %s %s echo %s app" % 
+#                     (WORK_DIR, APP_CONTAINER, JOB_TAG, APP_CONTAINER),
+#                     verbose=verbose)
+#         if result['rc'] != SUCCESS:
+#             halt("error running app container %s (%d, %s)" % (APP_CONTAINER, result['rc'], result['status']))
+#         time.sleep(3)
+#     ENV_VOLUMES.append("%s:/output" % JOB_OUTPUT_DIR)
+#     cmd_args = "{cmd} {args}".format(cmd=CMD, args=ARGS)
+#     if QUOTE_CMD:
+#         cmd_args = "'%s'" % cmd_args
+#     docker_cmd = "docker run --rm -t --volumes-from {app} -v {volumes} -w {workdir} {env} {cmd_args}".format(
+#         app=APP_CONTAINER, volumes=" -v ".join(ENV_VOLUMES), 
+#         env=ENV_CONTAINER, workdir=WORK_DIR, cmd_args=cmd_args)
+#     result = sh(docker_cmd, verbose=verbose, logout="%s/out.log" % JOB_OUTPUT_DIR, logerr="%s/err.log" % JOB_OUTPUT_DIR, )
+#     if result['rc'] != SUCCESS:
+#         halt("error running env container %s (%d, %s)" % (ENV_CONTAINER, result['rc'], result['status']))
 
 
 def gather_output(jd, output_basedir, output_storage):
@@ -227,7 +253,7 @@ def main(args):
         exit(1)
     with open(args.input) as fh:
         jd = json.load(fh)
-        run_jd_async(jd, output_basedir=args.output, force=args.force)
+        run_jd_async(jd, output_basedir=args.output, force=args.force, nopull=args.nopull)
         gather_output(jd, output_basedir=args.output, output_storage=args.storage)
 
 

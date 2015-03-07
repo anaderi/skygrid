@@ -8,6 +8,7 @@ import sys
 import json
 import time
 import socket
+import random
 import logging
 import smtplib
 import cPickle
@@ -21,7 +22,8 @@ from util import QueueDir, test_queue, sh, SUCCESS, ERROR_INTERRUPT, ERROR_EXCEP
 
 MAILFROM = "Wooster@SkyGrid"
 MAILHOST = "localhost"
-SLEEP_DELAY = 1
+SLEEP_DELAY = 2
+MAX_DELAY_BEFORE_JEEVES_START = 2
 HOSTNAME = socket.gethostname().split('.')[0]
 logger = None
 
@@ -36,6 +38,7 @@ def parse_args():
     p.add_argument("--verbose", "-v", action='store_true', default=False)
     p.add_argument("--test", "-t", action='store_true', default=False)
     p.add_argument("--mail", "-m", action='store_true', default=False)
+    p.add_argument("--nopull", action='store_true', default=False)
     p.add_argument("--log", help="logfile name (wooster_HOSTNAME.log)", default="wooster_%s.log" % HOSTNAME)
     args = p.parse_args()
     if not os.path.exists(args.dir) and not args.test:
@@ -58,17 +61,26 @@ def my_dir():
     return os.path.dirname(os.path.join(my_dir, __file__))
 
 
-def run_jd_wrapper(args):
-    return run_jd(*args)
+# def run_jd_wrapper(args):
+#     return run_jd(*args)
+# 
+def dict2args(**kwargs):
+    result=[]
+    for k, v in kwargs.iteritems():
+        if type(v) == bool:
+	    result.append("--%s" % k)
+	else:
+            result.append("--%s=%s" % (k, v))
+    return ' '.join(result)
 
 
-def run_jd(jds, output_dir):
+def run_jd(jds, output_dir, jeeves_kwargs):
     result = {
         "rc": ERROR_EXCEPTION,
         "status": "",
         "jd": jds
     }
-    # TODO rndom delay before start
+    time.sleep(random.random() * MAX_DELAY_BEFORE_JEEVES_START)
     try:
         with tempfile.NamedTemporaryFile() as fh:
             json.dump(jds, fh, indent=2, sort_keys=True)
@@ -76,6 +88,8 @@ def run_jd(jds, output_dir):
             runner = os.path.join(my_dir(), "jeeves.py")
             cmd = "{runner} --input {file} --output {out} -v".format(
                 runner=runner, file=fh.name, out=output_dir)
+	    if len(jeeves_kwargs) > 0: 
+	        cmd += " %s" % dict2args(**jeeves_kwargs)
             logger.info("CMD: " + cmd)
             sh_result = sh(cmd, logout="jeeves_out_%d.log" % jds['job_id'],
                 logerr="jeeves_err_%d.log" % jds['job_id'])
@@ -249,11 +263,13 @@ class Cache(object):
 
 
 def update_results(results, q_success, q_fail, locker, result_log):
-    print "### update_result"
+    """
+    update collection of job results from slots
+    """
     for i, r in enumerate(results):
         if r is None:
             continue
-        print "#### %d, %s, %s" % (i, r, r.ready())
+        print "#### Checking if slot %d is ready: %s" % (i, r.ready())
         if r.ready():
             rd = r.get()
             if rd['rc'] == SUCCESS:
@@ -296,12 +312,12 @@ def main(args):
                 time.sleep(SLEEP_DELAY)
                 update_results(result_async, q_success, q_fail, locker, result_log)
             slot_id = result_async.get_empty_idx()
-            result_async[slot_id] = pool.apply_async(run_jd, [jd, args.output])
+            result_async[slot_id] = pool.apply_async(run_jd, 
+                                                     [jd, args.output, {'nopull': args.nopull}])
         while not result_async.empty():
-            print "## Non empty"
-            print result_log 
             update_results(result_async, q_success, q_fail, locker, result_log)
             time.sleep(SLEEP_DELAY)
+        # print "LOG:", result_log 
 
     except KeyboardInterrupt:
         logger.warn("Caught SIGINT (^C), terminating")
