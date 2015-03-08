@@ -86,7 +86,7 @@ def my_dir():
 def dict2args(**kwargs):
     result=[]
     for k, v in kwargs.iteritems():
-        if type(v) == bool:
+        if type(v) == bool and v is True:
             result.append("--%s" % k)
         else:
             result.append("--%s=%s" % (k, v))
