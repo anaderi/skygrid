@@ -20,7 +20,7 @@ setup(
         "flask-mongoengine==0.7.1",
         "itsdangerous==0.24",
         "mongoengine==0.8.7",
-        "pymongo==2.7.2",
+        "pymongo>=2.8",
         "pytz==2014.4",
         "requests==2.3.0",
         "six==1.7.3",
