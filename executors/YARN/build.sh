@@ -15,7 +15,7 @@ cd $BUILD_DIR
 jar -xf YarnTestClient-1.0.jar
 rm -rf META-INF
 
-for dep_jar in ws-commons-util-1.0.2.jar  xmlrpc-client-3.1.3.jar  xmlrpc-common-3.1.3.jar
+for dep_jar in ws-commons-util-1.0.2.jar  xmlrpc-client-3.1.3.jar  xmlrpc-common-3.1.3.jar commons-io-1.3.2.jar
 do
   cp $PROJECT_DIR/target/dependency/$dep_jar $BUILD_DIR
   jar -xf $dep_jar

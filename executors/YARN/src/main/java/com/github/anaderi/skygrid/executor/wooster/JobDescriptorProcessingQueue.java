@@ -1,6 +1,6 @@
 package com.github.anaderi.skygrid.executor.wooster;
 
-import com.github.anaderi.skygrid.JobDescriptor;
+import com.github.anaderi.skygrid.executor.common.JobDescriptor;
 
 import java.util.ArrayList;
 
@@ -22,10 +22,6 @@ public class JobDescriptorProcessingQueue {
 
     public synchronized boolean HasUpcomingTasks() {
         return !upcomingJobDescriptors_.isEmpty();
-    }
-
-    public synchronized int FindJobDescriptorIndex(JobDescriptor jobDescriptor) {
-        return registeredJobDescriptors_.indexOf(jobDescriptor);
     }
 
     public synchronized int UpcomingQueueSize() {

@@ -20,7 +20,7 @@ public class NMCallbackHandler implements NMClientAsync.CallbackHandler {
 
     @Override
     public void onContainerStatusReceived(ContainerId containerId, ContainerStatus containerStatus) {
-
+        LOG.info("Jeeves {} status {} (on thread {})", containerId, containerStatus, Thread.currentThread());
     }
 
     @Override
@@ -35,11 +35,11 @@ public class NMCallbackHandler implements NMClientAsync.CallbackHandler {
 
     @Override
     public void onGetContainerStatusError(ContainerId containerId, Throwable throwable) {
-
+        LOG.info("Jeeves on container status error {}", containerId);
     }
 
     @Override
     public void onStopContainerError(ContainerId containerId, Throwable throwable) {
-
+        LOG.info("Jeeves on stop container error {}", containerId);
     }
 }

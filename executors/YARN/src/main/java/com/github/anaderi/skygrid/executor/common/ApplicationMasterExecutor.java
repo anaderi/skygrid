@@ -107,6 +107,7 @@ public class ApplicationMasterExecutor {
         env.put("AMJARTIMESTAMP", Long.toString(destJarModificationTime_));
         env.put("AMJARLEN", Long.toString(destJarLength_));
         env.put("CLASSPATH", getApplicationsClasspath());
+        env.put("_JAVA_OPTIONS", "-Djava.net.preferIPv4Stack=false");
         return env;
     }
 

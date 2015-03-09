@@ -82,7 +82,7 @@ Running Docker containers
 For running docker containers `/etc/sudoers.d/skygrid` file must be created
 with the following contents:
 
-    Cmnd_Alias  DOCKER = /usr/bin/docker ps, /usr/bin/docker pull *, /usr/bin/docker run *
+    Cmnd_Alias  DOCKER = /usr/bin/docker ps -q --no-trunc=true, /usr/bin/docker pull *, /usr/bin/docker run *, /usr/bin/docker rm *
     User_Alias  DOCKER_OWNER = root
     User_Alias  YARN_USER = stromsund
 
