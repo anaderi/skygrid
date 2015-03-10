@@ -10,7 +10,7 @@ from ..models import *
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
 
 def queue_length(queue_name):
-    return len(Job.objects(job_type=queue_name, status=JobStatus.pending))
+    return Job.objects(job_type=queue_name, status=JobStatus.pending).count()
 
 
 class QueueManagementResource(MetaschedulerResource):
