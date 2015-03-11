@@ -27,7 +27,7 @@ class MonteCarloList(SkygridResource):
         queue = current_app.metascheduler.queue(queue_name)
 
         callback_url = os.path.join(
-            current_app.config['FULL_URL'],
+            current_app.config['CALLBACK_URL'],
             "montecarlo",
             str(mc.pk),
             "callback"

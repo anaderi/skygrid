@@ -11,11 +11,23 @@ app = Flask(__name__)
 app.config.from_envvar('SKYGRID_CONFIG')
 cors = CORS(app)
 
+
 # Configure DB
+
+mongo_host = app.config.get('MONGO_DB_HOST') or 'localhost'
+
 if app.config['DB_USE_AUTH']:
-    connect(app.config['MONGO_DB'], username=app.config['MONGO_DB_USERNAME'], password=app.config['MONGO_DB_PASSWORD'])
+    connect(
+        app.config['MONGO_DB'],
+        username=app.config['MONGO_DB_USERNAME'],
+        password=app.config['MONGO_DB_PASSWORD'],
+        host=mongo_host
+    )
 else:
-    connect(app.config['MONGO_DB'])
+    connect(
+        app.config['MONGO_DB'],
+        host=mongo_host
+    )
 
 
 # Configure metascheduler

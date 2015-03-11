@@ -10,7 +10,7 @@ from ..models import *
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
 
 def queue_length(queue_name):
-    return len(Job.objects(job_type=queue_name, status=JobStatus.pending))
+    return Job.objects(job_type=queue_name, status=JobStatus.pending).count()
 
 
 class QueueManagementResource(MetaschedulerResource):
@@ -66,11 +66,20 @@ class QueueResource(ExistingQueueResource):
         descriptor = request.json.get('descriptor')
         assert descriptor
 
+        input_files = request.json.get('input') or []
 
         callback = request.json.get('callback')
         replicate = request.json.get('multiply') or 1
 
-        jobs = [Job(job_type=job_type, descriptor=descriptor, callback=callback) for _ in xrange(replicate)]
+        jobs = [
+            Job(
+                job_type=job_type,
+                descriptor=descriptor,
+                callback=callback,
+                input=input_files
+            )
+            for _ in xrange(replicate)
+        ]
         jobs = Job.objects.insert(jobs)
 
 
