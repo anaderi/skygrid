@@ -67,3 +67,5 @@ hs_err_pid*
 
 *.pyc
 .venv
+
+worker.cfg

@@ -1,0 +1,8 @@
+backports.ssl-match-hostname==3.4.0.2
+docker-py==1.0.0
+lockfile==0.10.2
+requests==2.4.3
+six==1.9.0
+skygrid-libscheduler==0.4.0
+skygrid-libskygrid==0.1.1
+websocket-client==0.25.0
