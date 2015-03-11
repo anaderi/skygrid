@@ -4,7 +4,8 @@ import re
 import docker
 from docker import Client
 
-from common import execute
+from lockfile import LockFile
+
 from ..log import logger
 
 
@@ -12,40 +13,36 @@ client = Client(base_url='unix://var/run/docker.sock', version="1.16")
 
 
 def pull_image(image, *args, **kwargs):
-    with LockFile("/tmp/jeeves_lock_pull_%s" % re.sub("[:/]", "_", image)):
+    with LockFile("/tmp/pull_lock_%s" % re.sub("[:/]", "_", image)):
         logger.debug("Pulling image {}".format(image))
         client.pull(image, *args, **kwargs)
 
 
-def is_running(container):
-    tempfile = "/tmp/jeeves.%d" % os.getpid()
 
-    ret = None
+def is_running(containter_id):
+    running_ids = [c['Id'] for c in client.containers()]
+    return containter_id in running_ids
 
-    try:
-        ret = bool(client.inspect_container(container))
-    except docker.errors.APIError:
-        ret = False
-
-    os.remove(tempfile)
-
-    return ret
-
-
-def is_container_running(containerID):
-    result = False
-    check_result = sh("sudo docker ps", verbose=False)
-    assert len(check_result['err']) == 0, "got error while 'docker ps': %s" % check_result['err']
-    assert check_result['rc'] == 0, "got non-zero result while 'docker ps'"
-    result = containerID[:12] in check_result['out']
-    return result
 
 
 def run(image, **kwargs):
+    logger.debug("Creating container for image {} with arguments: {}".format(image, kwargs))
+
+    volumes_from = None
+    if 'volumes_from' in kwargs:
+        volumes_from = kwargs['volumes_from']
+        del kwargs['volumes_from']
+
     c = client.create_container(
         image,
         **kwargs
     )
 
-    c.start(c['Id'])
+    client.start(c['Id'], volumes_from=volumes_from)
+
+    logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
     return c['Id']
+
+
+def logs(container_id, **kwargs):
+    return client.logs(container_id, **kwargs)

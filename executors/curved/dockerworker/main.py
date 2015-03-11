@@ -13,7 +13,7 @@ def main():
         config.METASCHEDULER_URL,
         config.WORK_QUEUE,
         do_docker_job,
-        threads_num=4,
+        threads_num=config.THREADS_NUM,
         sleep_time=1
     )
 
