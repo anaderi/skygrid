@@ -87,6 +87,7 @@ def build_command(job):
 
 
 def create_containers(job, in_dir, out_dir):
+    # Add needed containers
     needed = job.descriptor['env_container'].get('needed_containers') or []
 
     logger.debug("Creating containers for job #{}".format(job.job_id))
@@ -96,7 +97,8 @@ def create_containers(job, in_dir, out_dir):
         image, volumes = container['name'], container['volumes']
         assert isinstance(volumes, list)
 
-        harbor.pull_image(image)
+        if not config.ONLY_LOCAL_IMAGES:
+            harbor.pull_image(image)
 
         tag = "JOB-{}-CNT-{}".format(job.job_id, i)
         mounted_names.append(tag)
@@ -108,6 +110,10 @@ def create_containers(job, in_dir, out_dir):
             name=tag,
             command="echo {} app".format(tag)
         )
+
+    # Execute environment container
+    if not config.ONLY_LOCAL_IMAGES:
+        harbor.pull_image(job.descriptor['env_container']['name'])
 
     volumes = [
         "{}:/input".format(in_dir),
