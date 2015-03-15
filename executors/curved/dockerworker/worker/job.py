@@ -8,6 +8,8 @@ import harbor
 from ..config import config
 from ..log import logger
 
+from backend import copy_from_backend, copy_to_backend
+
 DELAY_WAIT_DOCKER_MIN = 0.1
 DELAY_WAIT_DOCKER_MAX = 10.0
 
@@ -148,12 +150,17 @@ def create_workdir(job):
 
 def get_input_files(job, in_dir):
     for input_file in job.input:
-        logger.debug("job #{}: Fake download input {}".format(job.job_id, input_file))
+        logger.debug("job #{}: Download input {}".format(job.job_id, input_file))
+        copy_from_backend(input_file, in_dir)
 
 
 def upload_output_files(job, out_dir):
+    upload_uri = job.descriptor.get('output_uri') # should contain $JOB_ID
+    upload_uri = upload_uri.replace('$JOB_ID', job.job_id)
+
     for output_file in os.listdir(out_dir):
-        logger.debug("job #{}: Fake upload file `{}`".format(job.job_id, output_file))
+        logger.debug("job #{}: Upload file `{}` to `{}`".format(job.job_id, output_file, upload_uri))
+        copy_to_backend(os.path.join(out_dir, output_file), upload_uri)
 
 
 def write_std_output(container_id, out_dir):

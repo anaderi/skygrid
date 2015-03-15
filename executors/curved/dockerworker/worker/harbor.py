@@ -7,9 +7,11 @@ from docker import Client
 from lockfile import LockFile
 
 from ..log import logger
+from ..config import config
 
 
-client = Client(base_url='unix://var/run/docker.sock', version="1.16")
+
+client = Client(base_url=config.DOCKER_URL, version=config.DOCKER_API_VERSION)
 
 
 def pull_image(image, *args, **kwargs):
