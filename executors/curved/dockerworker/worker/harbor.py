@@ -31,16 +31,20 @@ def run(image, **kwargs):
     logger.debug("Creating container for image {} with arguments: {}".format(image, kwargs))
 
     volumes_from = None
+    binds = None
     if 'volumes_from' in kwargs:
         volumes_from = kwargs['volumes_from']
         del kwargs['volumes_from']
+    if 'binds' in kwargs:
+        binds = kwargs['binds']
+        del kwargs['binds']
 
     c = client.create_container(
         image,
         **kwargs
     )
 
-    client.start(c['Id'], volumes_from=volumes_from)
+    client.start(c['Id'], volumes_from=volumes_from, binds=binds)
 
     logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
     return c['Id']

@@ -132,7 +132,11 @@ def create_containers(job, in_dir, out_dir):
         command=command,
         volumes_from=mounted_names,
         volumes=volumes,
-        detach=True
+        detach=True,
+        binds={
+           in_dir:{'bind': '/input', 'ro': True},
+           out_dir:{'bind': '/output', 'ro': False},
+        }
     )
 
 
@@ -160,8 +164,13 @@ def upload_output_files(job, out_dir):
     upload_uri = upload_uri.replace('$JOB_ID', job.job_id)
 
     for output_file in os.listdir(out_dir):
+        output_file_path = os.path.join(out_dir, output_file)
+
+        if not os.path.isfile(output_file_path):
+            continue
+
         logger.debug("job #{}: Upload file `{}` to `{}`".format(job.job_id, output_file, upload_uri))
-        copy_to_backend(os.path.join(out_dir, output_file), upload_uri)
+        copy_to_backend(output_file_path, upload_uri)
 
 
 def write_std_output(container_id, out_dir):
