@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 import logging
 import traceback
 
@@ -189,3 +190,4 @@ def process(job):
     write_std_output(container_id, out_dir)
 
     upload_output_files(job, out_dir)
+    shutil.rmtree(job_dir)
