@@ -4,7 +4,7 @@ import imp
 conf_file = os.environ.get('DOCKER_WORKER_CONFIG')
 
 if not conf_file:
-    raise Exception("Environment variable $MC_WORKER_SETTINGS is not set.")
+    raise Exception("Environment variable $DOCKER_WORKER_CONFIG is not set.")
 
 config = imp.new_module('config')
 config.__file__ = conf_file
