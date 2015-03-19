@@ -44,7 +44,8 @@ def run(image, **kwargs):
         **kwargs
     )
 
-    client.start(c['Id'], volumes_from=volumes_from, binds=binds)
+    with LockFile("/tmp/cnt_lock_%s" % c['Id']):
+        client.start(c['Id'], volumes_from=volumes_from, binds=binds)
 
     logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
     return c['Id']

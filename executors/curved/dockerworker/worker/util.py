@@ -4,7 +4,10 @@ def getargs(arg_dict, subst):
     """
     transofrm dict of arguments (kw and positional) to string of arguments,
     and substitute $VARS from subst dict
-    """
+   """
+    if not arg_dict:
+        return ""
+
     args = []
     kw_keys = [k for k in arg_dict.keys() if k.startswith('-')]
     for k in kw_keys:
@@ -47,7 +50,6 @@ def build_command(job):
 def descriptor_correct(job):
     keys_needed = [
         ('cmd', unicode),
-        ('args', dict) ,
         ('cpu_per_container', int),
         ('max_memoryMB', int),
         ('min_memoryMB', int),
