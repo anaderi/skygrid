@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid-docker-worker',
-    version='0.2.3',
+    version='0.2.4',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
@@ -11,7 +11,7 @@ setup(
     install_requires=[
         "lockfile==0.10.2",
         "requests>=2.5.1",
-        "skygrid-libscheduler==0.4.0",
+        "skygrid-libscheduler==0.4.1",
         "skygrid-libskygrid==0.1.1",
         "docker-py==1.1.0",
         "six==1.9.0",
