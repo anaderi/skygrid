@@ -1,5 +1,3 @@
-import logging
-
 from time import sleep
 from multiprocessing import Process
 
@@ -50,12 +48,15 @@ class WorkerMS(object):
                 self.sleep()
                 continue
 
-            job = self.queue.get()
+            try:
+                job = self.queue.get()
+            except:
+                job = None
 
             if not job:
                 self.sleep()
                 continue
 
-            p = Process(target=self.do_job, args=(job,))
+            p = Process(name='job:{}'.format(job.job_id), target=self.do_job, args=(job,))
             self.processes.append(p)
             p.start()

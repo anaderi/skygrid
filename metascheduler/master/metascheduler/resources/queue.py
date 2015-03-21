@@ -45,7 +45,7 @@ class QueueManagementResource(MetaschedulerResource):
 
 class QueueResource(ExistingQueueResource):
     def get(self, job_type):
-        pulled_job = Job._collection.find_and_modify(
+        pulled_job = Job._get_collection().find_and_modify(
             query={'job_type': job_type, 'status': JobStatus.pending},
             sort={'last_update': 1},
             update={'$set': {'status': JobStatus.pulled}},
