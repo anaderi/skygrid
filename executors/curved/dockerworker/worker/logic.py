@@ -24,7 +24,7 @@ def create_workdir(job):
 
 def get_input_files(job, in_dir):
     for input_file in job.input:
-        logger.debug("job #{}: Download input {}".format(job.job_id, input_file))
+        logger.debug("Download input {}".format(input_file))
         copy_from_backend(input_file, in_dir)
 
 
@@ -32,7 +32,7 @@ def create_containers(job, in_dir, out_dir):
     # Add needed containers
     needed = job.descriptor['env_container'].get('needed_containers') or []
 
-    logger.debug("Creating containers for job #{}".format(job.job_id))
+    logger.debug("Creating containers")
 
     mounted_names = []
     for i, container in enumerate(needed):
@@ -93,7 +93,7 @@ def upload_output_files(job, out_dir):
     upload_uri = job.descriptor.get('output_uri') # should contain $JOB_ID
     upload_uri = upload_uri.replace('$JOB_ID', job.job_id)
 
-    logger.debug("job #{}: Upload output dir `{}` to `{}`".format(job.job_id, out_dir, upload_uri))
+    logger.debug("Upload output directory `{}` to `{}`".format(out_dir, upload_uri))
     copy_to_backend(out_dir, upload_uri)
 
     job.update_output(list_uploaded(upload_uri))

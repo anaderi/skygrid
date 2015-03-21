@@ -13,12 +13,12 @@ from ..log import logger
 
 
 def do_docker_job(job):
-    logger.debug("Got job #{} with descriptor: {}".format(job.job_id, job.descriptor))
+    logger.debug("Got descriptor: {}".format(job.descriptor))
     try:
         job.update_status("running")
         process(job)
         job.update_status("completed")
-        logger.debug("Finished job #{}".format(job.job_id))
+        logger.debug("Finished")
     except Exception, e:
         job.update_status("failed")
         # job.descriptor['exception'] = str(e) # TODO: add error field to job in metascheduler
