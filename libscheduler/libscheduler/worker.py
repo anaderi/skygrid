@@ -57,6 +57,6 @@ class WorkerMS(object):
                 self.sleep()
                 continue
 
-            p = Process(target=self.do_job, args=(job,))
+            p = Process(name='job:{}'.format(job.job_id), target=self.do_job, args=(job,))
             self.processes.append(p)
             p.start()
