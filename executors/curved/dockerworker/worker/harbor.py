@@ -7,9 +7,11 @@ from docker import Client
 from lockfile import LockFile
 
 from ..log import logger
+from ..config import config
 
 
-client = Client(base_url='unix://var/run/docker.sock', version="1.16")
+
+client = Client(base_url=config.DOCKER_URL, version=config.DOCKER_API_VERSION)
 
 
 def pull_image(image, *args, **kwargs):
@@ -29,16 +31,21 @@ def run(image, **kwargs):
     logger.debug("Creating container for image {} with arguments: {}".format(image, kwargs))
 
     volumes_from = None
+    binds = None
     if 'volumes_from' in kwargs:
         volumes_from = kwargs['volumes_from']
         del kwargs['volumes_from']
+    if 'binds' in kwargs:
+        binds = kwargs['binds']
+        del kwargs['binds']
 
     c = client.create_container(
         image,
         **kwargs
     )
 
-    client.start(c['Id'], volumes_from=volumes_from)
+    with LockFile("/tmp/cnt_lock_%s" % c['Id']):
+        client.start(c['Id'], volumes_from=volumes_from, binds=binds)
 
     logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
     return c['Id']
