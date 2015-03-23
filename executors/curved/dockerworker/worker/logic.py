@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import util
 import harbor
@@ -34,6 +35,7 @@ def create_containers(job, in_dir, out_dir):
 
     logger.debug("Creating containers")
 
+    mounted_ids = []
     mounted_names = []
     for i, container in enumerate(needed):
         image, volumes = container['name'], container['volumes']
@@ -45,13 +47,13 @@ def create_containers(job, in_dir, out_dir):
         tag = "JOB-{}-CNT-{}".format(job.job_id, i)
         mounted_names.append(tag)
 
-        harbor.run(
+        c_id = harbor.run(
             image,
             volumes=volumes,
             detach=True,
             name=tag,
-            command="echo {} app".format(tag)
         )
+        mounted_ids.append(c_id)
 
     # Execute environment container
     if not config.ONLY_LOCAL_IMAGES:
@@ -65,8 +67,9 @@ def create_containers(job, in_dir, out_dir):
 
     logger.debug('Executing: {}'.format(command))
 
-    return harbor.run(
+    main_id = harbor.run(
         job.descriptor['env_container']['name'],
+        do_start=True,
         working_dir=job.descriptor['env_container']['workdir'],
         command=command,
         volumes_from=mounted_names,
@@ -77,6 +80,7 @@ def create_containers(job, in_dir, out_dir):
            out_dir:{'bind': '/output', 'ro': False},
         }
     )
+    return mounted_ids, main_id
 
 
 def write_std_output(container_id, out_dir):
@@ -102,3 +106,12 @@ def upload_output_files(job, out_dir):
 def pre_remove_hook():
     logger.debug("Executing pre-remove hook: `{}`".format(config.PRE_REMOVE_HOOK))
     os.system(config.PRE_REMOVE_HOOK)
+
+
+def cleanup(job_dir, cnt_ids):
+    logger.debug("Cleaning up")
+    for container_id in cnt_ids:
+        harbor.remove(container_id, v=True)
+
+    pre_remove_hook()
+    shutil.rmtree(job_dir)

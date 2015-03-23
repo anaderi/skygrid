@@ -27,7 +27,7 @@ def is_running(containter_id):
 
 
 
-def run(image, **kwargs):
+def run(image, do_start=False, **kwargs):
     logger.debug("Creating container for image {} with arguments: {}".format(image, kwargs))
 
     volumes_from = None
@@ -44,8 +44,9 @@ def run(image, **kwargs):
         **kwargs
     )
 
-    with LockFile("/tmp/cnt_lock_%s" % c['Id']):
-        client.start(c['Id'], volumes_from=volumes_from, binds=binds)
+    if do_start:
+        with LockFile("/tmp/cnt_lock_%s" % c['Id']):
+            client.start(c['Id'], volumes_from=volumes_from, binds=binds)
 
     logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
     return c['Id']
@@ -53,3 +54,7 @@ def run(image, **kwargs):
 
 def logs(container_id, **kwargs):
     return client.logs(container_id, **kwargs)
+
+
+def remove(container_id, **kwargs):
+    return client.remove_container(container_id, **kwargs)

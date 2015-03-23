@@ -1,6 +1,5 @@
 import os
 import time
-import shutil
 import traceback
 
 import harbor
@@ -35,7 +34,7 @@ def process(job):
     job_dir, in_dir, out_dir = logic.create_workdir(job)
 
     logic.get_input_files(job, in_dir)
-    container_id = logic.create_containers(job, in_dir, out_dir)
+    mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
 
     while harbor.is_running(container_id):
         logger.debug("Container is running. Sleeping for {} sec.".format(config.SLEEP_TIME))
@@ -45,5 +44,4 @@ def process(job):
 
     logic.upload_output_files(job, out_dir)
 
-    logic.pre_remove_hook()
-    shutil.rmtree(job_dir)
+    logic.cleanup(job_dir, mounted_ids + [container_id])
