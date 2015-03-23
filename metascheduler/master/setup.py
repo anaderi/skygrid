@@ -28,6 +28,7 @@ setup(
         "pika==0.9.14",
         "skygrid-libscheduler==0.3.2",
         "flask-cors",
+        "gevent",
     ],
     tests_require=[
         "nose==1.3.4",

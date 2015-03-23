@@ -1,6 +1,9 @@
 import json
 from datetime import datetime
 
+import gevent
+from gevent import thread, queue
+
 from flask import request
 from api import MetaschedulerResource
 
@@ -8,27 +11,14 @@ import requests
 
 from ..models import Job, JobStatus
 
-# def update_job(job, update_dict):
-#     if 'id' in update_dict:
-#         raise Exception('Could not update job id!')
 
-#     new_status = update_dict.get('status')
-#     if new_status:
-#         assert new_status in JobStatus.valid_statuses
-#         job.status = new_status
-
-#     new_descriptor = update_dict.get('descriptor')
-#     if new_descriptor:
-#         job.descriptor = new_descriptor
-
-#     job.save()
-
-#     if job.callback:
-#         r = requests.post(
-#             job.callback,
-#             data=json.dumps(job.to_dict()),
-#             headers={'content-type': 'application/json'}
-#         )
+def do_callback(job):
+    if job.callback:
+        requests.post(
+                job.callback,
+                data=json.dumps(job.to_dict()),
+                headers={'content-type': 'application/json'}
+        )
 
 
 class JobResource(MetaschedulerResource):
@@ -60,6 +50,9 @@ class JobStatusResource(MetaschedulerResource):
         job = Job.objects.get(pk=job_id)
         job.status = new_status
         job.save()
+
+        if job.callback:
+            gevent.spawn(do_callback, job).start()
 
         return {'updated_status': job.status}
 

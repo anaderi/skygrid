@@ -1,3 +1,6 @@
+import gevent
+from gevent import monkey
+
 from .app import *
 from .models import *
 
@@ -37,3 +40,5 @@ api.add_resource(resources.JobInputResource, '/jobs/<string:job_id>/input')
 api.add_resource(resources.QueueManagementResource, '/queues')
 api.add_resource(resources.QueueResource, '/queues/<string:job_type>')
 api.add_resource(resources.QueueInfoResource, '/queues/<string:job_type>/info')
+
+gevent.monkey.patch_all() # if not started by gunicorn
