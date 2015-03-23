@@ -231,6 +231,34 @@ class QueueTest(BasicQueueTest):
         self.assertEqual(result_update['success'], True)
         self.assertEqual(OUTPUT_URIS, result_update['updated_output'])
 
+    def test_job_debug(self):
+        TEST_OBJ = {
+            "descriptor": {"hello": "world"}
+        }
+
+        TEST_DEBUG = {
+            "debug": "some info"
+        }
+
+        requests.post(
+            self.queue_url,
+            data=json.dumps(TEST_OBJ),
+            headers=self.json_headers
+        )
+        r = requests.get(self.queue_url)
+        result_get = r.json()
+
+
+        r = requests.post(
+            os.path.join(self.all_jobs_url, result_get['job']['job_id'], 'debug'),
+            data=json.dumps(TEST_DEBUG),
+            headers=self.json_headers
+        )
+        result_update = r.json()
+
+        self.assertEqual(result_update['success'], True)
+        self.assertEqual(result_update['debug'], TEST_DEBUG)
+
 
 class NoQueueTest(BasicQueueTest):
     def test_add_no_queue(self):

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from mongoengine import *
 
+from flask import current_app
 
 # Job model and stuff used
 
@@ -29,6 +30,8 @@ class Job(Document):
 
     callback = StringField()
 
+    debug = DictField()
+
     meta = {
         'ordering': ['last_update'],
         'indexes': ['job_type', 'status', 'last_update']
@@ -42,6 +45,8 @@ class Job(Document):
             'input': self.input,
             'output': self.output
         }
+        if current_app.config['DEBUG']:
+            d['debug'] = self.debug
 
         return d
 

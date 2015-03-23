@@ -79,3 +79,22 @@ class JobInputResource(MetaschedulerResource):
         return {
             'input': Job.objects.get(pk=job_id).input
         }
+
+
+class JobDebugResource(MetaschedulerResource):
+    def get(self, job_id):
+        return {
+            'debug': Job.objects.get(pk=job_id).debug
+        }
+
+    def post(self, job_id):
+        update_dict = request.json
+
+        job = Job.objects.get(pk=job_id)
+        job.debug = update_dict
+        job.save()
+
+        if job.callback:
+            gevent.spawn(do_callback, job).start()
+
+        return job.to_dict()
