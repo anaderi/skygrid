@@ -11,7 +11,7 @@ setup(
     install_requires=[
         "lockfile==0.10.2",
         "requests>=2.5.1",
-        "skygrid-libscheduler==0.4.2",
+        "skygrid-libscheduler==0.4.3",
         "skygrid-libskygrid==0.1.1",
         "docker-py==1.1.0",
         "six==1.9.0",

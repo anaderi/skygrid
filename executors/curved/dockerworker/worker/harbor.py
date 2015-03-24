@@ -20,36 +20,33 @@ def pull_image(image, *args, **kwargs):
         client.pull(image, *args, **kwargs)
 
 
-
 def is_running(containter_id):
     running_ids = [c['Id'] for c in client.containers()]
     return containter_id in running_ids
 
 
-
-def run(image, do_start=False, **kwargs):
+def create_container(image, **kwargs):
     logger.debug("Creating container for image {} with arguments: {}".format(image, kwargs))
-
-    volumes_from = None
-    binds = None
-    if 'volumes_from' in kwargs:
-        volumes_from = kwargs['volumes_from']
-        del kwargs['volumes_from']
-    if 'binds' in kwargs:
-        binds = kwargs['binds']
-        del kwargs['binds']
-
-    c = client.create_container(
-        image,
-        **kwargs
-    )
-
-    if do_start:
-        with LockFile("/tmp/cnt_lock_%s" % c['Id']):
-            client.start(c['Id'], volumes_from=volumes_from, binds=binds)
-
-    logger.debug("Created and started container with image={} id={}".format(image, c['Id']))
+    c = client.create_container(image, **kwargs)
     return c['Id']
+
+
+def start_container(container_id, **kwargs):
+    attempts = 0
+    while attempts < config.DOCKER_START_ATTEMPTS:
+        logger.debug("Trying to start container id={}".format(container_id))
+        try:
+            client.start(container_id, **kwargs)
+            break
+        except Exception, e:
+            logger.debug("Failed to start container id={}, error: {}".format(container_id, e))
+            attempts += 1
+
+    if attempts < config.DOCKER_START_ATTEMPTS:
+        logger.debug("Started container id={}".format(container_id))
+        return True
+    else:
+        raise Exception('Failed to start container id={}'.format(container_id))
 
 
 def logs(container_id, **kwargs):

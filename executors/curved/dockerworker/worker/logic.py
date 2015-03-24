@@ -47,7 +47,7 @@ def create_containers(job, in_dir, out_dir):
         tag = "JOB-{}-CNT-{}".format(job.job_id, i)
         mounted_names.append(tag)
 
-        c_id = harbor.run(
+        c_id = harbor.create_container(
             image,
             volumes=volumes,
             detach=True,
@@ -65,21 +65,25 @@ def create_containers(job, in_dir, out_dir):
     ]
     command = util.build_command(job)
 
-    logger.debug('Executing: {}'.format(command))
+    logger.debug('Command to execute: {}'.format(command))
 
-    main_id = harbor.run(
+    main_id = harbor.create_container(
         job.descriptor['env_container']['name'],
-        do_start=True,
         working_dir=job.descriptor['env_container']['workdir'],
         command=command,
-        volumes_from=mounted_names,
         volumes=volumes,
         detach=True,
+    )
+
+    harbor.start_container(
+        main_id,
+        volumes_from=mounted_names,
         binds={
            in_dir:{'bind': '/input', 'ro': True},
            out_dir:{'bind': '/output', 'ro': False},
         }
     )
+
     return mounted_ids, main_id
 
 
