@@ -27,4 +27,7 @@ class TestJobMS(TestWithQueue):
 
         self.assertRaises(Exception, job.update_status, 'some bad')
 
+        if config['api']['ms_debug'] == 'true':
+            self.assertTrue(job.update_debug({'some': 'debug info'}))
+
         self.assertTrue(job.delete())

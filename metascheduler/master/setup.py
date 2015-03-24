@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid-metascheduler',
-    version='0.4.4',
+    version='0.4.5',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
@@ -28,6 +28,7 @@ setup(
         "pika==0.9.14",
         "skygrid-libscheduler==0.3.2",
         "flask-cors",
+        "gevent",
     ],
     tests_require=[
         "nose==1.3.4",

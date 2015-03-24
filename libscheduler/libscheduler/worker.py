@@ -2,6 +2,7 @@ from time import sleep
 from multiprocessing import Process
 
 from .api import Metascheduler
+from .common import MetaschedulerServerError
 
 class WorkerMS(object):
     """
@@ -50,7 +51,7 @@ class WorkerMS(object):
 
             try:
                 job = self.queue.get()
-            except:
+            except MetaschedulerServerError:
                 job = None
 
             if not job:
