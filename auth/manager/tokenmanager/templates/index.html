@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% set active_page = active_page|default('dashboard') -%}
+
+{% block title %}Token management{% endblock %}
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Token management</h1>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+<div class="row">
+    <div class="col-lg-10">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover" id="dataTables-example">
+                <colgroup>
+                   <col span="1" style="width: 80%;">
+                   <col span="1" style="width: 20%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for token in tokens %}
+                    <tr>
+                        <td>{{token}}</td>
+                        <!-- <td><button class="btn btn-danger">Delete</button></td> -->
+                        <td><a href="/tokens/{{token}}/delete">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <!-- /.table-responsive -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<!-- DataTables JavaScript -->
+<script src="{{ url_for('static', filename='js/plugins/dataTables/jquery.dataTables.js') }}"></script>
+<script src="{{ url_for('static', filename='js/plugins/dataTables/dataTables.bootstrap.js') }}"></script>
+
+
+<script>
+// $(document).ready(function() {
+
+//     $.getJSON( "{{ config.METASCHEDULER_URL }}/queues", function( response ) {
+//         var qs_list = response['queues'];
+//         var list_for_datatables = Array();
+
+//         $.each(qs_list, function(index, q) {
+//             list_for_datatables.push(new Array(q['name'], q['length'], q['use_timeout']));
+//         });
+
+//         $('#dataTables-example').dataTable( {
+//             "data": list_for_datatables,
+//             "aaSorting": [[ 0, "asc" ]]
+//         });
+//     });
+// });
+</script>
+
+{% endblock %}
