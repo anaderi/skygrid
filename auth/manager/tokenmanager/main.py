@@ -16,4 +16,4 @@ app.add_url_rule('/tokens/<token>/delete', view_func=views.delete, methods=['GET
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=app.config['PORT'])
