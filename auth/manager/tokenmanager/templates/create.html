@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% set active_page = active_page|default('addtoken') -%}
+
+{% block title %}Create token{% endblock %}
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Create token</h1>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-10">
+        <form method="POST" action="/tokens/add">
+            {{ form.csrf_token }}
+
+            <div class="form-group">
+                <label>{{ form.service.label }}</label> <br/>
+                {{ form.service }}
+            </div>
+
+            <button type="submit" class="btn btn-success">Create token</button>
+        </form>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+{% endblock %}

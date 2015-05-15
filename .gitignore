@@ -68,4 +68,6 @@ hs_err_pid*
 *.pyc
 .venv
 
+# Configs used
 worker.cfg
+tokenmanager.cfg

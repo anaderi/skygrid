@@ -1,0 +1,2 @@
+recursive-include tokenmanager/templates *
+recursive-include tokenmanager/static *
