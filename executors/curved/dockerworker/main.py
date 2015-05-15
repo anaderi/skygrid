@@ -14,7 +14,7 @@ def main():
         config.WORK_QUEUE,
         do_docker_job,
         threads_num=config.THREADS_NUM,
-        sleep_time=1
+        sleep_time=config.SLEEP_TIME,
     )
 
     logger.debug("Starting worker...")
