@@ -18,7 +18,7 @@ setup(
         "argparse==1.2.1",
         "itsdangerous==0.24",
         "requests==2.5.0",
-        "skygrid-libscheduler==0.3.2",
+        "skygrid-libscheduler==0.4.3",
         "skygrid-libskygrid==0.1.0",
         "wsgiref==0.1.2",
     ],
