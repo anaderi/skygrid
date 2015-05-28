@@ -27,6 +27,7 @@ class MonteCarlo(Document):
             'multiplier': self.multiplier,
             'created': self.created.strftime(current_app.config['TIME_FORMAT']),
             'status': self.status,
+            'jobs': self.jobs,
         }
 
 
