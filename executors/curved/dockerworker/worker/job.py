@@ -25,7 +25,8 @@ def do_docker_job(job):
         if config.DEBUG:
             job.update_debug({
                 "hostname": socket.gethostname(),
-                "exception": str(e)
+                "exception": str(e),
+                "traceback": traceback.format_exc()
             })
 
         logger.error(str(e))
