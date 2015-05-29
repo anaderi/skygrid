@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 import traceback
 
@@ -20,8 +21,12 @@ def do_docker_job(job):
         logger.debug("Finished")
     except Exception, e:
         job.update_status("failed")
-        # job.descriptor['exception'] = str(e) # TODO: add error field to job in metascheduler
-        # job.update_descriptor(job.descriptor)
+
+        if config.DEBUG:
+            job.update_debug({
+                "hostname": socket.gethostname(),
+                "exception": str(e)
+            })
 
         logger.error(str(e))
         logger.error(traceback.format_exc())
