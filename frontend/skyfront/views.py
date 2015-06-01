@@ -47,10 +47,21 @@ class MCSubmitView(MethodView):
     def post(self):
         form = MCSubmitForm()
         if form.validate_on_submit():
-            payload = {
-                'descriptor': json.loads(form.data['descriptor']),
-                'multiplier': form.data['multiply']
-            }
+            description = json.loads(form.data['descriptor'])
+
+            if 'input' in description:
+                payload = {
+                    'descriptor': description['descriptor'],
+                    'input': description['input'],
+                    'multiplier': form.data['multiply']
+                }
+                print payload
+            else:
+                payload = {
+                    'descriptor': description,
+                    'multiplier': form.data['multiply']
+                }
+
             mc_url = u(current_app.config['SKYGRID_URL']) + 'montecarlo'
             r = requests.put(
                 mc_url,

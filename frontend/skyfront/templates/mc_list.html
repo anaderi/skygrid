@@ -24,7 +24,6 @@
                         <th>id</th>
                         <th>Name</th>
                         <th>Created</th>
-                        <th>Multiplier</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -68,18 +67,69 @@ $(document).ready(function() {
         var list_for_datatables = Array();
 
         $.each(mc_list, function(index, mc) {
+            var status = {
+                'completed': 0,
+                'failed': 0,
+                'in_queue': 0,
+                'running': 0,
+            }
+
+            for (var k in mc['jobs']) {
+                if (mc['jobs'].hasOwnProperty(k)) {
+                   status[mc['jobs'][k]] += 1;
+                }
+            }
+            status['total'] = Object.keys(mc['jobs']).length;
+
+            // alert(JSON.stringify(status));
             list_for_datatables.push(new Array(
                 mc['montecarlo_id'],
                 mc['descriptor']['name'],
                 mc['created'],
-                mc['multiplier'],
-                mc['status']
+                '', // status
+                status['completed'] / status['total'] * 100,
+                status['in_queue'] / status['total'] * 100,
+                status['failed'] / status['total'] * 100,
+                status['running'] / status['total'] * 100
             ));
         });
 
+        // list_for_datatables.push(new Array(
+        //         "test_id",
+        //         "test name",
+        //         "2015-04-15 10:00:00",
+        //         '', // status
+        //         50,
+        //         25,
+        //         10,
+        //         15
+        // ));
+
         $('#dataTables-example').dataTable( {
             "data": list_for_datatables,
-            "aaSorting": [[ 2, "desc" ]]
+            "aaSorting": [[ 2, "desc" ]],
+            "columnDefs": [
+                {
+                    "render": function ( data, type, row ) {
+                        return '<div class="progress">\
+                                  <div class="progress-bar progress-bar-success" style="width: ' + row[4] + '%">\
+                                    <span class="sr-only">' + row[4] + '% Completed </span>\
+                                  </div>\
+                                  <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: ' + row[5] + '%">\
+                                    <span class="sr-only">' + row[5] + '% In queue</span>\
+                                  </div>\
+                                  <div class="progress-bar progress-bar-danger" style="width: ' + row[6] + '%">\
+                                    <span class="sr-only">' + row[6] + '% Failed</span>\
+                                  </div>\
+                                  <div class="progress-bar progress-bar-info" style="width: ' + row[7] + '%">\
+                                    <span class="sr-only">' + row[7] + '% Running </span>\
+                                  </div>\
+                                </div>';
+                    },
+                    "targets": 3
+                },
+                { "visible": false,  "targets": [ 4, 5, 6, 7 ] }
+            ]
         });
     });
 });

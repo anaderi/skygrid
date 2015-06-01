@@ -34,4 +34,4 @@ app.add_url_rule('/mc/submit', view_func=MCSubmitView.as_view('mc_submit'))
 app.add_url_rule('/mc/list', view_func=RenderTemplateView.as_view('mc_list', template='mc_list.html'))
 
 if __name__ == "__main__":
-    app.run(host="cern-dev01i.vs.os.yandex.net", debug=True, port=5002)
+    app.run(host="localhost", debug=True, port=5002)
