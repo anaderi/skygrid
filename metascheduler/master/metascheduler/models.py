@@ -45,8 +45,11 @@ class Job(Document):
             'input': self.input,
             'output': self.output
         }
-        if current_app.config['DEBUG']:
-            d['debug'] = self.debug
+        try:
+            if current_app.config['DEBUG']:
+                d['debug'] = self.debug
+        except:
+            pass
 
         return d
 
