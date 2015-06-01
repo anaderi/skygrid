@@ -72,6 +72,7 @@ class MonteCarloCallback(SkygridResource):
 
         if mc.completed_jobs + mc.failed_jobs == len(mc.jobs):
             mc.status = "completed"
+            mc.save()
 
         assert mc.completed_jobs + mc.failed_jobs <= len(mc.jobs)
 
