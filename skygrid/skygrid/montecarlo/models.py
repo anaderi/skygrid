@@ -7,6 +7,8 @@ from flask import current_app
 
 class MonteCarlo(Document):
     jobs = ListField(StringField())
+    completed_jobs = IntField(min_value=0, default=0)
+    failed_jobs = IntField(min_value=0, default=0)
 
     descriptor = DictField(required=True)
     multiplier = IntField(required=True)
@@ -28,6 +30,8 @@ class MonteCarlo(Document):
             'created': self.created.strftime(current_app.config['TIME_FORMAT']),
             'status': self.status,
             'jobs': self.jobs,
+            'completed': self.completed_jobs,
+            'failed': self.failed_jobs
         }
 
 

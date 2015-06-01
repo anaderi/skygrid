@@ -2,33 +2,38 @@ from common import *
 
 DESCRIPTOR = """
 {
-  "app_container": {
-    "name": "leoredi/ship-dev:0.0.17",
-    "volume": "/opt/ship"
-  },
-  "args": {
-    "--output": "$OUTPUT_DIR/root",
-    "--num-events": 1000,
-    "-d": true,
-    "-f": true
-  },
-  "cmd": ". ./config.sh; export PYTHONPATH+=:/opt/ship/FairShip/build/python; python muonShieldOptimization/g4Ex_CHARMpit5_QGSP_BERT_EMV.py",
-  "cpu_per_container": 1,
-  "email": "flr09@ic.ac.uk",
-  "env_container": {
-    "app_volume": "$APP_CONTAINER",
-    "name": "anaderi/ocean:latest",
-    "output_volume": "$JOB_OUTPUT_DIR:/output",
-    "workdir": "/opt/ship/FairShip/build"
-  },
-  "job_id": 20699,
-  "job_parent_id": 4,
-  "job_super_id": 4,
-  "max_memoryMB": 1024,
-  "min_memoryMB": 512,
-  "name": "SHIP-MC.test",
-  "num_containers": 48,
-  "status": "SUCCESS"
+    "descriptor" : {
+        "name" : "SHIP-MC.test",
+        "env_container" : {
+            "workdir" : "/opt/ship/FairShip/build",
+            "name" : "anaderi/ocean:0.6.1",
+            "needed_containers" : [
+                {
+                    "name" : "anaderi/ship-dev:0.1.0",
+                    "volumes" : [
+                        "/opt/ship"
+                    ]
+                }
+            ]
+        },
+        "output_uri" : "local:/srv/skygrid/demo_result/$JOB_ID",
+        "args" : {
+            "--nEvents" : 10,
+            "-f" : "$INPUT_DIR/Genie-mu+_nu_mu-gntp.113.gst_0.root",
+            "--output" : "$OUTPUT_DIR/root",
+            "--seed" : "$TIMEHASH",
+            "--Genie" : true,
+            "-Y" : 10
+        },
+        "cpu_per_container" : 1,
+        "cmd" : "cd /opt/ship/FairShip/build; . ./config.sh; cp -r gconfig geometry python ..; export PYTHONPATH+=:/opt/ship/FairShip/build/python; python macro/run_simScript.py",
+        "max_memoryMB" : 1024,
+        "min_memoryMB" : 512
+    },
+
+    "input" : [
+        "local:/srv/skygrid/barbara_splitted/mu/Genie-mu+_nu_mu-gntp.113.gst_0.root"
+    ]
 }
 """
 
@@ -80,6 +85,25 @@ class MonteCarloTest(BasicSkygridTest):
         self.assertEqual(data['descriptor'], payload['descriptor'])
         self.assertEqual(data['multiplier'], payload['multiplier'])
         self.assertEqual(data['status'], 'in_queue')
+
+        for job_id in data['jobs']:
+            r = requests.post(
+                os.path.join(self.montecarlo_url, data['montecarlo_id'], "callback"),
+                data=json.dumps(dict(job_id=job_id, status="completed")),
+                headers=self.json_headers
+            ).json()
+
+            self.assertTrue(r['success'])
+
+        # Some bad id
+        r = requests.post(
+            os.path.join(self.montecarlo_url, data['montecarlo_id'], "callback"),
+            data=json.dumps(dict(job_id=str(uuid.uuid4()), status="completed")),
+            headers=self.json_headers
+        ).json()
+
+        self.assertFalse(r['success'])
+
 
 
         r = requests.delete(

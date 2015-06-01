@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid',
-    version='0.1.6',
+    version='0.1.7',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
@@ -26,7 +26,7 @@ setup(
         "six==1.7.3",
         "wsgiref==0.1.2",
         "pika==0.9.14",
-        "skygrid-libscheduler",
+        "skygrid-libscheduler==0.4.3",
         "flask-cors",
     ],
     tests_require=[
