@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid',
-    version='0.1.8',
+    version='0.1.9',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',

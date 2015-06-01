@@ -58,7 +58,6 @@ class MonteCarloTest(BasicSkygridTest):
 
         self.assertEqual(data['descriptor'], payload['descriptor'])
         self.assertEqual(data['multiplier'], payload['multiplier'])
-        self.assertEqual(data['status'], 'in_queue')
 
 
         r = requests.delete(
@@ -84,7 +83,6 @@ class MonteCarloTest(BasicSkygridTest):
 
         self.assertEqual(data['descriptor'], payload['descriptor'])
         self.assertEqual(data['multiplier'], payload['multiplier'])
-        self.assertEqual(data['status'], 'in_queue')
 
         for job_id in data['jobs']:
             r = requests.post(

@@ -20,7 +20,6 @@ class MonteCarloList(SkygridResource):
         mc = MonteCarlo(
             descriptor=data['descriptor'],
             multiplier=data['multiplier'],
-            status="not_submitted",
         ).save()
 
 
@@ -34,13 +33,14 @@ class MonteCarloList(SkygridResource):
             "callback"
         )
 
-        mc.jobs = queue.put({
+        jobs = queue.put({
             'descriptor': mc.descriptor,
             'callback':  callback_url,
             'multiply': mc.multiplier,
         })
 
-        mc.status = "in_queue"
+        mc.jobs = {job_id : "in_queue" for job_id in jobs}
+
         mc.save()
 
         return mc.to_dict()
@@ -58,22 +58,12 @@ class MonteCarloCallback(SkygridResource):
     def post(self, mc_id):
         mc = MonteCarlo.objects.get(pk=mc_id)
         job = request.json
+        job_id = job['job_id']
 
-        if not job['job_id'] in mc.jobs:
+        if not job_id in mc.jobs:
             raise Exception("Job is not in this MC.")
 
-        if job['status'] == "failed":
-            MonteCarlo.objects(pk=mc_id).update_one(inc__failed_jobs=1)
-        elif job['status'] == "completed":
-            MonteCarlo.objects(pk=mc_id).update_one(inc__completed_jobs=1)
-        elif job['status'] == "running":
-            mc.status = "running"
-            mc.save()
-
-        if mc.completed_jobs + mc.failed_jobs == len(mc.jobs):
-            mc.status = "completed"
-            mc.save()
-
-        assert mc.completed_jobs + mc.failed_jobs <= len(mc.jobs)
+        mc.jobs[job_id] = job['status']
+        mc.save()
 
         return "ok"
