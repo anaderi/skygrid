@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 
 from flask import request, current_app
@@ -19,7 +20,6 @@ class MonteCarloList(SkygridResource):
         mc = MonteCarlo(
             descriptor=data['descriptor'],
             multiplier=data['multiplier'],
-            status="not_submitted",
         ).save()
 
 
@@ -33,13 +33,14 @@ class MonteCarloList(SkygridResource):
             "callback"
         )
 
-        mc.jobs = queue.put({
+        jobs = queue.put({
             'descriptor': mc.descriptor,
             'callback':  callback_url,
             'multiply': mc.multiplier,
         })
 
-        mc.status = "in_queue"
+        mc.jobs = {job_id : "in_queue" for job_id in jobs}
+
         mc.save()
 
         return mc.to_dict()
@@ -55,4 +56,14 @@ class MonteCarloDetail(SkygridResource):
 
 class MonteCarloCallback(SkygridResource):
     def post(self, mc_id):
-        print "Got callback for {}: \n {}".format(mc_id, reque.json)
+        mc = MonteCarlo.objects.get(pk=mc_id)
+        job = request.json
+        job_id = job['job_id']
+
+        if not job_id in mc.jobs:
+            raise Exception("Job is not in this MC.")
+
+        mc.jobs[job_id] = job['status']
+        mc.save()
+
+        return "ok"
