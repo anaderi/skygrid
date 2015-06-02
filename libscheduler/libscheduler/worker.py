@@ -14,7 +14,8 @@ class WorkerMS(object):
         self.sleep_time = sleep_time
         self.do_job = job_func
 
-        self.threads_num = threads_num
+        self.cpu_avail = threads_num
+        self.cpus_per_job = {} # job_id -> needed_cpus
         self.processes = []
 
         self.running = False
@@ -39,18 +40,30 @@ class WorkerMS(object):
         for p in processes_snapshot:
             if not p.is_alive():
                 self.processes.remove(p)
+                self.release_cpus(p.name)
+
+
+    def acquire_cpus(self, process_name, ncpus):
+        self.cpus_per_job[process_name] = ncpus
+        self.cpu_avail -= ncpus
+
+
+    def release_cpus(self, process_name):
+        self.cpu_avail += self.cpus_per_job[process_name]
+        self.cpus_per_job.pop(process_name, None)
+        print "Released cpu, available: ", self.cpu_avail
 
 
     def run(self):
         while self.running:
             self.cleanup_processes()
 
-            if not len(self.processes) < self.threads_num:
+            if self.cpu_avail <= 0:
                 self.sleep()
                 continue
 
             try:
-                job = self.queue.get()
+                job = self.queue.get(cpu_available=self.cpu_avail)
             except MetaschedulerServerError:
                 job = None
 
@@ -58,6 +71,13 @@ class WorkerMS(object):
                 self.sleep()
                 continue
 
-            p = Process(name='job:{}'.format(job.job_id), target=self.do_job, args=(job,))
+            process_name = 'job:{}'.format(job.job_id)
+
+            self.acquire_cpus(
+                process_name,
+                job.descriptor.get('cpu_per_container') or 1
+            )
+
+            p = Process(name=process_name, target=self.do_job, args=(job,))
             self.processes.append(p)
             p.start()
