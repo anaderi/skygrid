@@ -19,7 +19,8 @@ class MonteCarloList(SkygridResource):
 
         mc = MonteCarlo(
             descriptor=data['descriptor'],
-            multiplier=data['multiplier'],
+            multiplier=data['multiplier'] or 1,
+            input=data.get('input') or []
         ).save()
 
 
@@ -37,6 +38,7 @@ class MonteCarloList(SkygridResource):
             'descriptor': mc.descriptor,
             'callback':  callback_url,
             'multiply': mc.multiplier,
+            'input': mc.input
         })
 
         mc.jobs = {job_id : "in_queue" for job_id in jobs}

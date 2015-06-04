@@ -11,6 +11,9 @@ class MonteCarlo(Document):
     descriptor = DictField(required=True)
     multiplier = IntField(required=True)
 
+    input = ListField(StringField())
+
+
     created = DateTimeField(default=datetime.now)
 
     meta = {
