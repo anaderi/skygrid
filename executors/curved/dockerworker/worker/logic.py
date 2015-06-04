@@ -79,7 +79,7 @@ def create_containers(job, in_dir, out_dir):
         main_id,
         volumes_from=mounted_names,
         binds={
-           in_dir:{'bind': '/input', 'ro': True},
+           in_dir:{'bind': '/input', 'ro': False},
            out_dir:{'bind': '/output', 'ro': False},
         }
     )
