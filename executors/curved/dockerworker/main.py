@@ -17,7 +17,7 @@ def main():
         sleep_time=config.SLEEP_TIME,
     )
 
-    signal.signal(signal.SIGQUIT, worker.fail_all)
+    signal.signal(signal.SIGQUIT, lambda n,f: worker.fail_all())
 
     logger.debug("Starting worker...")
     worker.start()
