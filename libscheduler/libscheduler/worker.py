@@ -30,6 +30,13 @@ class WorkerMS(object):
         for p in self.processes:
             p.terminate()
 
+    def fail_all(self):
+        self.cleanup_processes()
+        processes_snapshot = self.processes[:]
+        for p in processes_snapshot:
+            job_id = p.name.strip("job:")
+            job = self.ms.job(job_id)
+            job.update_status('failed')
 
     def sleep(self):
         sleep(self.sleep_time)
