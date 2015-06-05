@@ -32,6 +32,7 @@ class WorkerMS(object):
 
     def fail_all(self):
         self.cleanup_processes()
+        self.stop()
         processes_snapshot = self.processes[:]
         for p in processes_snapshot:
             job_id = p.name.strip("job:")
