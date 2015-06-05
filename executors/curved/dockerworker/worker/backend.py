@@ -25,7 +25,7 @@ class LocalBackend(BackendBase):
             shutil.copy(src_path, dst_path)
         except:
             shutil.rmtree(dst_path)
-            shutil.copy(src_path, dst_path)
+            shutil.copytree(src_path, dst_path)
 
     def copy_to_backend(self, src_path, dst_path):
         assert os.path.exists(src_path)
@@ -34,7 +34,7 @@ class LocalBackend(BackendBase):
             shutil.copytree(src_path, dst_path)
         except:
             shutil.rmtree(dst_path)
-            shutil.copy(src_path, dst_path)
+            shutil.copytree(src_path, dst_path)
 
     def list_uploaded(self, path):
         for root, dirs, files in os.walk(path):
