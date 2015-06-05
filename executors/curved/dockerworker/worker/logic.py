@@ -12,6 +12,9 @@ from ..log import logger
 
 def create_workdir(job):
     job_workdir = os.path.join(config.WORK_DIR, job.job_id)
+    if os.path.isdir(job_workdir):
+        shutil.rmtree(job_workdir)
+
     os.mkdir(job_workdir)
 
     input_dir  = os.path.join(job_workdir, "input")
