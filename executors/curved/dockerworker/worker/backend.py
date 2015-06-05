@@ -21,7 +21,11 @@ class LocalBackend(BackendBase):
         assert os.path.exists(src_path)
         assert os.path.isfile(src_path)
 
-        shutil.copy(src_path, dst_path)
+        try:
+            shutil.copy(src_path, dst_path)
+        except:
+            shutil.rmtree(dst_path)
+            shutil.copy(src_path, dst_path)
 
     def copy_to_backend(self, src_path, dst_path):
         assert os.path.exists(src_path)
