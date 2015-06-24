@@ -11,7 +11,18 @@ from .helpers import check_update_valid, update_document
 
 class MonteCarloList(SkygridResource):
     def get(self):
-        return [mc.to_dict() for mc in MonteCarlo.objects.all()]
+        limit = int(request.args.get('limit') or "0")
+        skip  = int(request.args.get('skip') or "0")
+
+        if skip == limit == 0:
+            return {
+                "mc_objects": MonteCarlo.objects.count(),
+                "note": "Use `limit` and `skip` GET-parameters to obtain results"
+            }
+
+        assert limit > 0, "`limit` should be >0"
+        mcs = MonteCarlo.objects().skip(skip).limit(limit)
+        return [mc.to_dict() for mc in mcs]
 
 
     def put(self):
