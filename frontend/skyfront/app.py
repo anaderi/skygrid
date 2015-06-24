@@ -31,7 +31,7 @@ app.add_url_rule('/metascheduler/jobs/<job_id>', view_func=JobView.as_view('job_
 
 
 app.add_url_rule('/mc/submit', view_func=MCSubmitView.as_view('mc_submit'))
-app.add_url_rule('/mc/list', view_func=RenderTemplateView.as_view('mc_list', template='mc_list.html'))
+app.add_url_rule('/mc/list', view_func=RenderTemplateView.as_view('mc_list', 'mc_list.html'))
 
 if __name__ == "__main__":
-    app.run(host="localhost", debug=True, port=5002)
+    app.run(host=app.config["HOSTNAME"], debug=True, port=5002)

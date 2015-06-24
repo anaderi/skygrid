@@ -7,11 +7,12 @@ from flask import render_template, request, current_app, redirect
 from flask.views import View, MethodView
 
 class RenderTemplateView(View):
-    def __init__(self, template):
+    def __init__(self, template, **kwargs):
         self.template = template
+        self.kwargs = kwargs
 
     def dispatch_request(self):
-        return render_template(self.template)
+        return render_template(self.template, **self.kwargs)
 
 
 class JobView(MethodView):
