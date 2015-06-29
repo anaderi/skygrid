@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid-docker-worker',
-    version='0.3.6',
+    version='0.3.7',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
@@ -19,4 +19,8 @@ setup(
         "wsgiref==0.1.2",
         "easywebdav-dcache==1.2.1", # fixed easywebdav, see https://github.com/amnong/easywebdav/pull/37
     ],
+
+    scripts = [
+        'scripts/test-descriptor'
+    ]
 )

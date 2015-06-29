@@ -1,11 +1,20 @@
 import os
 import shutil
+import errno
 from urlparse import urlparse
 
 import easywebdav
 
 from ..config import config
 
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
 
 
 class BackendBase(object):
@@ -32,6 +41,8 @@ class LocalBackend(BackendBase):
 
     def copy_to_backend(self, src_path, dst_path):
         assert os.path.exists(src_path)
+
+        mkdir_p(dst_path)
 
         try:
             shutil.copytree(src_path, dst_path)
@@ -62,7 +73,7 @@ class WebDAVBackend(BackendBase):
             for basename in files:
                 filename = os.path.join(root, basename)
 
-                self.wc.upload(filename, dst_path)
+                self.wc.upload(filename, os.path.join(dst_path, basename))
 
 
     def list_uploaded(self, path):
