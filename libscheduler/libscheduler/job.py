@@ -58,7 +58,7 @@ class JobMS(object):
 
         return ms_post(
             os.path.join(self.job_url, 'debug'),
-            data=json.dumps({'output': debug}),
+            data=json.dumps(debug),
             headers=JSON_HEADERS
         )
 
