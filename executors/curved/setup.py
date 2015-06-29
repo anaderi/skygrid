@@ -16,6 +16,7 @@ setup(
         "docker-py==1.1.0",
         "six==1.9.0",
         "websocket-client==0.26.0",
-        "wsgiref==0.1.2"
+        "wsgiref==0.1.2",
+        "easywebdav-dcache==1.2.1", # fixed easywebdav, see https://github.com/amnong/easywebdav/pull/37
     ],
 )
