@@ -12,6 +12,9 @@ from ..log import logger
 
 def create_workdir(job):
     job_workdir = os.path.join(config.WORK_DIR, job.job_id)
+    if os.path.isdir(job_workdir):
+        shutil.rmtree(job_workdir)
+
     os.mkdir(job_workdir)
 
     input_dir  = os.path.join(job_workdir, "input")
@@ -79,7 +82,7 @@ def create_containers(job, in_dir, out_dir):
         main_id,
         volumes_from=mounted_names,
         binds={
-           in_dir:{'bind': '/input', 'ro': True},
+           in_dir:{'bind': '/input', 'ro': False},
            out_dir:{'bind': '/output', 'ro': False},
         }
     )

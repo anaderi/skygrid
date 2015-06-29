@@ -75,8 +75,8 @@ class QueueMS(object):
         else:
             return self._construct_job(response)
 
-    def get(self):
-        response = ms_get(self.queue_url)
+    def get(self, **parameters):
+        response = ms_get(self.queue_url, params=parameters)
 
         return self._construct_job(response)
 

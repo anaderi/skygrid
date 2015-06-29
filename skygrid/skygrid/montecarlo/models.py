@@ -6,17 +6,18 @@ from mongoengine import *
 from flask import current_app
 
 class MonteCarlo(Document):
-    jobs = ListField(StringField())
+    jobs = DictField()
 
     descriptor = DictField(required=True)
     multiplier = IntField(required=True)
 
+    input = ListField(StringField())
+
+
     created = DateTimeField(default=datetime.now)
 
-    status = StringField()
-
     meta = {
-        'indexes': ['created', 'status'],
+        'indexes': ['created'],
         'ordering': ['-created'],
     }
 
@@ -26,7 +27,6 @@ class MonteCarlo(Document):
             'descriptor': self.descriptor,
             'multiplier': self.multiplier,
             'created': self.created.strftime(current_app.config['TIME_FORMAT']),
-            'status': self.status,
             'jobs': self.jobs,
         }
 

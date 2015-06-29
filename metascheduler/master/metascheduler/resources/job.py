@@ -45,10 +45,12 @@ class JobStatusResource(MetaschedulerResource):
         update_dict = request.json
         new_status = update_dict.get('status')
 
-        assert new_status in JobStatus.valid_statuses
+        # 'pulled' can be set only internaly
+        assert new_status in JobStatus.valid_statuses - {JobStatus.pulled}
 
         job = Job.objects.get(pk=job_id)
         job.status = new_status
+        job.last_update = datetime.now()
         job.save()
 
         if job.callback:

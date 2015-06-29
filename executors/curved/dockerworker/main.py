@@ -6,7 +6,7 @@ from config import config
 from worker import do_docker_job
 from log import logger
 
-
+import signal
 
 def main():
     worker = WorkerMS(
@@ -16,6 +16,8 @@ def main():
         threads_num=config.THREADS_NUM,
         sleep_time=config.SLEEP_TIME,
     )
+
+    signal.signal(signal.SIGQUIT, lambda n,f: worker.fail_all())
 
     logger.debug("Starting worker...")
     worker.start()

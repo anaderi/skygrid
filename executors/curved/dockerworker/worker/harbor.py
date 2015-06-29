@@ -11,7 +11,7 @@ from ..config import config
 
 
 
-client = Client(base_url=config.DOCKER_URL, version=config.DOCKER_API_VERSION)
+client = Client(base_url=config.DOCKER_URL, version=config.DOCKER_API_VERSION, timeout=config.DOCKER_TIMEOUT)
 
 
 def pull_image(image, *args, **kwargs):

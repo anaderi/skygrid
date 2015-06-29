@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 
 from flask import request, current_app
@@ -10,7 +11,18 @@ from .helpers import check_update_valid, update_document
 
 class MonteCarloList(SkygridResource):
     def get(self):
-        return [mc.to_dict() for mc in MonteCarlo.objects.all()]
+        limit = int(request.args.get('limit') or "0")
+        skip  = int(request.args.get('skip') or "0")
+
+        if skip == limit == 0:
+            return {
+                "mc_objects": MonteCarlo.objects.count(),
+                "note": "Use `limit` and `skip` GET-parameters to obtain results"
+            }
+
+        assert limit > 0, "`limit` should be >0"
+        mcs = MonteCarlo.objects().skip(skip).limit(limit)
+        return [mc.to_dict() for mc in mcs]
 
 
     def put(self):
@@ -18,8 +30,8 @@ class MonteCarloList(SkygridResource):
 
         mc = MonteCarlo(
             descriptor=data['descriptor'],
-            multiplier=data['multiplier'],
-            status="not_submitted",
+            multiplier=data['multiplier'] or 1,
+            input=data.get('input') or []
         ).save()
 
 
@@ -33,13 +45,15 @@ class MonteCarloList(SkygridResource):
             "callback"
         )
 
-        mc.jobs = queue.put({
+        jobs = queue.put({
             'descriptor': mc.descriptor,
             'callback':  callback_url,
             'multiply': mc.multiplier,
+            'input': mc.input
         })
 
-        mc.status = "in_queue"
+        mc.jobs = {job_id : "in_queue" for job_id in jobs}
+
         mc.save()
 
         return mc.to_dict()
@@ -55,4 +69,14 @@ class MonteCarloDetail(SkygridResource):
 
 class MonteCarloCallback(SkygridResource):
     def post(self, mc_id):
-        print "Got callback for {}: \n {}".format(mc_id, reque.json)
+        mc = MonteCarlo.objects.get(pk=mc_id)
+        job = request.json
+        job_id = job['job_id']
+
+        if not job_id in mc.jobs:
+            raise Exception("Job is not in this MC.")
+
+        mc.jobs[job_id] = job['status']
+        mc.save()
+
+        return "ok"
