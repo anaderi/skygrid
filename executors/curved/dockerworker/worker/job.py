@@ -11,8 +11,7 @@ import logic
 from ..config import config
 from ..log import logger
 
-from filelock import FileLock
-
+from lockfile import LockFile
 
 def do_docker_job(job):
     logger.debug("Got descriptor: {}".format(job.descriptor))
@@ -43,7 +42,7 @@ def process(job):
 
     logic.get_input_files(job, in_dir)
 
-    with FileLock(config.LOCK_FILE):
+    with LockFile(config.LOCK_FILE):
         mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
 
     while harbor.is_running(container_id):
@@ -54,4 +53,5 @@ def process(job):
 
     logic.upload_output_files(job, out_dir)
 
-    logic.cleanup(job_dir, mounted_ids + [container_id])
+    with LockFile(config.LOCK_FILE):
+        logic.cleanup(job_dir, mounted_ids + [container_id])
