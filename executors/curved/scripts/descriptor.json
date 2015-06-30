@@ -1,0 +1,22 @@
+{
+    "name" : "SHIP-MC.bck",
+    "env_container" : {
+        "workdir" : "/opt/ship/FairShip/build",
+        "name" : "anaderi/fairroot:latest",
+        "needed_containers" : [
+            {
+                "name" : "anaderi/ship-dev:0.1.8",
+                "volumes" : [
+                    "/opt/ship"
+                ]
+            }
+        ]
+    },
+    "output_uri" : "dcache:/tmp/test_output/$JOB_ID",
+    "cmd" : "cd /opt/ship/FairShip/build; . ./config.sh; cp -r gconfig geometry python ..; export PYTHONPATH+=:/opt/ship/FairShip/build/python; python muonShieldOptimization/g4Ex_gap.py --ecut 10 --num-events 1000 --output /output",
+    "args" : {
+    },
+    "cpu_per_container" : 1,
+    "max_memoryMB" : 1024,
+    "min_memoryMB" : 512
+}

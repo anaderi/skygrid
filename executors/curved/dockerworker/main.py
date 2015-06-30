@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import signal
 
@@ -13,16 +14,19 @@ from lockfile import LockFile
 
 
 def break_lock():
-    return LockFile(config.LOCK_FILE).break_lock()
+    try:
+        return LockFile(config.LOCK_FILE).break_lock()
+    except:
+        pass
 
 def sigquit_handler(n, f, worker):
     worker.fail_all()
 
     if config.SIGQUIT_DOCKER_KILLALL:
-        logger.debug("Killing all containers")
         kill_all_containers()
 
     break_lock()
+    sys.exit(0)
 
 def main():
     break_lock()

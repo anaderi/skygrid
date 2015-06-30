@@ -2,10 +2,14 @@
 
 import sys
 import json
+import signal
 from time import time
 
-from dockerworker.worker import do_docker_job
+from lockfile import LockFile
 
+from dockerworker.config import config
+from dockerworker.worker.harbor import kill_all_containers
+from dockerworker.worker import do_docker_job
 
 class JobPH(object):
     """Phony job class"""
@@ -40,7 +44,20 @@ class JobPH(object):
         })
 
 
+def break_lock():
+    try:
+        LockFile(config.LOCK_FILE).break_lock()
+    except:
+        pass
+
+def sigquit_handler(n, f):
+    kill_all_containers()
+    break_lock()
+    sys.exit(0)
+
 def main():
+    break_lock()
+    signal.signal(signal.SIGQUIT, sigquit_handler)
     assert len(sys.argv) == 2, "input file is needed"
     descriptor =  json.loads(open(sys.argv[1]).read())
 
