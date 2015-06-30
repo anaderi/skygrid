@@ -11,6 +11,8 @@ import logic
 from ..config import config
 from ..log import logger
 
+from filelock import FileLock
+
 
 def do_docker_job(job):
     logger.debug("Got descriptor: {}".format(job.descriptor))
@@ -40,7 +42,9 @@ def process(job):
     job_dir, in_dir, out_dir = logic.create_workdir(job)
 
     logic.get_input_files(job, in_dir)
-    mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
+
+    with FileLock(config.LOCK_FILE):
+        mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
 
     while harbor.is_running(container_id):
         logger.debug("Container is running. Sleeping for {} sec.".format(config.SLEEP_TIME))
