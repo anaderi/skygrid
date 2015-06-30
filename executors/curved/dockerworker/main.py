@@ -1,4 +1,6 @@
+import os
 import json
+import signal
 
 from libscheduler.worker import WorkerMS
 
@@ -7,16 +9,24 @@ from worker import do_docker_job
 from log import logger
 from worker.harbor import kill_all_containers
 
-import signal
+from lockfile import LockFile
+
+
+def break_lock():
+    return LockFile(config.LOCK_FILE).break_lock()
 
 def sigquit_handler(n, f, worker):
     worker.fail_all()
 
     if config.SIGQUIT_DOCKER_KILLALL:
+        logger.debug("Killing all containers")
         kill_all_containers()
 
+    break_lock()
 
 def main():
+    break_lock()
+
     worker = WorkerMS(
         config.METASCHEDULER_URL,
         config.WORK_QUEUE,
