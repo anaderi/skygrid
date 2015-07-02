@@ -77,7 +77,7 @@ class WebDAVBackend(BackendBase):
 
 
     def list_uploaded(self, path):
-        return self.wc.ls(path)
+        return [f.name for f in self.wc.ls(path)]
 
 
 BACKENDS = {
