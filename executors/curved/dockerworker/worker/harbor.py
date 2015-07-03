@@ -15,9 +15,8 @@ client = Client(base_url=config.DOCKER_URL, version=config.DOCKER_API_VERSION, t
 
 
 def pull_image(image, *args, **kwargs):
-    with LockFile("/tmp/pull_lock_%s" % re.sub("[:/]", "_", image)):
-        logger.debug("Pulling image {}".format(image))
-        client.pull(image, *args, **kwargs)
+    logger.debug("Pulling image {}".format(image))
+    client.pull(image, *args, **kwargs)
 
 
 def is_running(containter_id):
