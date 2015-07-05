@@ -1,7 +1,5 @@
 import json
 import datetime
-from time import sleep
-from random import random
 
 import pymongo
 from flask import request, jsonify
@@ -47,7 +45,6 @@ class QueueManagementResource(MetaschedulerResource):
 
 class QueueResource(ExistingQueueResource):
     def get(self, job_type):
-        sleep(3.0 * random()) # FIXME
         pulled_job = Job._get_collection().find_and_modify(
             query={'job_type': job_type, 'status': JobStatus.pending},
             sort={'last_update': 1},
