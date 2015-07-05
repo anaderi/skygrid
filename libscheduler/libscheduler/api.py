@@ -17,3 +17,9 @@ class Metascheduler(object):
 
     def job(self, job_id, **kwargs):
         return JobMS(job_id, api_url=self.api_url, **kwargs)
+
+    def get_statuses(self, job_id_list):
+        url = os.path.join(self.api_url, 'jobs', ','.join(job_id_list), 'status')
+        ret = ms_get(url)
+        del ret['success']
+        return ret
