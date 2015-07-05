@@ -42,3 +42,20 @@ def queue_exists_decorator(f):
 
 class ExistingQueueResource(Resource):
     method_decorators = [queue_exists_decorator, api_decorator]
+
+
+def parse_jobid(f):
+    def decorated(job_id, *args, **kwargs):
+        if ',' in job_id:
+            return {
+              jid: f(jid, *args, **kwargs) for jid in job_id.split(',')
+            }
+        else:
+            return f(job_id, *args, **kwargs)
+
+
+    return decorated
+
+
+class MSJobResource(Resource):
+    method_decorators = [parse_jobid, api_decorator]

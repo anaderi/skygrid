@@ -181,6 +181,17 @@ class QueueTest(BasicQueueTest):
 
         IDS = set(result_create['job_ids'])
 
+        multiurl = os.path.join(self.all_jobs_url, ','.join(IDS))
+        r = requests.get(
+            multiurl,
+            headers=self.json_headers
+        )
+        result_multi = r.json()
+        self.assertEqual(result_multi['success'], True)
+        del result_multi['success']
+
+        self.assertEqual(set(result_multi.keys()), IDS)
+
         for _ in xrange(N_OBJ):
             r = requests.get(self.queue_url)
             result_get = r.json()

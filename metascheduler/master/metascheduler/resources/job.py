@@ -5,41 +5,37 @@ import gevent
 from gevent import thread, queue
 
 from flask import request
-from api import MetaschedulerResource
+from api import MetaschedulerResource, MSJobResource
 
 import requests
 
 from ..models import Job, JobStatus
 
+from flask import current_app
 
-def do_callback(job):
+def do_callback(job, timeout):
     if job.callback:
         requests.post(
                 job.callback,
                 data=json.dumps(job.to_dict()),
-                headers={'content-type': 'application/json'}
+                headers={'content-type': 'application/json'},
+                timeout=timeout,
         )
 
 
-class JobResource(MetaschedulerResource):
+class JobResource(MSJobResource):
     def get(self, job_id):
-        if ',' in job_id:
-            return {
-              job_id: Job.objects.get(pk=job_id).to_dict() for job_id in job_id.split(',')
-            }
-        else:
-            return Job.objects.get(pk=job_id).to_dict()
+        return Job.objects.get(pk=job_id).to_dict()
 
     def delete(self, job_id):
         job = Job.objects.get(pk=job_id)
         job.delete()
+        return {"result": "deleted"}
 
 
-class JobStatusResource(MetaschedulerResource):
+class JobStatusResource(MSJobResource):
     def get(self, job_id):
-        return {
-            'status': Job.objects.get(pk=job_id).status
-        }
+        return {"status": Job.objects.get(pk=job_id).status}
 
     def post(self, job_id):
         update_dict = request.json
@@ -54,12 +50,12 @@ class JobStatusResource(MetaschedulerResource):
         job.save()
 
         if job.callback:
-            gevent.spawn(do_callback, job).start()
+            gevent.spawn(do_callback, job, current_app.config["CALLBACK_TIMEOUT"]).start()
 
         return {'updated_status': job.status}
 
 
-class JobOutputResource(MetaschedulerResource):
+class JobOutputResource(MSJobResource):
     def get(self, job_id):
         return {
             'output': Job.objects.get(pk=job_id).output
@@ -76,14 +72,12 @@ class JobOutputResource(MetaschedulerResource):
         return {'updated_output': job.output}
 
 
-class JobInputResource(MetaschedulerResource):
+class JobInputResource(MSJobResource):
     def get(self, job_id):
-        return {
-            'input': Job.objects.get(pk=job_id).input
-        }
+        return {'input': Job.objects.get(pk=job_id).input}
 
 
-class JobDebugResource(MetaschedulerResource):
+class JobDebugResource(MSJobResource):
     def get(self, job_id):
         return {
             'debug': Job.objects.get(pk=job_id).debug
@@ -97,6 +91,6 @@ class JobDebugResource(MetaschedulerResource):
         job.save()
 
         if job.callback:
-            gevent.spawn(do_callback, job).start()
+            gevent.spawn(do_callback, job, current_app.config["CALLBACK_TIMEOUT"]).start()
 
         return job.to_dict()
