@@ -22,4 +22,7 @@ class Metascheduler(object):
         url = os.path.join(self.api_url, 'jobs', ','.join(job_id_list), 'status')
         ret = ms_get(url)
         del ret['success']
+
+        if len(job_id_list) == 1:
+            return {job_id_list[0]: ret['status']}
         return ret
