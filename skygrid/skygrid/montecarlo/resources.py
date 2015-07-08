@@ -80,3 +80,25 @@ class MonteCarloCallback(SkygridResource):
         mc.save()
 
         return "ok"
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
+
+class MonteCarloRefresh(SkygridResource):
+    def post(self, mc_id):
+        mc = MonteCarlo.objects.get(pk=mc_id)
+
+        for jobs_chunk in chunks(mc.jobs.keys(), current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
+            statuses = current_app.metascheduler.get_statuses(jobs_chunk)
+            mc.jobs.update(statuses)
+
+        mc.save()
+
+        return "updated"
+
+class MonteCarloJobs(SkygridResource):
+    def get(self, mc_id):
+        return MonteCarlo.objects.get(pk=mc_id).jobs

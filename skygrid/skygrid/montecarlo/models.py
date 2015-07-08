@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from collections import Counter
 
 from mongoengine import *
 
@@ -27,7 +28,7 @@ class MonteCarlo(Document):
             'descriptor': self.descriptor,
             'multiplier': self.multiplier,
             'created': self.created.strftime(current_app.config['TIME_FORMAT']),
-            'jobs': self.jobs,
+            'jobs': Counter(self.jobs.values()),
         }
 
 
