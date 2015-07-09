@@ -70,6 +70,15 @@ function rerender() {
     document.location.href = "{{ config.SELF_URL }}/mc/list?skip=" + skip + "&limit=" + limit;
 }
 
+function sum( obj ) {
+  var sum = 0;
+  for( var el in obj ) {
+    if( obj.hasOwnProperty( el ) ) {
+      sum += parseFloat( obj[el] );
+    }
+  }
+  return sum;
+}
 
 $(document).ready(function() {
     $.getJSON( "{{ config.SKYGRID_URL }}/montecarlo", function( response ) {
@@ -83,7 +92,7 @@ $(document).ready(function() {
     });
 
     var queryDict = {};
-location.search.substr(1).split("&").forEach(function(item) {queryDict[item.split("=")[0]] = item.split("=")[1]});
+    location.search.substr(1).split("&").forEach(function(item) {queryDict[item.split("=")[0]] = item.split("=")[1]});
 
     if(queryDict["skip"] != undefined) { $('#skip').val(queryDict["skip"]); }
     if(queryDict["limit"] != undefined) { $('#limit').val(queryDict["limit"]); }
@@ -97,19 +106,10 @@ location.search.substr(1).split("&").forEach(function(item) {queryDict[item.spli
         var list_for_datatables = Array();
 
         $.each(mc_list, function(index, mc) {
-            var status = {
-                'completed': 0,
-                'failed': 0,
-                'in_queue': 0,
-                'running': 0,
-            }
+            var status = mc['jobs'];
+            status['total'] = sum(mc['jobs']);
 
-            for (var k in mc['jobs']) {
-                if (mc['jobs'].hasOwnProperty(k)) {
-                   status[mc['jobs'][k]] += 1;
-                }
-            }
-            status['total'] = Object.keys(mc['jobs']).length;
+            // alert(JSON.stringify(status));
 
             // alert(JSON.stringify(status));
             list_for_datatables.push(new Array(
