@@ -5,16 +5,7 @@ from mongoengine import *
 
 from flask import current_app
 
-
-class JobStatus:
-    pending = "pending"
-    running = "running"
-    failed  = "failed"
-    completed = "completed"
-    pulled = "pulled"
-
-    valid_statuses = set([pending, running, failed, completed, pulled])
-
+VALID_STATUSES =  ["failed", "running", "pulled", "completed", "in_queue"]
 
 class MonteCarlo(Document):
     jobs = DictField()
@@ -40,7 +31,7 @@ class MonteCarlo(Document):
             'multiplier': self.multiplier,
             'created': self.created.strftime(current_app.config['TIME_FORMAT']),
             'jobs': {
-                status: statuses.count(status) for status in JobStatus.valid_statuses
+                status: statuses.count(status) for status in VALID_STATUSES
             },
         }
 
