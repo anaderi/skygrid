@@ -20,12 +20,21 @@ def break_lock():
         pass
 
 def sigquit_handler(n, f, worker):
-    worker.fail_all()
+    try:
+        worker.fail_all()
+    except:
+        pass
 
     if config.SIGQUIT_DOCKER_KILLALL:
-        kill_all_containers()
+        try:
+            kill_all_containers()
+        except:
+            pass
 
-    break_lock()
+    try:
+        break_lock()
+    except:
+        pass
     sys.exit(0)
 
 def main():
