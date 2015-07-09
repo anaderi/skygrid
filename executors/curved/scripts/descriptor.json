@@ -13,7 +13,7 @@
         ]
     },
     "output_uri" : "dcache:/tmp/test_output/$JOB_ID",
-    "cmd" : "cd /opt/ship/FairShip/build; . ./config.sh; cp -r gconfig geometry python ..; export PYTHONPATH+=:/opt/ship/FairShip/build/python; python muonShieldOptimization/g4Ex_gap.py --ecut 10 --num-events 1000 --output /output",
+    "cmd": "sleep 10000",
     "args" : {
     },
     "cpu_per_container" : 1,
