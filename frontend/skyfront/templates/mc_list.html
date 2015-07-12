@@ -133,17 +133,17 @@ $(document).ready(function() {
                 {
                     "render": function ( data, type, row ) {
                         return '<div class="progress">\
-                                  <div class="progress-bar progress-bar-success" style="width: ' + row[4] + '%">\
-                                    <span class="sr-only">' + row[4] + '% Completed </span>\
-                                  </div>\
                                   <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: ' + row[5] + '%">\
                                     <span class="sr-only">' + row[5] + '% In queue</span>\
                                   </div>\
-                                  <div class="progress-bar progress-bar-danger" style="width: ' + row[6] + '%">\
-                                    <span class="sr-only">' + row[6] + '% Failed</span>\
-                                  </div>\
                                   <div class="progress-bar progress-bar-info" style="width: ' + row[7] + '%">\
                                     <span class="sr-only">' + row[7] + '% Running </span>\
+                                  </div>\
+                                  <div class="progress-bar progress-bar-success" style="width: ' + row[4] + '%">\
+                                    <span class="sr-only">' + row[4] + '% Completed </span>\
+                                  </div>\
+                                  <div class="progress-bar progress-bar-danger" style="width: ' + row[6] + '%">\
+                                    <span class="sr-only">' + row[6] + '% Failed</span>\
                                   </div>\
                                 </div>';
                     },
