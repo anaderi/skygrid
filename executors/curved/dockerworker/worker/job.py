@@ -40,18 +40,25 @@ def process(job):
 
     job_dir, in_dir, out_dir = logic.create_workdir(job)
 
-    logic.get_input_files(job, in_dir)
+    err = None
+    try:
+        logic.get_input_files(job, in_dir)
 
-    with LockFile(config.LOCK_FILE):
-        mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
+        with LockFile(config.LOCK_FILE):
+            mounted_ids, container_id = logic.create_containers(job, in_dir, out_dir)
 
-    while harbor.is_running(container_id):
-        logger.debug("Container is running. Sleeping for {} sec.".format(config.SLEEP_TIME))
-        time.sleep(config.SLEEP_TIME)
+        while harbor.is_running(container_id):
+            logger.debug("Container is running. Sleeping for {} sec.".format(config.SLEEP_TIME))
+            time.sleep(config.SLEEP_TIME)
 
-    logic.write_std_output(container_id, out_dir)
+        logic.write_std_output(container_id, out_dir)
 
-    logic.upload_output_files(job, out_dir)
+        logic.upload_output_files(job, out_dir)
+    except Exception, e:
+        err = e
 
     with LockFile(config.LOCK_FILE):
         logic.cleanup(job_dir, mounted_ids + [container_id])
+
+    if err:
+        raise err
