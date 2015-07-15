@@ -37,4 +37,4 @@ class MonteCarlo(Document):
 
 
     def __unicode__(self):
-        return "{} : {}".format(self.pk, self.name)
+        return "{}".format(self.pk)
