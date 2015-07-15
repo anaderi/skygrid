@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 
+import gevent
 from flask import request, current_app
 
 from ..api import SkygridResource
@@ -67,18 +68,20 @@ class MonteCarloDetail(SkygridResource):
         return MonteCarlo.objects.get(pk=mc_id).delete()
 
 
-class MonteCarloCallback(SkygridResource):
-    def post(self, mc_id):
-        mc = MonteCarlo.objects.get(pk=mc_id)
-        job = request.json
-        job_id = job['job_id']
+def handle_callback(mc_id, job):
+    mc = MonteCarlo.objects.get(pk=mc_id)
+    job_id = job['job_id']
 
-        if not job_id in mc.jobs:
+    if not job_id in mc.jobs:
             raise Exception("Job is not in this MC.")
 
-        mc.jobs[job_id] = job['status']
-        mc.save()
+    mc.jobs[job_id] = job['status']
+    mc.save()
 
+
+class MonteCarloCallback(SkygridResource):
+    def post(self, mc_id):
+        gevent.spawn(handle_callback, mc_id=mc_id, job=request.json).start()
         return "ok"
 
 
@@ -87,11 +90,12 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
+
 class MonteCarloRefresh(SkygridResource):
     def post(self, mc_id):
         mc = MonteCarlo.objects.get(pk=mc_id)
 
-        for jobs_chunk in chunks(mc.jobs.keys(), current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
+        for jobs_chunk in chunks(mc.jobs.keys(), 100): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
             statuses = current_app.metascheduler.get_statuses(jobs_chunk)
             mc.jobs.update(statuses)
 

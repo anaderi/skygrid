@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='skygrid',
-    version='0.1.13',
+    version='0.1.14',
     url='https://github.com/anaderi/skygrid',
     author='Alexander Baranov',
     author_email='sashab1@yandex-team.ru',
@@ -28,6 +28,7 @@ setup(
         "pika==0.9.14",
         "skygrid-libscheduler==0.5.4",
         "flask-cors",
+        "gevent"
     ],
     tests_require=[
         "nose==1.3.4",

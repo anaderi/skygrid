@@ -84,7 +84,12 @@ class MonteCarloTest(BasicSkygridTest):
         self.assertEqual(data['descriptor'], payload['descriptor'])
         self.assertEqual(data['multiplier'], payload['multiplier'])
 
-        for job_id in data['jobs']:
+        jobs = requests.get(
+            os.path.join(self.montecarlo_url, data['montecarlo_id'], "jobs"),
+            headers=self.json_headers
+        ).json()['data']
+
+        for job_id, status in jobs.items():
             r = requests.post(
                 os.path.join(self.montecarlo_url, data['montecarlo_id'], "callback"),
                 data=json.dumps(dict(job_id=job_id, status="completed")),
@@ -94,13 +99,14 @@ class MonteCarloTest(BasicSkygridTest):
             self.assertTrue(r['success'])
 
         # Some bad id
-        r = requests.post(
-            os.path.join(self.montecarlo_url, data['montecarlo_id'], "callback"),
-            data=json.dumps(dict(job_id=str(uuid.uuid4()), status="completed")),
-            headers=self.json_headers
-        ).json()
+        # Now it is done in greenlet, so we could not test it
+        # r = requests.post(
+        #     os.path.join(self.montecarlo_url, data['montecarlo_id'], "callback"),
+        #     data=json.dumps(dict(job_id=str(uuid.uuid4()), status="completed")),
+        #     headers=self.json_headers
+        # ).json()
 
-        self.assertFalse(r['success'])
+        # self.assertFalse(r['success'])
 
 
 

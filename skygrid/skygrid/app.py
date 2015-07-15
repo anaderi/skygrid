@@ -3,6 +3,7 @@ from flask import Flask
 from flask.ext.cors import CORS
 
 from mongoengine import connect
+from gevent import monkey
 
 from libscheduler import Metascheduler
 
@@ -43,3 +44,5 @@ import montecarlo
 app.register_blueprint(datasets.blueprint)
 app.register_blueprint(classifiers.blueprint)
 app.register_blueprint(montecarlo.blueprint)
+
+monkey.patch_all() # if not started by gunicorn
