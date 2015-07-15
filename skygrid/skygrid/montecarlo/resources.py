@@ -91,18 +91,18 @@ def chunks(l, n):
         yield l[i:i+n]
 
 
-def do_refresh(mc_id):
+def do_refresh(mc_id, ms):
     mc = MonteCarlo.objects.get(pk=mc_id)
 
     for jobs_chunk in chunks(mc.jobs.keys(), 100): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
-        statuses = current_app.metascheduler.get_statuses(jobs_chunk)
+        statuses = ms.get_statuses(jobs_chunk)
         mc.jobs.update(statuses)
 
     mc.save()
 
 class MonteCarloRefresh(SkygridResource):
     def post(self, mc_id):
-        gevent.spawn(do_refresh, mc_id=mc_id).start()
+        gevent.spawn(do_refresh, mc_id=mc_id, ms=current_app.metascheduler).start()
         return "update started"
 
 class MonteCarloJobs(SkygridResource):
