@@ -1,3 +1,4 @@
+import gevent
 from flask import jsonify, current_app
 from flask.ext.restful import Resource
 
@@ -47,9 +48,10 @@ class ExistingQueueResource(Resource):
 def parse_jobid(f):
     def decorated(job_id, *args, **kwargs):
         if ',' in job_id:
-            return {
-              jid: f(jid, *args, **kwargs) for jid in job_id.split(',')
+            jobs = {
+              job_id: gevent.spawn(f, job_id, *args, **kwargs) for job_id in job_id.split(',')
             }
+            return {job_id: gevent_job.get() for job_id, gevent_job in jobs.items()}
         else:
             return f(job_id, *args, **kwargs)
 
