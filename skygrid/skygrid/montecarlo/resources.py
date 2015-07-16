@@ -92,15 +92,16 @@ def chunks(l, n):
 
 
 def refresh_pack(jobs_chunk, mc, ms):
-    statuses = ms.get_statuses(jobs_chunk)
-    mc.jobs.update(statuses)
-    mc.save()
+    for chunk in chunks(jobs_chunk, 100): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
+        statuses = ms.get_statuses(chunk)
+        mc.jobs.update(statuses)
+        mc.save()
 
 
 def do_refresh(mc_id, ms):
     mc = MonteCarlo.objects.get(pk=mc_id)
 
-    for jobs_chunk in chunks(mc.jobs.keys(), 100): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
+    for jobs_chunk in chunks(mc.jobs.keys(), 5000): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
         gevent.spawn(refresh_pack, jobs_chunk, mc, ms)
 
 
