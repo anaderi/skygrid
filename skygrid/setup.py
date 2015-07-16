@@ -26,7 +26,7 @@ setup(
         "six==1.7.3",
         "wsgiref==0.1.2",
         "pika==0.9.14",
-        "skygrid-libscheduler==0.5.4",
+        "skygrid-libscheduler==0.5.5",
         "flask-cors",
         "gevent"
     ],
