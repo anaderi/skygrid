@@ -25,4 +25,5 @@ class Metascheduler(object):
 
         if len(job_id_list) == 1:
             return {job_id_list[0]: ret['status']}
-        return ret
+        else:
+            return {job_id: v['status'] for job_id, v in ret.items()}
