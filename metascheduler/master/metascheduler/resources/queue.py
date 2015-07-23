@@ -83,6 +83,8 @@ class QueueResource(ExistingQueueResource):
                     str(r) for r in Job._get_collection().insert([
                             {
                                 "job_type" : job_type,
+                                "status": JobStatus.pending,
+                                "last_update": datetime.now(),
                                 "descriptor" : descriptor,
                                 "callback" : callback,
                                 "input" : input_files
