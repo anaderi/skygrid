@@ -62,6 +62,10 @@ class WebDAVBackend(BackendBase):
         self.wc = easywebdav.connect(host, **params)
 
     def copy_from_backend(self, src_path, dst_path):
+        if os.path.isdir(dst_path):
+            basename = src_path.split("/")[-1]
+            dst_path = os.path.join(dst_path, basename)
+
         self.wc.download(src_path, dst_path)
 
     def copy_to_backend(self, src_path, dst_path):
