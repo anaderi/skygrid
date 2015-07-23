@@ -42,7 +42,6 @@ class QueueManagementResource(MetaschedulerResource):
         return {'queue': queue.to_dict()}
 
 
-
 class QueueResource(ExistingQueueResource):
     def get(self, job_type):
         pulled_job = Job._get_collection().find_and_modify(
@@ -67,26 +66,32 @@ class QueueResource(ExistingQueueResource):
         assert descriptor
 
         input_files = request.json.get('input') or []
-
         callback = request.json.get('callback')
-        replicate = request.json.get('multiply') or 1
+        replicate = request.json.get('multiply')  or 1
 
-        jobs = [
-            Job(
+        if replicate == 1:
+            job = Job(
                 job_type=job_type,
                 descriptor=descriptor,
                 callback=callback,
                 input=input_files
-            )
-            for _ in xrange(replicate)
-        ]
-        jobs = Job.objects.insert(jobs)
-
-
-        if replicate == 1:
-            return {'job': jobs[0].to_dict()}
+            ).save()
+            return {'job': job.to_dict()}
         else:
-            return {"job_ids": [str(j.pk) for j in jobs]}
+            return {
+                "job_ids": [
+                    str(r) for r in Job._get_collection().insert([
+                            {
+                                "job_type" : job_type,
+                                "descriptor" : descriptor,
+                                "callback" : callback,
+                                "input" : input_files
+                            }
+                        for _ in xrange(replicate)]
+                    )
+                ]
+            }
+
 
     def delete(self, job_type):
         queue = Queue.objects.get(job_type=job_type)
