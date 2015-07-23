@@ -78,13 +78,14 @@ class QueueResource(ExistingQueueResource):
             ).save()
             return {'job': job.to_dict()}
         else:
+            now = datetime.now()
             return {
                 "job_ids": [
                     str(r) for r in Job._get_collection().insert([
                             {
                                 "job_type" : job_type,
                                 "status": JobStatus.pending,
-                                "last_update": datetime.now(),
+                                "last_update": now,
                                 "descriptor" : descriptor,
                                 "callback" : callback,
                                 "input" : input_files
