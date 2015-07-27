@@ -53,7 +53,7 @@ class MonteCarloList(SkygridResource):
             'input': mc.input
         })
 
-        mc.jobs = {job_id : "in_queue" for job_id in jobs}
+        mc.jobs = {job_id : "pending" for job_id in jobs}
 
         mc.save()
 

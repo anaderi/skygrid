@@ -5,7 +5,7 @@ from mongoengine import *
 
 from flask import current_app
 
-VALID_STATUSES =  ["failed", "running", "pulled", "completed", "in_queue"]
+VALID_STATUSES =  ["failed", "running", "pulled", "completed", "pending"]
 
 class MonteCarlo(Document):
     jobs = DictField()
