@@ -93,9 +93,14 @@ def chunks(l, n):
 
 def refresh_pack(jobs_chunk, mc, ms):
     for chunk in chunks(jobs_chunk, 100): # current_app.config['JOBS_UPDATE_CHUNK_SIZE']):
-        statuses = ms.get_statuses(chunk)
-        mc.jobs.update(statuses)
-        mc.save()
+        for retries in xrange(0, 5):
+            try:
+                statuses = ms.get_statuses(chunk)
+                mc.jobs.update(statuses)
+                mc.save()
+                break
+            except:
+                continue
 
 
 def do_refresh(mc_id, ms):
