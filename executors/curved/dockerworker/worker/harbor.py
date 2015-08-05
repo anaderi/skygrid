@@ -60,4 +60,9 @@ def cleanup_containers():
     logger.debug("Killing and removing all containers!")
     all_ids = [c['Id'] for c in client.containers(all=True)]
     for container_id in all_ids:
-        client.remove_container(container_id, force=True)
+        for retries in xrange(20):
+            try:
+                client.remove_container(container_id, force=True)
+                break
+            except:
+                continue
