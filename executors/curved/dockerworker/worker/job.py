@@ -40,7 +40,8 @@ def process(job):
 
     job_dir, in_dir, out_dir = logic.create_workdir(job)
 
-    err = None
+    mounted_ids = []
+    container_id = None
     try:
         logic.get_input_files(job, in_dir)
 
@@ -55,10 +56,13 @@ def process(job):
 
         logic.upload_output_files(job, out_dir)
     except Exception, e:
-        err = e
+        raise e
+    finally:
+        logic.cleanup_dir(job_dir)
 
-    with LockFile(config.LOCK_FILE):
-        logic.cleanup(job_dir, mounted_ids + [container_id])
+        cnt_to_remove = mounted_ids
+        if container_id:
+            cnt_to_remove += [container_id]
 
-    if err:
-        raise err
+        with LockFile(config.LOCK_FILE):
+            logic.cleanup_containers(cnt_to_remove)

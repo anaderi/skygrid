@@ -55,7 +55,8 @@ def logs(container_id, **kwargs):
 def remove(container_id, **kwargs):
     return client.remove_container(container_id, **kwargs)
 
-def cleanup_containers():
+
+def REMOVE_ALL_CONTAINERS():
     "Use with caution"
     logger.debug("Killing and removing all containers!")
     all_ids = [c['Id'] for c in client.containers(all=True)]

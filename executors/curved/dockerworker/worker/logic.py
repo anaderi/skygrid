@@ -115,10 +115,13 @@ def pre_remove_hook():
     os.system(config.PRE_REMOVE_HOOK)
 
 
-def cleanup(job_dir, cnt_ids):
-    logger.debug("Cleaning up")
+def cleanup_containers(cnt_ids):
+    logger.debug("Cleaning up containers")
     for container_id in cnt_ids:
-        harbor.remove(container_id, v=True)
+        harbor.remove(container_id, v=True, force=True)
 
+
+def cleanup_dir(job_dir):
+    logger.debug("Cleaning up directories")
     pre_remove_hook()
     shutil.rmtree(job_dir)

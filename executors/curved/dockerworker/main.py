@@ -8,7 +8,7 @@ from libscheduler.worker import WorkerMS
 from config import config
 from worker import do_docker_job
 from log import logger
-from worker.harbor import cleanup_containers
+from worker.harbor import REMOVE_ALL_CONTAINERS
 
 from lockfile import LockFile
 
@@ -27,7 +27,7 @@ def sigquit_handler(n, f, worker):
 
     if config.DOCKER_KILLALL:
         try:
-            cleanup_containers()
+            REMOVE_ALL_CONTAINERS()
         except:
             pass
 
@@ -40,7 +40,7 @@ def sigquit_handler(n, f, worker):
 def main():
     break_lock()
     if config.DOCKER_KILLALL:
-        cleanup_containers()
+        REMOVE_ALL_CONTAINERS()
 
     worker = WorkerMS(
         config.METASCHEDULER_URL,
