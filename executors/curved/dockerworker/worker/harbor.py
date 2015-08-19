@@ -6,7 +6,7 @@ from docker import Client
 
 from lockfile import LockFile
 
-from ..log import logger
+from ..log import logger, captureException
 from ..config import config
 
 
@@ -38,6 +38,7 @@ def start_container(container_id, **kwargs):
             client.start(container_id, **kwargs)
             break
         except Exception, e:
+            captureException()
             logger.debug("Failed to start container id={}, error: {}".format(container_id, e))
             attempts += 1
 
@@ -66,4 +67,5 @@ def REMOVE_ALL_CONTAINERS():
                 client.remove_container(container_id, force=True)
                 break
             except:
+                captureException()
                 continue
