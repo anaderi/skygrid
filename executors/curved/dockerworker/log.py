@@ -18,9 +18,9 @@ logger = default_logger()
 
 
 sentry_client = None
-captureException = lambda: None
+capture_exception = lambda: None
 
-if config.SENTRY_KEY:
+if getattr(config, "SENTRY_KEY", None):
     logger.debug("Setting sentry client")
     sentry_client = Client(config.SENTRY_KEY)
-    captureException = sentry_client.captureException
+    capture_exception = sentry_client.captureException

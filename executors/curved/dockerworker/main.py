@@ -7,7 +7,7 @@ from libscheduler.worker import WorkerMS
 
 from config import config
 from worker import do_docker_job
-from log import logger, captureException
+from log import logger, capture_exception
 from worker.harbor import REMOVE_ALL_CONTAINERS
 
 from lockfile import LockFile
@@ -25,20 +25,20 @@ def sigquit_handler(n, f, worker):
     try:
         worker.fail_all()
     except:
-        captureException()
+        capture_exception()
         pass
 
     if config.DOCKER_KILLALL:
         try:
             REMOVE_ALL_CONTAINERS()
         except:
-            captureException()
+            capture_exception()
             pass
 
     try:
         break_lock()
     except:
-        captureException()
+        capture_exception()
         pass
     sys.exit(0)
 

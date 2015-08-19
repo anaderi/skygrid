@@ -9,7 +9,7 @@ import util
 import logic
 
 from ..config import config
-from ..log import logger, captureException
+from ..log import logger, capture_exception
 
 from lockfile import LockFile
 
@@ -20,8 +20,8 @@ def do_docker_job(job):
         process(job)
         job.update_status("completed")
         logger.debug("Finished")
-    except Exception, e:
-        captureException()
+    except BaseException, e:
+        capture_exception()
         job.update_status("failed")
 
         if config.DEBUG:
@@ -57,7 +57,7 @@ def process(job):
 
         logic.upload_output_files(job, out_dir)
     except Exception, e:
-        captureException()
+        capture_exception()
         raise e
     finally:
         logic.cleanup_dir(job_dir)
