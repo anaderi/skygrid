@@ -11,6 +11,7 @@ API_URL = config['api']['url']
 
 from test_queue import TestWithQueue
 
+DBG = {'some': 'debug info'}
 
 class TestJobMS(TestWithQueue):
     def test_update_and_delete(self):
@@ -28,6 +29,7 @@ class TestJobMS(TestWithQueue):
         self.assertRaises(Exception, job.update_status, 'some bad')
 
         if config['api']['ms_debug'] == 'true':
-            self.assertTrue(job.update_debug({'some': 'debug info'}))
+            self.assertTrue(job.update_debug(DBG))
+            self.assertEqual(job.get_debug(), DBG)
 
         self.assertTrue(job.delete())

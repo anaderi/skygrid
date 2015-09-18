@@ -62,6 +62,13 @@ class JobMS(object):
             headers=JSON_HEADERS
         )
 
+    def get_debug(self):
+        self._debug = ms_get(
+            os.path.join(self.job_url, 'debug'),
+            headers=JSON_HEADERS
+        )['debug']
+
+        return self._debug
 
     def delete(self):
         return ms_delete(self.job_url)
