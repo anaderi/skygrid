@@ -57,4 +57,4 @@ def descriptor_correct(job):
     ]
 
     for key, keytype in keys_needed:
-        assert isinstance(job.descriptor.get(key), keytype)
+        assert isinstance(job.descriptor.get(key), keytype), "Error with key: " + key

@@ -4,6 +4,7 @@ import errno
 from urlparse import urlparse
 
 import easywebdav
+from git import Repo
 
 from ..config import config
 
@@ -84,9 +85,22 @@ class WebDAVBackend(BackendBase):
         return [f.name for f in self.wc.ls(path)]
 
 
+class GitBackend(BackendBase):
+    def copy_from_backend(self, src_path, dst_path):
+        Repo.clone_from(src_path, dst_path)
+
+    def copy_to_backend(self, src_path, dst_path):
+        raise NotImplementedError
+
+    def list_uploaded(self, path):
+        raise NotImplementedError
+
+
+
 BACKENDS = {
     "local" : LocalBackend(),
     "dcache": WebDAVBackend(config.DCACHE_HOST, config.DCACHE_PARAMS),
+    "git": GitBackend(),
 }
 
 def parse_uri(uri):

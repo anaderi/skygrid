@@ -19,6 +19,7 @@ setup(
         "wsgiref==0.1.2",
         "easywebdav-dcache==1.2.2", # fixed easywebdav, see https://github.com/amnong/easywebdav/pull/37
         "raven",
+        "gitpython",
     ],
 
     scripts = [
