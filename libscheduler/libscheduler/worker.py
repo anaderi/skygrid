@@ -72,7 +72,7 @@ class WorkerMS(object):
 
             try:
                 job = self.queue.get(cpu_available=self.cpu_avail)
-            except MetaschedulerServerError:
+            except BaseException:
                 job = None
 
             if not job:
