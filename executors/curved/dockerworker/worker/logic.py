@@ -31,7 +31,6 @@ def get_input_files(job, in_dir):
         logger.debug("Download input {}".format(input_file))
         copy_from_backend(input_file, in_dir)
 
-
 def create_containers(job, in_dir, out_dir):
     # Add needed containers
     needed = job.descriptor['env_container'].get('needed_containers') or []
@@ -62,29 +61,24 @@ def create_containers(job, in_dir, out_dir):
     if not config.ONLY_LOCAL_IMAGES:
         harbor.pull_image(job.descriptor['env_container']['name'])
 
-    volumes = [
-        "{}:/input".format(in_dir),
-        "{}:/output".format(out_dir),
-    ]
     command = util.build_command(job)
-
     logger.debug('Command to execute: {}'.format(command))
+
+    extra_flags = job.descriptor['env_container'].get('extra_flags') or []
+    volumes_list, volumes_binds = util.obtain_volumes(in_dir, out_dir, extra_flags)
 
     main_id = harbor.create_container(
         job.descriptor['env_container']['name'],
         working_dir=job.descriptor['env_container']['workdir'],
         command=command,
-        volumes=volumes,
+        volumes=volumes_list,
         detach=True,
     )
 
     harbor.start_container(
         main_id,
         volumes_from=mounted_names,
-        binds={
-           in_dir:{'bind': '/input', 'ro': False},
-           out_dir:{'bind': '/output', 'ro': False},
-        }
+        binds=volumes_binds
     )
 
     return mounted_ids, main_id
