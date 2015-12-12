@@ -64,6 +64,7 @@ def create_containers(job, in_dir, out_dir):
     command = util.build_command(job)
     logger.debug('Command to execute: {}'.format(command))
 
+    entrypoint = job.descriptor['env_container'].get('entrypoint') or ''
     extra_flags = job.descriptor['env_container'].get('extra_flags') or []
     volumes_list, volumes_binds = util.obtain_volumes(in_dir, out_dir, extra_flags)
 
@@ -71,6 +72,7 @@ def create_containers(job, in_dir, out_dir):
         job.descriptor['env_container']['name'],
         working_dir=job.descriptor['env_container']['workdir'],
         command=command,
+        entrypoint=entrypoint,
         volumes=volumes_list,
         detach=True,
     )
