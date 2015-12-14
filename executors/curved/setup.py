@@ -15,7 +15,7 @@ setup(
         "skygrid-libskygrid==0.1.1",
         "docker-py>=1.1.0",
         "six==1.9.0",
-        "websocket-client==0.26.0",
+        "websocket-client>=0.26.0",
         "wsgiref==0.1.2",
         "easywebdav-dcache==1.2.2", # fixed easywebdav, see https://github.com/amnong/easywebdav/pull/37
         "raven",
