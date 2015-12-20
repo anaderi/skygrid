@@ -13,7 +13,7 @@ class Dataset(Document):
     filehash = StringField()
 
     meta = {
-        'ordering': ['upload_ts'],
+        'ordering': ['upload_ts'], # maybe upload_time?
         'indexes': ['filehash', 'name']
     }
 

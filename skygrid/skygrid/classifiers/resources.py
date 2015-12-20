@@ -13,7 +13,7 @@ from .blueprint import blueprint
 from .models import Classifier, Dataset
 from .helpers import check_update_valid, update_document
 
-class ClassifierList(SkygridResource):
+class ClassifierList(SkygridResource): # Add the class and its methods descriptions.
     def get(self):
         return {
             'classifiers': [cl.to_dict() for cl in Classifier.objects.all()]
@@ -60,7 +60,7 @@ class ClassifierList(SkygridResource):
         return cl.to_dict()
 
 
-class ClassifierDetail(SkygridResource):
+class ClassifierDetail(SkygridResource): # Add the class and its methods descriptions.
     def get(self, cl_id):
         return Classifier.objects.get(pk=cl_id).to_dict()
 
@@ -79,7 +79,7 @@ class ClassifierDetail(SkygridResource):
         return Classifier.objects.get(pk=cl_id).delete()
 
 
-class ClassifierCallback(SkygridResource):
+class ClassifierCallback(SkygridResource): # Add the class and its methods descriptions.
     def get_classifier_status(self, job_status):
         statuses = {
             "pending" : 'in_queue',
@@ -100,7 +100,8 @@ class ClassifierCallback(SkygridResource):
         cl.save()
 
 
-class ClassifierFormula(Resource):
+# Add the class and its methods descriptions.
+class ClassifierFormula(Resource): # SkygridResource?
     def get(self, cl_id):
         cl = Classifier.objects.get(pk=cl_id)
         job = current_app.metascheduler.job(cl.job_id, from_api=True)

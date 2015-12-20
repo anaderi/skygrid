@@ -4,7 +4,7 @@ from multiprocessing import Process
 from .api import Metascheduler
 from .common import MetaschedulerServerError
 
-class WorkerMS(object):
+class WorkerMS(object): # Add the class and its methods descriptions.
     """
     Class to run job_func on jobs from MS in parallel
     """

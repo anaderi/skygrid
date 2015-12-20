@@ -41,7 +41,7 @@ HOSTNAME = socket.gethostname().split('.')[0]
 logger = None
 API_URL = "http://metascheduler.test.vs.os.yandex.net:80"
 
-
+# Add the functions and the classes descriptions.
 def parse_args():
     global logger
     p = argparse.ArgumentParser()

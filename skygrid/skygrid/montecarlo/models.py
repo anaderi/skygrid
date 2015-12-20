@@ -7,7 +7,7 @@ from flask import current_app
 
 VALID_STATUSES =  ["failed", "running", "pulled", "completed", "pending"]
 
-class MonteCarlo(Document):
+class MonteCarlo(Document): # Add the class and its methods descriptions.
     jobs = DictField()
 
     descriptor = DictField(required=True)

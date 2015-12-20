@@ -18,7 +18,7 @@ def mkdir_p(path):
         else: raise
 
 
-class BackendBase(object):
+class BackendBase(object): # Add the class and its methods descriptions.
     def copy_from_backend(self, src_path, dst_path):
         raise NotImplementedError()
 
@@ -29,7 +29,7 @@ class BackendBase(object):
         raise NotImplementedError()
 
 
-class LocalBackend(BackendBase):
+class LocalBackend(BackendBase): # Add the class and its methods descriptions.
     def copy_from_backend(self, src_path, dst_path):
         assert os.path.exists(src_path)
         assert os.path.isfile(src_path)
@@ -58,7 +58,7 @@ class LocalBackend(BackendBase):
                 yield filename
 
 
-class WebDAVBackend(BackendBase):
+class WebDAVBackend(BackendBase): # Add the class and its methods descriptions.
     def __init__(self, host, params):
         self.wc = easywebdav.connect(host, **params)
 
@@ -85,7 +85,7 @@ class WebDAVBackend(BackendBase):
         return [f.name for f in self.wc.ls(path)]
 
 
-class GitBackend(BackendBase):
+class GitBackend(BackendBase): # Add the class and its methods descriptions.
     def copy_from_backend(self, src_path, dst_path):
         Repo.clone_from(src_path, dst_path, recursive=True)
 

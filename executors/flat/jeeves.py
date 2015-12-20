@@ -21,7 +21,7 @@ logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
 
-
+# Add the functions descriptions.
 def parse_args():
     global verbose
     p = argparse.ArgumentParser()

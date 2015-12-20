@@ -38,7 +38,7 @@ POOL_SIZE=20
 JD_PER_DIR = 1000
 EV_PER_JD = 5000
 
-
+# Add the functions descriptions.
 def parse_args():
     p = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, epilog="""
 Supported commands:

@@ -13,7 +13,7 @@ from ..log import logger, capture_exception
 
 from lockfile import LockFile
 
-def do_docker_job(job):
+def do_docker_job(job): # Add description.
     logger.debug("Got descriptor: {}".format(job.descriptor))
     try:
         job.update_status("running")
@@ -36,7 +36,7 @@ def do_docker_job(job):
         raise e
 
 
-def process(job):
+def process(job): # Add description.
     util.descriptor_correct(job)
 
     job_dir, in_dir, out_dir = logic.create_workdir(job)
