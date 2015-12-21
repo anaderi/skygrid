@@ -29,7 +29,7 @@ queue_exts = {
     # WORK: '.work'
 }
 
-
+# Add the functions descriptions.
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--ids", "-i", help="hosts ids for stat")

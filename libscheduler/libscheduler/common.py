@@ -1,7 +1,7 @@
 import os
 import requests
 
-class MetaschedulerServerError(Exception): pass
+class MetaschedulerServerError(Exception): pass # Add the class and its methods descriptions.
 
 class u(object):
     def __init__(self, url):
@@ -22,6 +22,7 @@ class u(object):
 
 JSON_HEADERS = {'content-type': 'application/json'}
 
+# Add the methods descriptions.
 def check_result(result):
     assert result
     result.raise_for_status()

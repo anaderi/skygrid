@@ -8,7 +8,7 @@ from .job import JobMS
 from .common import *
 
 
-class QueueMS(object):
+class QueueMS(object): # Add the class and its methods descriptions.
     def __init__(self, queue_name, autocreate=True, api_url="http://localhost:5000/"):
         self.queue_name = queue_name
         self.api_url = api_url

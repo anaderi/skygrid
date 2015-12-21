@@ -3,7 +3,7 @@ import json
 
 from .common import *
 
-class JobMS(object):
+class JobMS(object): # Add the class and its methods descriptions.
     """Class for communicating with metascheduler about Jobs"""
     def __init__(self, job_id, status='', descriptor={}, input=[], output=[],
             api_url="http://localhost:5000/", from_api=False, debug={}):

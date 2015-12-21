@@ -14,7 +14,7 @@ ERROR_DEAD = 127
 
 logger = logging.getLogger()
 
-
+# Add the functions descriptions.
 def wait_poll(proc):
     # TODO increase delay progressively
     delay = 0.5

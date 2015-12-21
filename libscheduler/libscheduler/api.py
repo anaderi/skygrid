@@ -3,7 +3,7 @@ from .queue import QueueMS
 from .job import JobMS
 from .common import ms_get, MetaschedulerServerError
 
-class Metascheduler(object):
+class Metascheduler(object): # Add the class and its methods descriptions.
     def __init__(self, api_url):
         self.api_url = api_url
         self.status_url = os.path.join(self.api_url, 'status')

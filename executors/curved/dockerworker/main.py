@@ -14,7 +14,7 @@ from lockfile import LockFile
 
 
 
-
+# Add description of the functions
 def break_lock():
     try:
         return LockFile(config.LOCK_FILE).break_lock()

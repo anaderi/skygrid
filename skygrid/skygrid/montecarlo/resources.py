@@ -10,7 +10,7 @@ from ..api import SkygridResource
 from .models import MonteCarlo
 from .helpers import check_update_valid, update_document
 
-class MonteCarloList(SkygridResource):
+class MonteCarloList(SkygridResource): # Add the class and its methods descriptions.
     def get(self):
         limit = int(request.args.get('limit') or "0")
         skip  = int(request.args.get('skip') or "0")
@@ -60,7 +60,7 @@ class MonteCarloList(SkygridResource):
         return mc.to_dict()
 
 
-class MonteCarloDetail(SkygridResource):
+class MonteCarloDetail(SkygridResource): # Add the class and its methods descriptions.
     def get(self, mc_id):
         return MonteCarlo.objects.get(pk=mc_id).to_dict()
 
@@ -68,7 +68,7 @@ class MonteCarloDetail(SkygridResource):
         return MonteCarlo.objects.get(pk=mc_id).delete()
 
 
-def handle_callback(mc_id, job):
+def handle_callback(mc_id, job): # It is used anly in one class. Is it reasonable to put it into that class?
     mc = MonteCarlo.objects.get(pk=mc_id)
     job_id = job['job_id']
 
@@ -79,12 +79,12 @@ def handle_callback(mc_id, job):
     mc.save()
 
 
-class MonteCarloCallback(SkygridResource):
+class MonteCarloCallback(SkygridResource): # Add the class and its methods descriptions.
     def post(self, mc_id):
         gevent.spawn(handle_callback, mc_id=mc_id, job=request.json).start()
         return "ok"
 
-
+# Put the following methods into the MonteCarloRefresh class. Is it reasonable?
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in xrange(0, len(l), n):
@@ -110,12 +110,12 @@ def do_refresh(mc_id, ms):
         gevent.spawn(refresh_pack, jobs_chunk, mc, ms)
 
 
-class MonteCarloRefresh(SkygridResource):
+class MonteCarloRefresh(SkygridResource): # Add the class and its methods descriptions.
     def post(self, mc_id):
         gevent.spawn(do_refresh, mc_id=mc_id, ms=current_app.metascheduler).start()
         return "update started"
 
 
-class MonteCarloJobs(SkygridResource):
+class MonteCarloJobs(SkygridResource): # Add the class and its methods descriptions.
     def get(self, mc_id):
         return MonteCarlo.objects.get(pk=mc_id).jobs

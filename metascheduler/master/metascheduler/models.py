@@ -18,7 +18,7 @@ class JobStatus:
     valid_statuses = set([pending, running, failed, completed, pulled])
 
 
-class Job(Document):
+class Job(Document): # Add the class and its methods descriptions.
     job_type = StringField(default="ANY")
     descriptor = DictField(default={})
 
@@ -59,7 +59,7 @@ class Job(Document):
 
 # Queue model and stuff used
 
-class Queue(Document):
+class Queue(Document): # Add the class and its methods descriptions.
     job_type = StringField(required=True, unique=True)
 
     timeout = FloatField(min_value=0)

@@ -10,7 +10,7 @@ from libscheduler.queue import QueueMS
 
 API_URL = "http://mc03.h.cern.yandex.net:5000"
 
-
+# Add the functions descriptions.
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--hosts", default=None, required=True)

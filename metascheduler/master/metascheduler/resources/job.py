@@ -13,6 +13,7 @@ from ..models import Job, JobStatus
 
 from flask import current_app
 
+# Put the method to the classes where it is used or put it into the MSJobResource. Do you agree?
 def do_callback(job, timeout):
     if job.callback:
         requests.post(
@@ -23,7 +24,7 @@ def do_callback(job, timeout):
         )
 
 
-class JobResource(MSJobResource):
+class JobResource(MSJobResource): # Add the class and its methods descriptions.
     def get(self, job_id):
         return Job.objects.get(pk=job_id).to_dict()
 
@@ -33,7 +34,7 @@ class JobResource(MSJobResource):
         return {"result": "deleted"}
 
 
-class JobStatusResource(MSJobResource):
+class JobStatusResource(MSJobResource): # Add the class and its methods descriptions.
     def get(self, job_id):
         return {"status": Job.objects.get(pk=job_id).status}
 
@@ -55,7 +56,7 @@ class JobStatusResource(MSJobResource):
         return {'updated_status': job.status}
 
 
-class JobOutputResource(MSJobResource):
+class JobOutputResource(MSJobResource): # Add the class and its methods descriptions.
     def get(self, job_id):
         return {
             'output': Job.objects.get(pk=job_id).output
@@ -72,12 +73,12 @@ class JobOutputResource(MSJobResource):
         return {'updated_output': job.output}
 
 
-class JobInputResource(MSJobResource):
+class JobInputResource(MSJobResource): # Add the class and its methods descriptions.
     def get(self, job_id):
         return {'input': Job.objects.get(pk=job_id).input}
 
 
-class JobDebugResource(MSJobResource):
+class JobDebugResource(MSJobResource): # Add the class and its methods descriptions.
     def get(self, job_id):
         return {
             'debug': Job.objects.get(pk=job_id).debug

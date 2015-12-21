@@ -3,7 +3,6 @@
 import sys
 from util import filter_older_than
 
-
 def parse_args():
     if len(sys.argv) < 2:
         print "USAGE: %s MAX_SECONDS" % sys.argv[0]

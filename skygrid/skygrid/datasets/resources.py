@@ -19,7 +19,7 @@ def get_extension(filename):
 def allowed_extension(extension):
     return extension in current_app.config['ALLOWED_EXTENSIONS']
 
-
+# Put the following methods into the DatasetList class. Is it reasonable?
 def upload_file(ds_id, ds_file):
     extension = get_extension(ds_file.filename)
     if not allowed_extension(extension):
@@ -47,7 +47,7 @@ def hashfile(path):
     return hasher.hexdigest()
 
 
-class DatasetList(SkygridResource):
+class DatasetList(SkygridResource): # Add the class and its methods descriptions.
     def get(self):
         if 'hash' in request.args:
             return {
@@ -93,7 +93,7 @@ class DatasetList(SkygridResource):
         return ds_embryo.to_dict()
 
 
-class DatasetDetail(SkygridResource):
+class DatasetDetail(SkygridResource): # Add the class and its methods descriptions.
     def get(self, ds_id):
         return Dataset.objects.get(pk=ds_id).to_dict()
 

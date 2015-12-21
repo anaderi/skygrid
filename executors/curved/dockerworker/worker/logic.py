@@ -9,7 +9,7 @@ from backend import copy_from_backend, copy_to_backend, list_uploaded
 from ..config import config
 from ..log import logger
 
-
+# Add descriptions of the functions.
 def create_workdir(job):
     job_workdir = os.path.join(config.WORK_DIR, job.job_id)
     if os.path.isdir(job_workdir):

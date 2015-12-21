@@ -9,11 +9,12 @@ from ..models import *
 
 from api import MetaschedulerResource, ExistingQueueResource, queue_exists
 
+# Put the method to the classes where it is used. Do you agree?
 def queue_length(queue_name):
     return Job.objects(job_type=queue_name, status=JobStatus.pending).count()
 
 
-class QueueManagementResource(MetaschedulerResource):
+class QueueManagementResource(MetaschedulerResource): # Add the class and its methods descriptions.
     def get(self):
         jsoned_queues = []
 
@@ -42,7 +43,7 @@ class QueueManagementResource(MetaschedulerResource):
         return {'queue': queue.to_dict()}
 
 
-class QueueResource(ExistingQueueResource):
+class QueueResource(ExistingQueueResource): # Add the class and its methods descriptions.
     def get(self, job_type):
         pulled_job = Job._get_collection().find_and_modify(
             query={'job_type': job_type, 'status': JobStatus.pending},
@@ -105,7 +106,7 @@ class QueueResource(ExistingQueueResource):
 
 
 
-class QueueInfoResource(MetaschedulerResource):
+class QueueInfoResource(MetaschedulerResource): # Add the class and its methods descriptions.
     def get(self, job_type):
         if not queue_exists(job_type):
             return {'exists': False}
