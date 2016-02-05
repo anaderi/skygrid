@@ -75,10 +75,17 @@ class WebDAVBackend(BackendBase):
         self.wc.mkdirs(dst_path)
 
         for root, dirs, files in os.walk(src_path):
+            path_in_root = root.replace(src_path, "")
+            if path_in_root.startswith('/'):
+                path_in_root = path_in_root[1:]
+
+            dst_root = os.path.join(dst_path, path_in_root)
+            self.wc.mkdirs(dst_root)
+
             for basename in files:
                 filename = os.path.join(root, basename)
 
-                self.wc.upload(filename, os.path.join(dst_path, basename))
+                self.wc.upload(filename, os.path.join(dst_root, basename))
 
 
     def list_uploaded(self, path):
