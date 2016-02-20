@@ -4,8 +4,6 @@ import shutil
 import util
 import harbor
 
-from backend import copy_from_backend, copy_to_backend, list_uploaded
-
 from ..config import config
 from ..log import logger
 
@@ -29,7 +27,7 @@ def create_workdir(job):
 def get_input_files(job, in_dir):
     for input_file in job.input:
         logger.debug("Download input {}".format(input_file))
-        copy_from_backend(input_file, in_dir)
+        config.backend.copy_from_backend(input_file, in_dir)
 
 def create_containers(job, in_dir, out_dir):
     # Add needed containers
@@ -101,9 +99,9 @@ def upload_output_files(job, out_dir):
     upload_uri = upload_uri.replace('$JOB_ID', job.job_id)
 
     logger.debug("Upload output directory `{}` to `{}`".format(out_dir, upload_uri))
-    copy_to_backend(out_dir, upload_uri)
+    config.backend.copy_to_backend(out_dir, upload_uri)
 
-    job.update_output(list_uploaded(upload_uri))
+    job.update_output(config.backend.list_uploaded(upload_uri))
 
 
 def pre_remove_hook():
