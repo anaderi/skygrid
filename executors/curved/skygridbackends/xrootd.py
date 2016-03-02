@@ -14,4 +14,5 @@ class XrootdBackend(BackendBase):
         xrdcopy("-r", src_path, self.xrd_server + dst_path)
 
     def list_uploaded(self, path):
-        xrdfs(self.xrd_server, "ls", path).split("\n")
+        files = xrdfs(self.xrd_server, "ls", path).split("\n")
+        return filter(None, files)
